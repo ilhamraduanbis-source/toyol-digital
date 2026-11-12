@@ -63,6 +63,9 @@ export function fromTaskmarket(task){
   reward_amount:amount,reward_currency:code,
   payout_rail:'ONCHAIN_IDENTITY_REQUIRED',funding_signal:clean(task.escrowTxHash?'ESCROW_TX_LISTED':'UNKNOWN'),
   acceptance:'TASKMARKET_REVIEW',competition:'OPEN_BOUNTY',deadline:clean(task.expiryTime,36)||null,
+  submission_count:Number.isInteger(task.submissionCount)&&task.submissionCount>=0?task.submissionCount:null,
+  free_task_quota:50,
+  delivery_open:task.submissionWindowOpen===false?false:task.submissionWindowOpen===true?true:null,
   stake_required:false,stake_terms_unverified:false,task_status:'OPEN_DIRECT_API',
   requires_registration:'WALLET_SIGNATURE',source_primary_verified:true};
 }
@@ -90,6 +93,15 @@ export function analyzeTask(item){
  if(danger.test(content))blocked.push('REQUESTS_UNSAFE_PAYMENT_OR_SECRETS');
  if(purchaseRequired.test(content))blocked.push('REQUIRES_PURCHASE_OR_OUTLAY');
  if(item.stake_required)blocked.push('REQUIRES_STAKE');
+ // Provider reference: https://docs.taskmarket.dev/reference/competing
+ // Free only for the first 5 per worker AND fewer than 50 total task submissions.
+ // Count missing or stale is not authorization to submit; a live read is required.
+ if(item.source==='Taskmarket'){
+  if(item.delivery_open===false)blocked.push('SUBMISSION_WINDOW_CLOSED');
+  if(item.deadline&&Number.isFinite(Date.parse(item.deadline))&&Date.parse(item.deadline)<=Date.now())blocked.push('TASK_EXPIRED');
+  if(!Number.isInteger(item.submission_count))blocked.push('FREE_QUOTA_UNVERIFIED');
+  else if(item.submission_count>=50)blocked.push('TASK_FREE_SUBMISSIONS_EXHAUSTED');
+ }
  if(item.source==='BasedAgents'&&item.funding_signal==='NO_FUNDED_ESCROW_EVIDENCE')blocked.push('UNFUNDED_OR_UNVERIFIED_ESCROW');
  const execution=skillText.test(content)?'POTENTIAL_FIELD_TASK':'NEEDS_CAPABILITY_DIAGNOSIS';
  if(/(?:medical advice|licensed therapy|firearm|explicit content|casino)/i.test(content))blocked.push('RESTRICTED_DOMAIN');
@@ -167,6 +179,7 @@ export function report(data){
   '- **'+clean(t.title,100).replace(/[\[\]*]/g,'')+'** — '+t.reward_amount+' '+t.reward_currency+
   ' ([original]('+t.url+'))',
   '  - '+t.source+' | payout: '+t.payout_rail+' | funding: '+t.funding_signal+
+  (t.source==='Taskmarket'?' | task submissions: '+t.submission_count+'/50 free total (recheck before submit)':'')+
   ' | local solve: '+t.execution_path+' | original: '+(t.original_issue?.status??'UNVERIFIED')+
   ' | warnings: '+(t.original_issue?.warnings?.join(',')||'none')+' | MYR payout: UNVERIFIED'
  );
