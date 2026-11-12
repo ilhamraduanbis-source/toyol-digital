@@ -63,6 +63,7 @@ export function fromTaskmarket(task){
   reward_amount:amount,reward_currency:code,
   payout_rail:'ONCHAIN_IDENTITY_REQUIRED',funding_signal:clean(task.escrowTxHash?'ESCROW_TX_LISTED':'UNKNOWN'),
   acceptance:'TASKMARKET_REVIEW',competition:'OPEN_BOUNTY',deadline:clean(task.expiryTime,36)||null,
+  off_platform_token_only:/\b(?:FLAPJAX only|no per-worker USDC release|USDC (?:reward|listing deposit).{0,120}(?:listing deposit|not a per-worker payout)|paid off-platform.{0,100}not by Taskmarket)\b/i.test(String(task.description||'')),
   submission_count:Number.isInteger(task.submissionCount)&&task.submissionCount>=0?task.submissionCount:null,
   free_task_quota:50,
   delivery_open:task.submissionWindowOpen===false?false:task.submissionWindowOpen===true?true:null,
@@ -97,12 +98,16 @@ export function analyzeTask(item){
  // Free only for the first 5 per worker AND fewer than 50 total task submissions.
  // Count missing or stale is not authorization to submit; a live read is required.
  if(item.source==='Taskmarket'){
+  if(item.off_platform_token_only)blocked.push('ADVERTISED_USDC_NOT_WORKER_PAYOUT');
   if(item.delivery_open===false)blocked.push('SUBMISSION_WINDOW_CLOSED');
   if(item.deadline&&Number.isFinite(Date.parse(item.deadline))&&Date.parse(item.deadline)<=Date.now())blocked.push('TASK_EXPIRED');
   if(!Number.isInteger(item.submission_count))blocked.push('FREE_QUOTA_UNVERIFIED');
   else if(item.submission_count>=50)blocked.push('TASK_FREE_SUBMISSIONS_EXHAUSTED');
  }
- if(item.source==='BasedAgents'&&item.funding_signal==='NO_FUNDED_ESCROW_EVIDENCE')blocked.push('UNFUNDED_OR_UNVERIFIED_ESCROW');
+ if(item.source==='BasedAgents'){
+  blocked.push('PAID_CLAIM_REQUIRES_REFUNDABLE_USDC_BOND');
+  if(item.funding_signal==='NO_FUNDED_ESCROW_EVIDENCE')blocked.push('UNFUNDED_OR_UNVERIFIED_ESCROW');
+ }
  const execution=skillText.test(content)?'POTENTIAL_FIELD_TASK':'NEEDS_CAPABILITY_DIAGNOSIS';
  if(/(?:medical advice|licensed therapy|firearm|explicit content|casino)/i.test(content))blocked.push('RESTRICTED_DOMAIN');
  const escrowVerified=false; // Require actual primary transaction or receipt, never infer from index.
