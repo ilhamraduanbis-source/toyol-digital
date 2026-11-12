@@ -87,3 +87,15 @@ test('BasedAgents escrow claim is lead-only pending verification of actual depos
  assert.equal(t.funding_from_primary_verified,false);
  assert.equal(t.earned_myr_verified,0);
 });
+
+test('Taskmarket global free quota blocks paid submissions even for a new wallet',()=>{
+ const base={id:'0x'+'c'.repeat(64),status:'open',chainId:8453,reward:'500000',description:'Write report',mode:'bounty',submissionWindowOpen:true};
+ assert.equal(analyzeTask(fromTaskmarket({...base,submissionCount:49})).suitable_for_draft,true);
+ for(const count of [50,58,65]){
+  const t=analyzeTask(fromTaskmarket({...base,submissionCount:count}));
+  assert.equal(t.suitable_for_draft,false);
+  assert.ok(t.eligibility.reasons.includes('TASK_FREE_SUBMISSIONS_EXHAUSTED'));
+ }
+ assert.ok(analyzeTask(fromTaskmarket(base)).eligibility.reasons.includes('FREE_QUOTA_UNVERIFIED'));
+ assert.ok(analyzeTask(fromTaskmarket({...base,submissionCount:0,submissionWindowOpen:false})).eligibility.reasons.includes('SUBMISSION_WINDOW_CLOSED'));
+});
