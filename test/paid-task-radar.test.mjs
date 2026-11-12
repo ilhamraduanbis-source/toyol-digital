@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {fromJobbi,fromTaskmarket,fromBasedAgents,analyzeTask,shortlist,scan} from '../src/paid-task-radar.mjs';
+import {fromJobbi,fromTaskmarket,fromBasedAgents,fromFrantic,analyzeTask,shortlist,scan} from '../src/paid-task-radar.mjs';
 const source={id:'algora:1',title:'Fix a Python data parser',url:'https://github.com/example/example/issues/4',
   content_text:'Write test and fix parser',_jobbi:{lane:'agent',reward:{amount:0.01,currency:'USD',rail:'stripe'},
   payment_state:'escrowed',acceptance_type:'review',source:'algora',claims_open:true}};
@@ -57,7 +57,7 @@ test('partial API outages are not silently presented as a healthy zero',async()=
   if(url.includes('basedagents'))return {tasks:[]};
   return {items:[source]};
  });
- assert.equal(x.sources.length,3);
+ assert.equal(x.sources.length,4);
  assert.equal(x.sources.filter(y=>y.status==='ERROR').length,1);
  assert.equal(x.tasks.length,1);
  assert.equal(x.verified_myr_received,0);
@@ -98,4 +98,12 @@ test('Taskmarket global free quota blocks paid submissions even for a new wallet
  }
  assert.ok(analyzeTask(fromTaskmarket(base)).eligibility.reasons.includes('FREE_QUOTA_UNVERIFIED'));
  assert.ok(analyzeTask(fromTaskmarket({...base,submissionCount:0,submissionWindowOpen:false})).eligibility.reasons.includes('SUBMISSION_WINDOW_CLOSED'));
+});
+
+test('Frantic excludes private invitations and purchase cashback, accepts funded public work',()=>{
+ const b={number:150,title:'Write a Python parser',visibility:'public',funded:true,work_status:'open',price_usd:3,claim_slots:{available:1}};
+ assert.equal(fromFrantic(b).reward_amount,3);
+ assert.equal(fromFrantic({...b,visibility:'private'}),null);
+ assert.equal(fromFrantic({...b,title:'Your first bounty is on the house'}),null);
+ assert.equal(fromFrantic({...b,claim_slots:{available:0}}),null);
 });
