@@ -186,6 +186,14 @@ export function report(data){
  'Only public work explicitly open to a participant may be attempted. Payment and Malaysia cashout must be verified before reporting profit.',''
  ];
  for(const s of data.sources)lines.push('- '+s.name+': '+s.status+' ('+s.count+' tasks inspected)'+(s.error?' — '+clean(s.error,90):''));
+ const f=data.frantic_agent;
+ if(f?.status==='OK'){
+  lines.push('','## Toyol Frantic customer inbox','',
+   '- Sworn: '+f.sworn+'; hire listing open: '+f.hire_open+'; payout configured: '+f.payout_set,
+   '- Invitations: '+f.invites.length+'; active claims: '+f.active+'; review pending: '+f.review_pending+'; revision needed: '+f.revision_required+'; awaiting payout: '+f.accepted_awaiting_payout,
+   '- Platform reported earnings USD: '+(f.platform_reported_earned_usd??'UNKNOWN')+' (not independently verified settlement or MYR).');
+  for(const i of f.invites)lines.push('- ACTIONABLE INVITATION #'+i.number+' — '+i.price_usd+' USD; inspect authenticated brief before claim. https://gofrantic.com/bounties/'+i.number);
+ }else if(f)lines.push('','Frantic customer inbox unavailable; no inference about invites.');
  lines.push('','## Original issue verification','',
   '- GitHub issue sources checked: '+(data.original_github_issues_checked??'not run')+
   '; closed source issues excluded: '+(data.source_closed_rejections?.length??0),
@@ -231,8 +239,20 @@ export async function scan(fetchJSON=getJSON){
    all.push(...mapped);
   }catch(e){sources.push({name:s.name,status:'ERROR',count:0,error:clean(e?.message,110)});}
  }
+ let frantic_agent={status:'UNVERIFIED'};
+ try{
+  const x=await fetchJSON('https://gofrantic.com/v1/agents/agent-65c3b0/status');
+  if(x?.ok!==true||x.agent?.kid!=='agent-65c3b0')throw Error('unexpected agent response');
+  const w=x.work?.summary||{};
+  frantic_agent={status:'OK',sworn:x.verification?.sworn===true,hire_open:x.agent.situation?.open===true,
+   eligible:x.agent.claimEligibility?.eligible===true,payout_set:x.agent.onboarding?.payout?.set===true,
+   invites:(Array.isArray(x.agent.invites)?x.agent.invites:[]).filter(i=>Number.isInteger(i.bountyNumber)&&money(i.priceUsd)).map(i=>({number:i.bountyNumber,price_usd:i.priceUsd,until:clean(i.until,40)})),
+   active:Number(w.active)||0,review_pending:Number(w.deliveredPendingReview)||0,revision_required:Number(w.revisionRequired)||0,
+   accepted_awaiting_payout:Number(w.acceptedAwaitingPayout)||0,paid_recent:Number(w.paidRecent)||0,
+   platform_reported_earned_usd:typeof x.agent.earnedUsd==='number'?x.agent.earnedUsd:null};
+ }catch(e){frantic_agent.error=clean(e?.message,110);}
  return {scanned_at:new Date().toISOString(),sources,normalized_count:all.length,
-  tasks:shortlist(all),accepted_paid_tasks:0,verified_myr_received:0};
+  frantic_agent,tasks:shortlist(all),accepted_paid_tasks:0,verified_myr_received:0};
 }
 async function publish(content,token){
  if(!token||process.env.GITHUB_REPOSITORY!==REPO)return {saved:false,reason:'NO_GITHUB_AUTH'};
