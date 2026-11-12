@@ -16,7 +16,8 @@ const END='<!-- /toyol-paid-tasks-v1 -->';
 const SOURCES=[
  {name:'Jobbi agent gigs',url:'https://jobbi.org/gigs.json?lane=agent&limit=1000'},
  {name:'Taskmarket open',url:'https://api.taskmarket.dev/api/tasks?status=open&sort=newest&limit=100'},
- {name:'BasedAgents tasks',url:'https://api.basedagents.ai/v1/tasks?status=open'}
+ {name:'BasedAgents tasks',url:'https://api.basedagents.ai/v1/tasks?status=open'},
+ {name:'Frantic funded bounties',url:'https://gofrantic.com/v1/board?status=open&limit=50'}
 ];
 const skillText=/(code|bug|fix|program|script|api|json|csv|data|documentation|readme|test|research|content|translate|summari|article|report|spreadsheet|analysis|markdown|python|javascript|typescript|extract|parse|validate|audit|design|write)/i;
 const danger=/(?:\bpay (?:a |the )?(?:fee|deposit)\b|\bupfront (?:fee|payment|deposit)\b|\bstaking required\b|\bstake required\b|\btransfer funds\b|\bwallet seed\b|\bprivate key\b|\bsecret token\b|\bpassword\b|\bdeanonymize\b|\bhack (?:into|an account)\b|\baccount takeover\b|\breferral (?:scheme|chain)\b)/i;
@@ -70,6 +71,17 @@ export function fromTaskmarket(task){
   stake_required:false,stake_terms_unverified:false,task_status:'OPEN_DIRECT_API',
   requires_registration:'WALLET_SIGNATURE',source_primary_verified:true};
 }
+export function fromFrantic(b){
+ if(b?.visibility!=='public'||b?.funded!==true||b?.work_status!=='open'||!(b.claim_slots?.available>0)||!money(b.price_usd)||!Number.isInteger(b.number))return null;
+ if(/cashback|first bounty is on the house|reddit|citation|affiliate|social media|twitter|promot/i.test(b.title||''))return null;
+ return {id:'frantic:'+b.number,source:'Frantic',url:'https://gofrantic.com/bounties/'+b.number,
+  title:clean(b.title,140),brief:'Read original bounty contract before claim. Public funded work; availability can change.',
+  reward_amount:b.price_usd,reward_currency:'USDC',payout_rail:'FRANTIC_X402_BASE',
+  source_grade:'PRIMARY',funding_signal:'PROVIDER_FUNDED',acceptance:'FRANTIC_VERIFIER_AND_REVIEW',
+  competition:'AVAILABLE_SLOTS_'+b.claim_slots.available,deadline:null,stake_required:false,
+  stake_terms_unverified:false,task_status:'OPEN_DIRECT_API',requires_registration:'REGISTERED_AGENT_TOKEN',
+  source_primary_verified:true};
+}
 export function fromBasedAgents(task){
  const id=String(task?.id||task?.task_id||'');
  const raw=task?.bounty_amount??task?.bountyAmount??task?.reward??task?.bounty;
@@ -120,7 +132,7 @@ export function analyzeTask(item){
  priority-=item.payout_rail.includes('WALLET')?8:0;
  if(['C','C-','D','D-'].includes(item.source_grade))priority-=18;
  if(item.funding_signal==='promised')priority-=12;
- if(item.source==='Taskmarket')priority+=12;
+ if(item.source==='Taskmarket'||item.source==='Frantic')priority+=12;
  if(item.source==='BasedAgents')priority+=10;
  if(item.reward_amount<=10)priority+=5; // Micro gigs are allowed, not discarded.
  if(blocked.length)priority=0;
@@ -169,7 +181,7 @@ export function report(data){
  const lines=[
  '# 🧟 Toyol — Paid Tasks (not job vacancies)','',
  '**REAL MONEY RECEIVED: RM0. ADVERTISED REWARDS ARE NOT EARNINGS.**','',
- 'Source API: [Jobbi](https://jobbi.org/gigs), [Taskmarket](https://docs.taskmarket.dev/api/reference), [BasedAgents](https://basedagents.ai/docs/agents).',
+ 'Source API: [Jobbi](https://jobbi.org/gigs), [Taskmarket](https://docs.taskmarket.dev/api/reference), [BasedAgents](https://basedagents.ai/docs/agents), [Frantic](https://gofrantic.com).',
  'No owner cash, deposits, stakes, platform fees, wallet spending, or other people’s unclaimed money.','',
  'Only public work explicitly open to a participant may be attempted. Payment and Malaysia cashout must be verified before reporting profit.',''
  ];
@@ -193,7 +205,7 @@ export function report(data){
 }
 async function getJSON(url){
  const u=new URL(url);
- if(!['jobbi.org','api.taskmarket.dev','api.basedagents.ai'].includes(u.hostname))throw Error('unapproved API host');
+ if(!['jobbi.org','api.taskmarket.dev','api.basedagents.ai','gofrantic.com'].includes(u.hostname))throw Error('unapproved API host');
  const ac=new AbortController(),timer=setTimeout(()=>ac.abort(),15000);
  try{
   const res=await fetch(url,{signal:ac.signal,headers:{Accept:'application/json','User-Agent':'ToyolPaidTasks/1.0 (+public agent tasks; once daily)'}});
@@ -210,9 +222,10 @@ export async function scan(fetchJSON=getJSON){
    const x=await fetchJSON(s.url);
    const rows=s.name.startsWith('Jobbi')?(Array.isArray(x.items)?x.items:[]):
     s.name==='Taskmarket open'?(Array.isArray(x.tasks)?x.tasks:[]):
+    s.name.startsWith('Frantic')?(Array.isArray(x.board?.bounties)?x.board.bounties:[]):
     Array.isArray(x)?x:Array.isArray(x.tasks)?x.tasks:Array.isArray(x.data)?x.data:[];
    const mapped=rows.slice(0,1000).map(s.name.startsWith('Jobbi')?fromJobbi:
-    s.name==='Taskmarket open'?fromTaskmarket:fromBasedAgents).filter(Boolean);
+    s.name==='Taskmarket open'?fromTaskmarket:s.name.startsWith('Frantic')?fromFrantic:fromBasedAgents).filter(Boolean);
    sources.push({name:s.name,status:'OK',count:rows.length,normalized:mapped.length,
     examples:mapped.slice(0,8).map(t=>({title:t.title,url:t.url,amount:t.reward_amount,currency:t.reward_currency,brief:t.brief.slice(0,160)}))});
    all.push(...mapped);
