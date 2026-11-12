@@ -4,8 +4,6 @@ on:
   push:
     branches: [main]
     paths: ['.github/workflows/bountybook-live.yml']
-  schedule:
-    - cron: '11 */6 * * *'
 permissions:
   contents: read
 jobs:
