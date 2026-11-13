@@ -1,0 +1,27 @@
+name: Toyol — Exact Available Work
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-exact-available-work.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Read direct task detail rather than relying on incomplete listing fields
+        run: |
+          node --input-type=module <<'JS'
+          async function get(u){const r=await fetch(u,{redirect:'error',signal:AbortSignal.timeout(12000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();}
+          const root='https://api.taskmarket.dev',j=await get(root+'/api/tasks?status=open&sort=newest&limit=100'),rows=j.tasks??[];
+          console.log('TASK_COUNT '+rows.length);
+          for(const row of rows){
+            const id=row.id??row.taskId;
+            if(!/^0x[a-f0-9]{64}$/i.test(id??''))continue;
+            try{const x=await get(root+'/api/tasks/'+id),t=x.task??x,a=(t.pendingActions??[]).find(x=>x.role==='worker'&&['submit','claim'].includes(x.action));console.log('TASK '+JSON.stringify({id,status:t.status,chain:t.chainId,mode:t.mode,reward:t.reward,token:t.rewardToken,escrow:t.escrow,stake:t.stakeRequired,submissions:t.submissionCount,action:a?{action:a.action,requiresPayment:a.requiresPayment,dueAt:a.dueAt}:null,description:String(t.description??'').slice(0,1800)}));}catch(e){console.log('DETAIL_ERROR '+id+' '+e.message);}
+          }
+          const m=await get('https://make.fun/api/competitions?limit=100');
+          for(const c of m.items??[])if(Date.parse(c.deadline)>Date.now())console.log('MAKE_LIVE '+JSON.stringify({slug:c.slug,title:c.title,amount:c.rewardAmount,deadline:c.deadline,submissions:c.submissionCount,description:String(c.description??'').slice(0,1600)}));
+          JS
