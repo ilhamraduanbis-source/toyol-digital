@@ -1,0 +1,68 @@
+name: Toyol — Next Work Discovery
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-next-work.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Inspect public work and authorized seller action metadata
+        env:
+          TOYOL_OPENTASK_TOKEN: ${{ secrets.TOYOL_OPENTASK_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const token=process.env.TOYOL_OPENTASK_TOKEN;
+          if(!token)throw Error('TOKEN_MISSING');
+          const root='https://opentask.ai';
+          const code=v=>typeof v==='string'&&/^[A-Za-z0-9_:-]{1,120}$/.test(v)?v:null;
+          const txt=(v,n=2000)=>typeof v==='string'?v.replace(/[\x00-\x1f\x7f]/g,' ').slice(0,n):null;
+          async function get(url,auth=false){
+            const res=await fetch(url,{headers:{Accept:'application/json',...(auth?{Authorization:'Bearer '+token}:{})},redirect:'error',signal:AbortSignal.timeout(12000)});
+            if(!res.ok)throw Error('HTTP_'+res.status);
+            const raw=await res.text();if(raw.length>2000000)throw Error('RESPONSE_TOO_LARGE');
+            return JSON.parse(raw);
+          }
+          const me=await get(root+'/api/agent/me',true);
+          if(me?.profile?.id!=='cmwebq871016a08jtv7b35au1')throw Error('IDENTITY_MISMATCH');
+          const b=await get(root+'/api/agent/bids?status=active',true);
+          const bids=Array.isArray(b)?b:b.bids;
+          console.log('ACTIVE_OFFERS '+(Array.isArray(bids)?bids.length:'UNKNOWN'));
+          const c=await get(root+'/api/agent/contracts?limit=30',true);
+          const contracts=Array.isArray(c)?c:c.contracts;
+          if(Array.isArray(contracts)){
+            for(const row of contracts){
+              if(!code(row.id))continue;
+              const id=code(row.taskId??row.task?.id);
+              if(!['cmpupoqmm0027kw04351wcfhz','cmp545t0n0011l704htzztdbb','cmpx7dhcf000ai604p64ziut3'].includes(id))continue;
+              const detail=await get(root+'/api/agent/contracts/'+row.id,true);
+              const contract=detail.contract??detail;
+              console.log('KNOWN_CONTRACT '+JSON.stringify({id:row.id,task_id:id,status:code(contract.status??contract.state),actions:(detail.availableActions??contract.availableActions??[]).map(a=>({action:code(a.action),state:code(a.state)}))}));
+            }
+          }
+          for(const id of ['cmv11tua3007606jj2ne1mbwc','cmqrxehg10007jo04zlktj1q8','cmuyhedo7000406mtewl2qn8d','cmvytzy7h00kz08i6dadyxpbm','cmp545xcw001bl704p3a7ock7']){
+            try{
+              const j=await get(root+'/api/tasks/'+id),t=j.task??j;
+              const x=await get(root+'/api/agent/tasks/'+id,true),a=x.task??x;
+              console.log('PUBLIC_LEAD '+JSON.stringify({id,title:txt(t.title,150),description:txt(t.description),status:code(t.status??t.state),mode:code(t.executionMode),budget:t.budgetAmount??t.budget??null,currency:code(t.budgetCurrency??t.currency),updatedAt:txt(t.updatedAt,40),deadline:txt(t.deadline??t.deadlineAt,40),actions:(x.availableActions??a.availableActions??[]).map(z=>({action:code(z.action),state:code(z.state)}))}));
+            }catch(e){console.log('LEAD_UNAVAILABLE '+id+' '+(code(e.message)||'UNVERIFIED'));}
+          }
+          try{
+            const f=await get('https://gofrantic.com/v1/agents/agent-65c3b0/status');
+            if(f?.ok!==true||f.agent?.kid!=='agent-65c3b0')throw Error('FRANTIC_IDENTITY_MISMATCH');
+            console.log('FRANTIC '+JSON.stringify({review:f.work?.summary?.deliveredPendingReview??null,settled:Array.isArray(f.work?.settled)?f.work.settled.length:null,invites:Array.isArray(f.agent.invites)?f.agent.invites.length:null}));
+          }catch(e){console.log('FRANTIC_UNAVAILABLE '+code(e.message));}
+          try{
+            const s=await get('https://swarmmemo.com/api/works?kind=earn&limit=100');
+            const rows=s.data?.works??s.works;
+            if(Array.isArray(rows))for(const w of rows){
+              if(w.state!=='open'||w.claimable!==true||!code(w.id))continue;
+              const st=w.standing??{};
+              console.log('SWARM_LEAD '+JSON.stringify({id:w.id,title:txt(w.title,140),slots:st.open??null,results:st.results??null,max:st.results_max??null,tiers:(st.tiers??[]).map(t=>({name:code(t.name),usdc:typeof t.usdc==='string'&&/^\d+(\.\d+)?$/.test(t.usdc)?t.usdc:null}))}));
+            }
+          }catch(e){console.log('SWARM_UNAVAILABLE '+code(e.message));}
+          JS
