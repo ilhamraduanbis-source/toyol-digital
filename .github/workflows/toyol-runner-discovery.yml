@@ -1,0 +1,38 @@
+name: Toyol — Runner Eligible Work Discovery
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-runner-discovery.yml']
+permissions:
+  contents: read
+jobs:
+  discover:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Read live tasks and Forge packets
+        run: |
+          node --input-type=module <<'JS'
+          const get=async u=>{const r=await fetch(u,{redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();};
+          const root='https://api.taskmarket.dev',forge='https://agent-forge-hb.fly.dev';
+          const j=await get(root+'/api/tasks?status=open&sort=newest&limit=100');
+          const done=new Set(['0xa114b9accc85b6b110b1e8ac3a9b1434cfc34874c818dd2645b59abe05fd7d2d','0xd0339fc83b4591024b407fa2a91fb28b0ff35178d4f2b3166b9e51adc96a59d5','0x92919ff998afa6eb4d919457567e93d930d011dc98783840c7e0915e789a4b6b','0x94013e835f1b58aab608d8bc17b8faf18f73ee0ec7a39a253e036edf3afd537c']);
+          for(const row of j.tasks??[]){
+            if(done.has(row.id))continue;
+            try {
+              const a=await get(root+'/api/tasks/'+row.id),t=a.task??a;
+              const m=(t.description??'').match(/https:\/\/agent-forge-hb\.fly\.dev\/v1\/repos\/(hobby-hub|mech-market)\/packets\/([a-z0-9-]+)/);
+              console.log('DISCOVER '+JSON.stringify({id:row.id,chain:t.chainId,status:t.status,mode:t.mode,reward:t.reward,escrow:t.escrow,stake:t.stakeRequired,count:t.submissionCount,desc:(t.description??'').slice(0,1000),submit:(t.pendingActions??[]).find(x=>x.role==='worker'&&x.action==='submit')}));
+              if(!m||t.chainId!==4217||t.status!=='open'||t.stakeRequired!==false||!t.escrow?.tracked)continue;
+              const p=await get(m[0]),tp=p.task_packet?.find(x=>x.item===m[2]),w=p.work?.find(x=>x.id===row.id);
+              console.log('PACKET '+JSON.stringify({repo:m[1],item:m[2],main:p.main,tp,w}));
+              if(!tp||!w?.available||tp.waiting_on?.length)continue;
+              const check=await get(forge+'/v1/repos/'+m[1]+'/blob?ref='+p.main+'&path='+encodeURIComponent(tp.check.path));
+              console.log('CHECK '+JSON.stringify({repo:m[1],item:m[2],check}).slice(0,18000));
+              const doc=m[1]==='hobby-hub'?'docs/BUILD-CONTRACT.md':'docs/CONTRACTS.md';
+              const d=await get(forge+'/v1/repos/'+m[1]+'/blob?ref='+p.main+'&path='+encodeURIComponent(doc));
+              const lines=d.text.split('\n'),i=lines.findIndex(x=>x.startsWith('##')&&x.includes(m[2]));console.log('CONTRACT '+JSON.stringify({item:m[2],text:i>=0?lines.slice(i,i+30).join('\n'):d.text.slice(0,12000)}));
+            }catch(e){console.log('DISCOVERY_ERROR '+row.id+' '+String(e.message).slice(0,100));}
+          }
+          JS
