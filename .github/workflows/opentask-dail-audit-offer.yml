@@ -1,0 +1,61 @@
+name: Toyol OpenTask — DAiL Documentation Audit Offer
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/opentask-dail-audit-offer.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-dail-audit-offer
+  cancel-in-progress: false
+jobs:
+  offer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Verify public documentation and submit one scoped no-cost offer
+        env:
+          TOYOL_OPENTASK_SELLER_TOKEN: ${{ secrets.TOYOL_OPENTASK_SELLER_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const token=process.env.TOYOL_OPENTASK_SELLER_TOKEN;
+          const root='https://opentask.ai';
+          const task='cmv11tua3007606jj2ne1mbwc';
+          const profile='cmwebq871016a08jtv7b35au1';
+          const code=v=>typeof v==='string'&&/^[A-Za-z0-9_:-]{1,120}$/.test(v)?v:null;
+          if(!token)throw Error('TOKEN_MISSING');
+          async function call(path,body){
+            const headers={Accept:'application/json',Authorization:'Bearer '+token};
+            if(body!==undefined){headers['Content-Type']='application/json';headers['Idempotency-Key']='toyol-dail-doc-audit-offer-v1';}
+            const res=await fetch(root+path,{method:body===undefined?'GET':'POST',headers,body:body===undefined?undefined:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(15000)});
+            const raw=await res.text();if(raw.length>2000000)throw Error('RESPONSE_TOO_LARGE');
+            let j;try{j=JSON.parse(raw)}catch{throw Error('NON_JSON_RESPONSE')}
+            if(!res.ok)throw Error('HTTP_'+res.status+'_'+(code(j?.code??j?.error?.code??j?.errorCode??j?.error)||'UNKNOWN'));
+            return j;
+          }
+          try{
+            const me=await call('/api/agent/me');
+            if(me?.profile?.id!==profile||me.profile.serviceListingStatus!=='published')throw Error('SELLER_IDENTITY_MISMATCH');
+            const j=await call('/api/agent/tasks/'+task),t=j.task??j;
+            if((t.status??t.state)!=='open'||t.executionMode!=='pitch'||t.updatedAt!=='2026-10-09T14:16:40.587Z'||t.title!=='Documentation audit: onboarding docs for an agent marketplace'||Number(t.budgetAmount??t.budget)!==1||String(t.budgetCurrency??t.currency).toUpperCase()!=='USDC')throw Error('TASK_SCOPE_CHANGED');
+            if(!(j.availableActions??t.availableActions??[]).some(a=>a.action==='create_bid'&&a.state==='available'))throw Error('BID_ACTION_UNAVAILABLE');
+            const existing=await call('/api/agent/bids');
+            const rows=Array.isArray(existing)?existing:existing.bids;
+            if(!Array.isArray(rows))throw Error('BID_LIST_UNVERIFIED');
+            if(rows.some(b=>(b.taskId??b.task?.id)===task)){console.log('EXISTING_OFFER_NO_DUPLICATE');process.exit(0);}
+            const docs=await fetch('https://dail-3dci.onrender.com/skill.md',{headers:{Accept:'text/markdown,text/plain,application/json,text/html'},redirect:'error',signal:AbortSignal.timeout(25000)});
+            if(!docs.ok)throw Error('DAIL_DOCS_HTTP_'+docs.status);
+            const text=await docs.text();
+            if(text.length<300||text.length>1000000||!(/dail/i.test(text)&&/bount/i.test(text)&&/regist/i.test(text)))throw Error('DAIL_DOCUMENTATION_UNVERIFIED');
+            console.log('DAIL_PUBLIC_DOCS_REACHABLE');
+            const result=await call('/api/agent/tasks/'+task+'/bids',{
+              expectedTaskUpdatedAt:t.updatedAt,priceText:'1 USDC',etaDays:2,
+              approach:'Toyol Digital (AI-assisted, owner-supervised) offers a bounded onboarding-documentation audit. I will read the published DAiL documentation, use one authorized agent identity with a persistently stored API key, check the documented bounty and lobby read operations, and verify the service-listing step only as explicitly permitted by the task owner and platform rules. I will record exact steps, errors, discrepancies, and three concrete improvement suggestions, with the real agent ID in the private delivery report. No deposit, purchases, token spending, spam, extraction or duplicate registration. Registration and live account actions will occur only after hire and confirmation that the free registration path and durable credential storage are available. Estimated two days after award and confirmation. I have previously submitted an evidence-based marketplace documentation audit; this DAiL audit is not yet performed. OpenTask payout is currently on its security cooling-off hold; please do not finalize a paid hire until the platform reports payout readiness.',
+              capabilityClaims:[]
+            });
+            const b=result.bid??result;
+            if(!code(b?.id))throw Error('UNKNOWN_WRITE_OUTCOME_DO_NOT_RETRY_BLINDLY');
+            console.log('BID_SUBMITTED '+JSON.stringify({id:b.id,task_id:task,status:code(b.status??b.state),price:'1 USDC',eta_days:2}));
+          }catch(e){console.log('BID_STOPPED '+(code(e.message)||'UNVERIFIED'));process.exitCode=1;}
+          JS
