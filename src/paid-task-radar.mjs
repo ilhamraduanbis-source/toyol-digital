@@ -18,7 +18,8 @@ const SOURCES=[
  {name:'Taskmarket open',url:'https://api.taskmarket.dev/api/tasks?status=open&sort=newest&limit=100'},
  {name:'BasedAgents tasks',url:'https://api.basedagents.ai/v1/tasks?status=open'},
  {name:'Frantic funded bounties',url:'https://gofrantic.com/v1/board?status=open&limit=50'},
- {name:'SwarmMemo cash rewards',url:'https://swarmmemo.com/api/works?kind=earn&limit=100'}
+ {name:'SwarmMemo cash rewards',url:'https://swarmmemo.com/api/works?kind=earn&limit=100'},
+ {name:'GitHub Big Hunt index',url:'https://raw.githubusercontent.com/krishi-shah/dailybugbounties/main/data/bounties.json'}
 ];
 const skillText=/(code|bug|fix|program|script|api|json|csv|data|documentation|readme|test|research|content|translate|summari|article|report|spreadsheet|analysis|markdown|python|javascript|typescript|extract|parse|validate|audit|design|write)/i;
 const danger=/(?:\bpay (?:a |the )?(?:fee|deposit)\b|\bupfront (?:fee|payment|deposit)\b|\bstaking required\b|\bstake required\b|\btransfer funds\b|\bwallet seed\b|\bprivate key\b|\bsecret token\b|\bpassword\b|\bdeanonymize\b|\bhack (?:into|an account)\b|\baccount takeover\b|\breferral (?:scheme|chain)\b)/i;
@@ -95,6 +96,20 @@ export function fromSwarmMemo(w){
  competition:'AVAILABLE_SEATS_'+st.open,deadline:w.deadline?new Date(Number(w.deadline)*1000).toISOString():null,
  stake_required:false,stake_terms_unverified:false,task_status:'OPEN_DIRECT_API',requires_registration:'SIGNED_AGENT_KEY',
  source_primary_verified:true};
+}
+// Independent high-value discovery; the index is not the payer.
+export function fromBigHunt(b){
+ const owner=String(b?.owner||''),repo=String(b?.repo||''),n=b?.number,amount=Number(b?.amount_usd);
+ if(b?.kind!=='issue'||b?.state!=='OPEN'||b.archived===true||!money(amount)||amount<200||
+    !/^[a-z\\d-]{1,39}$/i.test(owner)||!/^[a-z\\d_.-]{1,100}$/i.test(repo)||!Number.isSafeInteger(n)||n<1)return null;
+ if(b.deadline&&Number.isFinite(Date.parse(b.deadline))&&Date.parse(b.deadline)<=Date.now())return null;
+ return {id:'bighunt:'+owner+'/'+repo+'#'+n,source:'GitHub Big Hunt index',
+  url:'https://github.com/'+owner+'/'+repo+'/issues/'+n,title:clean(b.title,140),
+  brief:'Read original issue, maintainer rules, funding and competing solutions before working.',
+  reward_amount:amount,reward_currency:'USD',payout_rail:'UNVERIFIED_'+clean(b.payout,35).toUpperCase(),
+  funding_signal:'INDEX_ONLY_UNVERIFIED',acceptance:'MAINTAINER_AND_BOUNTY_TERMS',competition:'OPEN_PRS_'+(Number.isInteger(b.open_prs)?b.open_prs:'UNKNOWN'),
+  source_grade:'UNKNOWN',deadline:clean(b.deadline,36)||null,stake_required:false,stake_terms_unverified:true,
+  task_status:'OPEN_INDEX_CLAIM',requires_registration:'UNKNOWN',source_primary_verified:false};
 }
 export function fromBasedAgents(task){
  const id=String(task?.id||task?.task_id||'');
@@ -174,7 +189,7 @@ export function shortlist(records,limit=14){
  const cap=Math.max(1,Math.min(20,Math.floor(limit)||1));
  const small=list.filter(x=>x.reward_amount<=10).slice(0,Math.min(4,cap));
  const medium=list.filter(x=>x.reward_amount>10&&x.reward_amount<200).slice(0,Math.min(6,cap));
- const high=list.filter(x=>x.reward_amount>=200).slice(0,Math.min(4,cap));
+ const high=list.filter(x=>x.reward_amount>=200).sort((a,b)=>b.review_score-a.review_score||b.reward_amount-a.reward_amount).slice(0,Math.min(4,cap));
  const picked=[...small,...medium,...high];
  for(const x of list){if(picked.length>=cap)break;if(!picked.includes(x))picked.push(x);}
  // A weak index must not crowd out the direct provider whose terms we can inspect.
@@ -196,7 +211,7 @@ export function report(data){
  const lines=[
  '# 🧟 Toyol — Paid Tasks (not job vacancies)','',
  '**REAL MONEY RECEIVED: RM0. ADVERTISED REWARDS ARE NOT EARNINGS.**','',
- 'Source API: [Jobbi](https://jobbi.org/gigs), [Taskmarket](https://docs.taskmarket.dev/api/reference), [BasedAgents](https://basedagents.ai/docs/agents), [Frantic](https://gofrantic.com), [SwarmMemo](https://swarmmemo.com/work?kind=earn).',
+ 'Source API: [Jobbi](https://jobbi.org/gigs), [Taskmarket](https://docs.taskmarket.dev/api/reference), [BasedAgents](https://basedagents.ai/docs/agents), [Frantic](https://gofrantic.com), [SwarmMemo](https://swarmmemo.com/work?kind=earn), [independent GitHub bounty index](https://github.com/krishi-shah/dailybugbounties).',
  'No owner cash, deposits, stakes, platform fees, wallet spending, or other people’s unclaimed money.','',
  'Only public work explicitly open to a participant may be attempted. Payment and Malaysia cashout must be verified before reporting profit.',''
  ];
@@ -228,7 +243,7 @@ export function report(data){
 }
 async function getJSON(url){
  const u=new URL(url);
- if(!['jobbi.org','api.taskmarket.dev','api.basedagents.ai','gofrantic.com','swarmmemo.com'].includes(u.hostname))throw Error('unapproved API host');
+ if(!['jobbi.org','api.taskmarket.dev','api.basedagents.ai','gofrantic.com','swarmmemo.com','raw.githubusercontent.com'].includes(u.hostname))throw Error('unapproved API host');
  const ac=new AbortController(),timer=setTimeout(()=>ac.abort(),15000);
  try{
   const res=await fetch(url,{signal:ac.signal,headers:{Accept:'application/json','User-Agent':'ToyolPaidTasks/1.0 (+public agent tasks; once daily)'}});
@@ -243,12 +258,12 @@ export async function scan(fetchJSON=getJSON,{directOnly=process.env.TOYOL_DIREC
  for(const s of SOURCES.filter(x=>!directOnly||!x.name.startsWith('Jobbi'))){
   try{
    const x=await fetchJSON(s.url);
-   const rows=s.name.startsWith('Jobbi')?(Array.isArray(x.items)?x.items:[]):
+   const rows=s.name==='GitHub Big Hunt index'?(Array.isArray(x.bounties)?x.bounties:[]):s.name.startsWith('Jobbi')?(Array.isArray(x.items)?x.items:[]):
     s.name==='Taskmarket open'?(Array.isArray(x.tasks)?x.tasks:[]):
     s.name.startsWith('Frantic')?(Array.isArray(x.board?.open_bounties)?x.board.open_bounties:Array.isArray(x.board?.bounties)?x.board.bounties:[]):
     s.name.startsWith('SwarmMemo')?(Array.isArray(x.data?.works)?x.data.works:[]):
     Array.isArray(x)?x:Array.isArray(x.tasks)?x.tasks:Array.isArray(x.data)?x.data:[];
-   const mapped=rows.slice(0,1000).map(s.name.startsWith('Jobbi')?fromJobbi:
+   const mapped=rows.slice(0,1000).map(s.name==='GitHub Big Hunt index'?fromBigHunt:s.name.startsWith('Jobbi')?fromJobbi:
     s.name==='Taskmarket open'?fromTaskmarket:s.name.startsWith('Frantic')?fromFrantic:s.name.startsWith('SwarmMemo')?fromSwarmMemo:fromBasedAgents).filter(Boolean);
    sources.push({name:s.name,status:'OK',count:rows.length,normalized:mapped.length,
     examples:mapped.slice(0,8).map(t=>({title:t.title,url:t.url,amount:t.reward_amount,currency:t.reward_currency,brief:t.brief.slice(0,160)}))});
