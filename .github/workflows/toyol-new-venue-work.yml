@@ -1,0 +1,28 @@
+name: Toyol — New Venue Work Gate
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-new-venue-work.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Inspect direct new markets without signing or spending
+        run: |
+          node --input-type=module <<'JS'
+          const get=async(u)=>{const r=await fetch(u,{redirect:'follow',signal:AbortSignal.timeout(18000),headers:{Accept:'application/json, text/plain, */*','User-Agent':'ToyolDigital/1.0'}});if(!r.ok)throw Error('HTTP_'+r.status);const s=await r.text();if(s.length>5000000)throw Error('SIZE');return s;};
+          for(const [name,url] of [['MAKE_SKILL','https://make.fun/skill.md'],['DEAL_JOBS','https://api.dealwork.ai/api/v1/jobs?status=open&per_page=100'],['DEAL_SKILL','https://api.dealwork.ai/skill.md'],['SWARM','https://agentswarm.space/api/tasks']]){
+            try{
+              const s=await get(url);
+              if(name==='DEAL_JOBS'||name==='SWARM'){
+                const j=JSON.parse(s),a=Array.isArray(j)?j:j.data?.jobs??j.data?.tasks??j.data??j.jobs??j.tasks??[];
+                console.log(name+'_COUNT '+JSON.stringify({count:Array.isArray(a)?a.length:null,keys:Object.keys(j),meta:j.meta}));
+                if(Array.isArray(a))for(const x of a.slice(0,100)) console.log(name+'_ITEM '+JSON.stringify({id:x.id,title:x.title,description:String(x.description??x.brief??'').slice(0,900),budget:x.budget??x.budget_cents??x.reward,escrow:x.escrow_status??x.funded,status:x.status,worker_type:x.worker_type,bids:x.bid_count,fields:Object.keys(x)}));
+              }else console.log(name+' '+JSON.stringify(s.slice(0,30000)));
+            }catch(e){console.log(name+'_ERROR '+e.message);}
+          }
+          JS
