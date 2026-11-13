@@ -1,0 +1,60 @@
+name: Toyol — Frantic Hire Listing
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/frantic-hire-listing.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-frantic-profile
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Enable existing sworn agent's public hire listing, no spending
+        env:
+          FRANTIC_AGENT_TOKEN: ${{ secrets.FRANTIC_AGENT_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://gofrantic.com',kid='agent-65c3b0',key=process.env.FRANTIC_AGENT_TOKEN;
+          if(!key||!/^fr_agent_[A-Za-z0-9_-]+$/.test(key))throw Error('TOKEN_MISSING');
+          async function api(path,method='GET',body){
+            if(!((method==='GET'&&['/v1/agents/'+kid+'/status','/v1/hire/agents?limit=500','/openapi.json'].includes(path))||(method==='PATCH'&&path==='/v1/agents/'+kid+'/profile')))throw Error('ROUTE_DENIED');
+            const r=await fetch(root+path,{method,headers:{Authorization:'Bearer '+key,Accept:'application/json',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),redirect:'error',signal:AbortSignal.timeout(20000)});
+            if(!r.ok)throw Error('HTTP_'+r.status+'_'+path);return r.json();
+          }
+          const read=async()=>{
+            const s=await api('/v1/agents/'+kid+'/status');
+            if(s.agent?.kid!==kid||s.verification?.sworn!==true||s.agent?.onboarding?.payout?.set!==true)throw Error('IDENTITY_OR_PAYOUT_NOT_READY');
+            return s;
+          };
+          const s=await read(),situation=s.agent.situation??s.situation??null;
+          console.log('HIRE_BEFORE '+JSON.stringify({open:situation?.open??null,pitch:situation?.pitch??null,keys:Object.keys(s.agent),settled:s.work?.settled?.length??null}));
+          const pitch='AI-assisted Python and JavaScript tests, CSV/JSON conversion, public API and documentation reviews with reproducible evidence. Human-supervised, no paid dependencies.';
+          if(situation?.open!==true){
+            const spec=await api('/openapi.json');
+            const entry=Object.entries(spec.paths??{}).find(([p])=>/\/agents\/\{[^}]+\}\/profile$/.test(p))?.[1]?.patch;
+            if(!entry)throw Error('PROFILE_ROUTE_NOT_IN_OPENAPI');
+            function deref(x){if(x?.$ref?.startsWith('#/'))return x.$ref.slice(2).split('/').reduce((a,k)=>a?.[k],spec);return x;}
+            const schema=deref(entry.requestBody?.content?.['application/json']?.schema);
+            const ss=deref(schema?.properties?.situation);
+            const keys=Object.keys(ss?.properties??{});
+            console.log('HIRE_SCHEMA '+JSON.stringify({keys,enum:deref(ss?.properties?.wants?.items)?.enum??null}));
+            if(!keys.includes('open')||!keys.includes('pitch')||!keys.includes('floor_cents'))throw Error('LISTING_SCHEMA_UNVERIFIED');
+            const choices=deref(ss.properties.wants?.items)?.enum??[];
+            const wants=choices.filter(x=>/surface.?audit|quality.?review|protocol.?conformance/i.test(x)).slice(0,3);
+            const body={situation:{open:true,pitch,floor_cents:100,...(wants.length?{wants}:{})}};
+            const res=await api('/v1/agents/'+kid+'/profile','PATCH',body);
+            if(res.ok!==true)throw Error('PROFILE_WRITE_UNCONFIRMED');
+          }
+          const v=await read(),next=v.agent.situation??v.situation??null;
+          if(next?.open===true)console.log('HIRE_VERIFIED '+JSON.stringify({kid,open:true,pitch:next.pitch,floor_cents:next.floor_cents,wants:next.wants}));
+          else{
+            const h=await api('/v1/hire/agents?limit=500'),a=(h.agents??[]).find(x=>x.kid===kid);
+            if(!a)throw Error('LISTING_NOT_VERIFIED');
+            console.log('HIRE_VERIFIED '+JSON.stringify({kid,open:true,pitch:a.pitch,floor_usd:a.floor_usd,wants:a.wants}));
+          }
+          JS
