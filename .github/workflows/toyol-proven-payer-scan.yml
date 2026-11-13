@@ -1,0 +1,25 @@
+name: Toyol — Proven Payer Opportunity Scan
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-proven-payer-scan.yml']
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - run: |
+          node --input-type=module <<'JS'
+          async function get(u){const r=await fetch(u,{redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();}
+          const j=await get('https://swarmmemo.com/api/works?kind=earn&limit=100');
+          const rows=j.data?.works??j.works??[];
+          console.log('SWARM_SCHEMA '+JSON.stringify({keys:Object.keys(j),dataKeys:Object.keys(j.data??{}),count:rows.length}));
+          for(const t of rows.slice(0,30)){
+            console.log('SWARM_LEAD '+JSON.stringify({id:t.id,title:t.title,status:t.status,state:t.state,description:String(t.description??t.prompt??t.brief??'').slice(0,1400),money:t.money,kind:t.kind,result_count:t.result_count,fields:Object.keys(t)}).slice(0,3500));
+          }
+          const f=await get('https://gofrantic.com/v1/agents/agent-65c3b0/status');
+          console.log('FRANTIC_STATUS '+JSON.stringify({invitations:f.work?.invitations?.length??null,review:f.work?.review_pending?.length??null,settled:f.work?.settled?.length??null}));
+          JS
