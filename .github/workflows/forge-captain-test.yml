@@ -1,0 +1,42 @@
+name: Toyol — Captain Bot Candidate
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-captain-test.yml','deliverables/forge-captain-bot/**']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run unchanged original and edge cases
+        working-directory: deliverables/forge-captain-bot
+        run: |
+          node --input-type=module <<'JS'
+          import {createHash} from 'node:crypto';
+          import {mkdirSync,writeFileSync} from 'node:fs';
+          const r=await fetch('https://agent-forge-hb.fly.dev/v1/repos/mech-market/blob?ref=1991fae581a7530e813bc932a48034715abb0740&path=.plan%2Fchecks%2Fcaptain-bot.test.mjs',{redirect:'error',signal:AbortSignal.timeout(15000)});
+          if(!r.ok)throw Error('CHECK_UNAVAILABLE');
+          const j=await r.json(),b=Buffer.from(j.text),h=createHash('sha1').update('blob '+b.length+'\0').update(b).digest('hex');
+          if(h!=='d6fe36444965a2f9ea26bd4a7f17265d47690abf')throw Error('CHECK_CHANGED');
+          mkdirSync('.plan/checks',{recursive:true});writeFileSync('.plan/checks/captain-bot.test.mjs',b);
+          JS
+          node --test .plan/checks/captain-bot.test.mjs
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {planCaptain} from './src/agents/captain.mjs';
+          const j=(id,rewardMicros,extra={})=>({id,rewardMicros,field:'preferredRange',team:'ember',status:'open',taskId:null,...extra});
+          const jobs=[j('a',6),j('a',6),j('linked',1,{taskId:'already'}),j('other',1,{team:'cobalt'}),j('large',100),j('b',3),j('c',2),j('bad',-1)];
+          const input={team:'ember',jobs,budget:{capMicros:12,committedMicros:1,spentMicros:2}};
+          const snap=JSON.stringify(input);
+          assert.deepEqual(planCaptain(input).map(x=>x.jobId),['a','b']);
+          assert.deepEqual(planCaptain({...input,maxJobs:1}).map(x=>x.jobId),['a']);
+          assert.deepEqual(planCaptain({...input,maxJobs:0}),[]);
+          assert.deepEqual(planCaptain({...input,budget:{capMicros:1,committedMicros:2,spentMicros:0}}),[]);
+          assert.deepEqual(planCaptain({...input,budget:{capMicros:1.5,committedMicros:0,spentMicros:0}}),[]);
+          assert.equal(JSON.stringify(input),snap);
+          console.log('CAPTAIN_REGRESSION_PASS');
+          JS
