@@ -1,0 +1,63 @@
+name: Toyol — Direct Cash Work Gate
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-direct-cash-gate.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Inspect real available funded tasks and distinguish duplicate listings
+        env:
+          TOYOL_OPENTASK_TOKEN: ${{ secrets.TOYOL_OPENTASK_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const tok=process.env.TOYOL_OPENTASK_TOKEN;
+          const txt=(v,n=2000)=>typeof v==='string'?v.replace(/[\x00-\x1f\x7f]/g,' ').slice(0,n):null;
+          const safe=v=>typeof v==='string'&&/^[a-zA-Z0-9_:-]{1,150}$/.test(v)?v:null;
+          async function get(url,auth=false){
+            const r=await fetch(url,{headers:{Accept:'application/json',...(auth?{Authorization:'Bearer '+tok}:{})},redirect:'error',signal:AbortSignal.timeout(15000)});
+            if(!r.ok)throw Error('HTTP_'+r.status);
+            const raw=await r.text();if(raw.length>3000000)throw Error('TOO_LARGE');return JSON.parse(raw);
+          }
+          try{
+            const j=await get('https://gofrantic.com/v1/board?status=open&limit=50');
+            const rows=j.bounties??j.board?.bounties??j.items??j.data?.bounties??(Array.isArray(j)?j:null);
+            console.log('FRANTIC_BOARD_SCHEMA '+JSON.stringify({keys:Object.keys(j),count:Array.isArray(rows)?rows.length:null}));
+            for(const b of rows??[]){
+              if(b.funded!==true||b.visibility!=='public'||b.work_status!=='open'||!(b.claim_slots?.available>0||b.claim_progress?.available>0))continue;
+              if(/cashback|rebate|affiliate|reddit|twitter|social media|citation|promot|first bounty is on the house/i.test(b.title??''))continue;
+              if(!Number.isInteger(b.number))continue;
+              const d=await get('https://gofrantic.com/v1/bounties/'+b.number),x=d.bounty;
+              if(x?.number!==b.number)continue;
+              console.log('DIRECT_FRANTIC '+JSON.stringify({number:x.number,price_cents:x.price_cents,title:txt(x.title,200),description:txt(x.description,4000),criteria:x.criteria,delivery_contract:x.delivery_contract,available:x.claim_progress?.available??x.claim_slots?.available,work_status:x.work_status}));
+            }
+          }catch(e){console.log('FRANTIC_ERROR '+safe(e.message));}
+          try{
+            const j=await get('https://api.taskmarket.dev/api/tasks?status=open&sort=newest&limit=100');
+            const rows=j.tasks??j.data?.tasks??(Array.isArray(j.data)?j.data:null)??(Array.isArray(j)?j:null);
+            console.log('TASKMARKET_SCHEMA '+JSON.stringify({keys:Object.keys(j),count:Array.isArray(rows)?rows.length:null}));
+            for(const t of (rows??[]).slice(0,12)){
+              console.log('TASKMARKET_LEAD '+JSON.stringify({id:safe(t.id??t.taskId),title:txt(t.title,200),description:txt(t.description??t.brief,1000),status:safe(t.status),reward:t.reward??t.budget??t.rewardAmount??null,escrow:t.escrowStatus??t.fundingStatus??null}));
+            }
+          }catch(e){console.log('TASKMARKET_ERROR '+safe(e.message));}
+          try{
+            const j=await get('https://api.bountybook.ai/jobs?status=open&category=code&limit=30');
+            const rows=j.jobs??j.data?.jobs??(Array.isArray(j.data)?j.data:null)??(Array.isArray(j)?j:null);
+            console.log('BOUNTYBOOK_SCHEMA '+JSON.stringify({count:Array.isArray(rows)?rows.length:null}));
+            for(const t of (rows??[]).slice(0,10))console.log('BOUNTYBOOK_LEAD '+JSON.stringify({id:safe(t.id),title:txt(t.title,150),description:txt(t.description,1000),reward:t.budget_usdc,escrow:t.escrow_status,status:safe(t.status)}));
+          }catch(e){console.log('BOUNTYBOOK_ERROR '+safe(e.message));}
+          try{
+            const ids=['cmp545t0n0011l704htzztdbb','cmp545xcw001bl704p3a7ock7'];
+            const found=[];
+            for(const id of ids){
+              const j=await get('https://opentask.ai/api/tasks/'+id),t=j.task??j;
+              found.push({id,title:txt(t.title,180),description:txt(t.description,2000),owner_id:safe(t.ownerProfileId??t.buyerProfileId??t.createdByProfileId??t.requesterProfileId??t.owner?.id??t.buyer?.id??t.createdBy?.id??t.profile?.id??t.requester?.id),created_at:txt(t.createdAt,40),fields:Object.keys(t)});
+            }
+            console.log('CSV_DUPLICATE_CHECK '+JSON.stringify(found));
+          }catch(e){console.log('CSV_COMPARE_ERROR '+safe(e.message));}
+          JS
