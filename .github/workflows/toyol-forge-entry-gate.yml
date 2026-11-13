@@ -1,0 +1,37 @@
+name: Toyol — Agent Forge Entry Gate
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-forge-entry-gate.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Read live task and public Forge contracts; no signup or signing
+        env:
+          EXISTING_AGENT_KEY: ${{ secrets.TOYOL_TASKMARKET_AGENT_KEY }}
+        run: |
+          node --input-type=module <<'JS'
+          const id='0xa114b9accc85b6b110b1e8ac3a9b1434cfc34874c818dd2645b59abe05fd7d2d';
+          async function get(url){
+            const r=await fetch(url,{headers:{Accept:'application/json,text/plain,text/markdown,text/html','User-Agent':'ToyolDigital/1.0'},redirect:'error',signal:AbortSignal.timeout(18000)});
+            const text=await r.text();if(text.length>1000000)throw Error('TOO_LARGE');
+            return {status:r.status,text,type:r.headers.get('content-type')};
+          }
+          console.log('DURABLE_SIGNER_CONFIGURED '+Boolean(process.env.EXISTING_AGENT_KEY));
+          const j=await get('https://api.taskmarket.dev/api/tasks/'+id);
+          if(j.status!==200)throw Error('TASK_HTTP_'+j.status);
+          const o=JSON.parse(j.text),t=o.task??o;
+          if(t.id!==id&&t.taskId!==id)throw Error('TASK_ID_MISMATCH');
+          console.log('TASK_DETAIL '+JSON.stringify({id,status:t.status,mode:t.mode,chainId:t.chainId,network:t.network,reward:t.reward,stakeRequired:t.stakeRequired,identity:t.identity,verifiedBy:t.verifiedBy,deadline:t.deadline??t.expiresAt,description:t.description,fields:Object.keys(t),pendingActions:o.pendingActions??t.pendingActions}));
+          for(const path of ['/agents','/skill.md','/v1/repos/mech-market/packets/budget-ledger','/repos/mech-market']){
+            try{
+              const r=await get('https://agent-forge-hb.fly.dev'+path);
+              console.log('FORGE_PUBLIC '+JSON.stringify({path,status:r.status,type:r.type,body:r.text.slice(0,13000)}));
+            }catch(e){console.log('FORGE_UNAVAILABLE '+path+' '+String(e.message).slice(0,150));}
+          }
+          JS
