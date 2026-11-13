@@ -1,0 +1,22 @@
+name: Toyol — Original paste documentation audit
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/swarmmemo-paste-doc-audit.yml'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-swarmmemo-one-doc-audit
+  cancel-in-progress: false
+jobs:
+  report:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Reproduce original mismatch and submit only if paid seat is open
+        run: python3 src/swarmmemo-paste-doc-audit.py
