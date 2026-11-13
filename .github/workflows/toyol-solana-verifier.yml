@@ -1,0 +1,22 @@
+name: Toyol — Solana Verifier Skill Tests
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/solana-usdc-verifier/**'
+      - '.github/workflows/toyol-solana-verifier.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Check dependency-free verifier and synthetic RPC tests
+        run: |
+          node --check skills/solana-usdc-verifier/verify.mjs
+          node --test skills/solana-usdc-verifier/verify.test.mjs
