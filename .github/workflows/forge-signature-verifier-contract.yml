@@ -1,0 +1,22 @@
+name: Toyol — Signature Verifier Contract
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-signature-verifier-contract.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - run: |
+          node --input-type=module <<'JS'
+          const root='https://agent-forge-hb.fly.dev/v1/repos/mech-market',item='signature-verifier';
+          async function get(u){const r=await fetch(u,{redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();}
+          const p=await get(root+'/packets/'+item);console.log('PACKET '+JSON.stringify(p).slice(0,22000));
+          for(const path of ['src/identity/verify.mjs','.plan/checks/signature-verifier.test.mjs','vendor/tap-verify/index.mjs','docs/CONTRACTS.md']){
+            try{const j=await get(root+'/blob?ref='+p.main+'&path='+encodeURIComponent(path));let s=j.text;if(path==='docs/CONTRACTS.md'){const i=s.indexOf('### signature-verifier');s=s.slice(Math.max(0,i-100),i+1800);}console.log('BLOB '+JSON.stringify({path,sha:j.sha??j.blob,text:s}).slice(0,30000));}catch(e){console.log('MISSING '+path+' '+e.message);}
+          }
+          const t=await get('https://api.taskmarket.dev/api/tasks/0xe36dd58721b4a02ba604ae74c51bd962d1a84c16eb5df055f1d3bd70718872a8');const rows=await get('https://api.taskmarket.dev/api/tasks/0x4860b150720fbe92ab2b363d7ebf43b466f7ab24c4adbaaa70d3934486fcd03b/submissions?chainId=4217');console.log('CAPTAIN_OWN '+JSON.stringify(Array.isArray(rows)?rows.filter(x=>String(x.workerAddress??'').toLowerCase()==='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431').map(x=>({id:x.id})):null));console.log('SIGNATURE_LIVE '+JSON.stringify({status:(t.task??t).status,escrow:(t.task??t).escrow,submissions:(t.task??t).submissionCount}));
+          JS
