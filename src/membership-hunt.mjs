@@ -79,6 +79,7 @@ export function summary(result){
  ...result.providers.map(p=>'- '+p.provider+': '+p.status+
   (p.invitations!==undefined?' | invitation count: '+(p.invitations??'unknown'):'')+
   (p.proposal_page_count!==undefined?' | proposals on first page: '+(p.proposal_page_count??'unknown')+' | recommendations on first page: '+(p.recommendation_page_count??'unknown'):'')+
+  (p.active_bid_page_count!==undefined?' | active bids on first page: '+(p.active_bid_page_count??'unknown'):'')+
   ' | '+(p.next_action||p.reason||'CHECK_SOURCE')),''].join('\n');
 }
 async function main(){
