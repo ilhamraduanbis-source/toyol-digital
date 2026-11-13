@@ -18,6 +18,24 @@
       "workPaths": [
         "src/agents/captain.mjs"
       ]
+    },
+    {
+      "task": "0xe36dd58721b4a02ba604ae74c51bd962d1a84c16eb5df055f1d3bd70718872a8",
+      "repo": "mech-market",
+      "item": "signature-verifier",
+      "sourceCommit": "c528d49d0814d12cd3584b180ce77afd384f9857",
+      "checkSha": "db1878231c06831e6444cab683271d92c376068d",
+      "ciRun": 43395319865,
+      "reward": "220000",
+      "files": [
+        {
+          "path": "src/identity/verify.mjs",
+          "sha": "579445651d688ccb4a1acede1cdfb2ec877e5fcc"
+        }
+      ],
+      "workPaths": [
+        "src/identity/verify.mjs"
+      ]
     }
   ]
 }
