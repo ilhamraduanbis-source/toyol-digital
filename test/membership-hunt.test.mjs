@@ -23,12 +23,16 @@ test('authenticated OpenTask counts are private-data-minimized and do not imply 
   if(url.includes('onboarding'))return {checkpoint:'activated'};
   if(url.includes('proposals'))return {proposals:[{secret:'private proposal body'}]};
   if(url.includes('recommendations'))return {recommendations:[{}]};
+  if(url.includes('/bids?'))return {bids:[{id:'a',private:'private bid body'},{id:'b'},{id:'c'}]};
   return {notifications:[{},{}]};
  };
  const x=await membershipHunt({read,token:'test-secret',expectedId:'toyol-profile'});
  assert.equal(x.providers[2].status,'REGISTERED_VERIFIED');
  assert.equal(x.providers[2].proposal_page_count,1);
  assert.equal(x.providers[2].unread_page_count,2);
+ assert.equal(x.providers[2].active_bid_page_count,3);
+ assert.ok(summary(x).includes('active bids on first page: 3'));
+ assert.ok(!JSON.stringify(x).includes('private bid body'));
  assert.ok(!JSON.stringify(x).includes('private proposal body'));
  assert.ok(!summary(x).includes('test-secret'));
 });
