@@ -1,0 +1,47 @@
+name: Toyol — Public Read Routes Candidate
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-public-read-routes-test.yml','deliverables/forge-public-read-routes/**']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Original frozen check and additional public boundary tests
+        run: |
+          set -eu
+          ROOT="$RUNNER_TEMP/mech-reads"
+          git -c core.hooksPath=/dev/null clone --quiet --no-checkout https://agent-forge-hb.fly.dev/r/mech-market.git "$ROOT"
+          git -C "$ROOT" -c core.hooksPath=/dev/null checkout --quiet --detach 93622c5bc48ed1bd122effc6e6b99907a4e78145
+          test "$(git -C "$ROOT" rev-parse HEAD:.plan/checks/public-read-routes.test.mjs)" = e2b95c285b55529a25696f61196613d08d49b981
+          test ! -e "$ROOT/src/server/reads.mjs"
+          cp deliverables/forge-public-read-routes/src/server/reads.mjs "$ROOT/src/server/reads.mjs"
+          cd "$ROOT"
+          node --test .plan/checks/public-read-routes.test.mjs
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {createReadRoutes} from './src/server/reads.mjs';
+          const state={id:'e1',round:1,phase:'market',privateKey:'SECRET',teams:[{id:'ember',name:'Ember',budget:{capMicros:3000000,committedMicros:0,spentMicros:0,privateKey:'SECRET'},policy:{aggression:50,secret:'SECRET'}}],jobs:[{id:'j1',status:'open',candidates:[{submissionId:'s1',privateKey:'SECRET',patch:{field:'aggression',value:50,secret:'SECRET'}}]}],events:[{seq:1,type:'test',at:1,data:{value:1,registry:{key:'SECRET'}}}]};
+          const original=JSON.stringify(state);
+          let afterSeen,streamAfter,unsub=0;
+          const routes=createReadRoutes({getState:()=>state,readEvents:a=>{afterSeen=a;return state.events;},getReplay:()=>({formatVersion:1,registry:{key:'SECRET'}}),hub:{async subscribe({after,onEvent}){streamAfter=after;onEvent({seq:after+1,type:'test',data:{ok:true,token:'SECRET'}});return ()=>{unsub++;}}}});
+          const get=(p,query='',headers={})=>routes.find(r=>r.path===p).handler(new Request('https://game.example'+p+query,{headers}));
+          assert.deepEqual(routes.map(r=>r.path),['/healthz','/v1/episode','/v1/jobs','/v1/teams','/v1/events','/v1/replay','/v1/stream']);
+          for(const p of ['/v1/episode','/v1/jobs','/v1/teams','/v1/events','/v1/replay'])assert.ok(!(await (await get(p)).text()).includes('SECRET'));
+          assert.equal((await get('/healthz')).status,200);
+          for(const q of ['?after=-1','?after=1.5','?after=9007199254740992','?after=1&after=2','?after='])assert.equal((await get('/v1/events',q)).status,400);
+          assert.deepEqual(await (await get('/v1/events','?after=1')).json(),[]);assert.equal(afterSeen,1);
+          const response=await get('/v1/stream','?after=1',{'last-event-id':'4'});
+          const reader=response.body.getReader();const first=await reader.read();
+          assert.match(new TextDecoder().decode(first.value),/id: 5/);assert.equal(streamAfter,4);
+          assert.ok(!new TextDecoder().decode(first.value).includes('SECRET'));
+          await reader.cancel();await new Promise(r=>setTimeout(r,0));assert.equal(unsub,1);
+          assert.equal(JSON.stringify(state),original);
+          console.log('PUBLIC_READ_BOUNDARY_REGRESSION_PASS');
+          JS
