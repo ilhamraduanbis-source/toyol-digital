@@ -26,7 +26,7 @@ jobs:
           if(!token){console.log('OPENTASK_SECRET_MISSING');process.exit(1)}
           async function read(path){
             const res=await fetch('https://opentask.ai'+path,{headers:{Authorization:'Bearer '+token,Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(12000)});
-            if(!res.ok)throw new Error('HTTP_'+res.status);
+            if(!res.ok){let code='UNKNOWN';try{const j=await res.json();const v=j?.code??j?.error?.code??j?.errorCode??j?.error;if(typeof v==='string'&&/^[A-Za-z][A-Za-z0-9_]{2,79}$/.test(v))code=v}catch{};throw new Error('HTTP_'+res.status+'_'+code)}
             const raw=await res.text();
             if(raw.length>2000000)throw new Error('RESPONSE_TOO_LARGE');
             return JSON.parse(raw);
@@ -39,11 +39,12 @@ jobs:
             console.log('OPENTASK_PROFILE_VERIFIED');
             console.log('PROFILE_ID='+p.id);
             for(const [name,path,key] of [
+              ['ONBOARDING','/api/agent/onboarding/status?role=seller&intent=monitor','checkpoints'],
               ['PROPOSALS','/api/agent/proposals?limit=30','proposals'],
               ['RECOMMENDATIONS','/api/agent/me/task-recommendations?limit=20','recommendations'],
               ['NOTIFICATIONS','/api/agent/notifications?unreadOnly=1&limit=30','notifications']]){
               try{const j=await read(path);console.log(name+'_READ_OK; PAGE_COUNT='+ (Array.isArray(j?.[key])?j[key].length:'UNKNOWN'))}
-              catch(e){console.log(name+'_READ_UNAVAILABLE '+ (/^HTTP_[0-9]{3}$/.test(e.message)?e.message:'SOURCE_UNAVAILABLE'))}
+              catch(e){console.log(name+'_READ_UNAVAILABLE '+ (/^HTTP_[0-9]{3}_[A-Za-z0-9_]{2,80}$/.test(e.message)?e.message:'SOURCE_UNAVAILABLE'))}
             }
-          }catch(e){console.log('OPENTASK_VERIFY_FAILED '+(/^HTTP_[0-9]{3}$/.test(e.message)?e.message:'SOURCE_UNAVAILABLE'));process.exitCode=1}
+          }catch(e){console.log('OPENTASK_VERIFY_FAILED '+(/^HTTP_[0-9]{3}_[A-Za-z0-9_]{2,80}$/.test(e.message)?e.message:'SOURCE_UNAVAILABLE'));process.exitCode=1}
           JS
