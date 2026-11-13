@@ -32,7 +32,8 @@ jobs:
             ['cmwedjhh6003z08l60o170g5v','cmv11tua3007606jj2ne1mbwc',1],
             ['cmwedzo9a003i07jrufvn466y','cmp545xcw001bl704p3a7ock7',100],
             ['cmweo7j3t001c07kwxyb5fltq','cmqrxehg10007jo04zlktj1q8',5],
-            ['cmweo7jt5001e07kwb2orf6m7','cmmb1pfk7000iju041ts0528g',5]
+            ['cmweo7jt5001e07kwb2orf6m7','cmmb1pfk7000iju041ts0528g',5],
+            ['cmweu078k00f607iawx868xfu','cmuyhedo7000406mtewl2qn8d',1]
           ];
           const safe=v=>typeof v==='string'&&/^[A-Za-z0-9_:-]{1,120}$/.test(v)?v:null;
           async function get(path){
