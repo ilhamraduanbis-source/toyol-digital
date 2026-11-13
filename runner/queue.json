@@ -54,6 +54,24 @@
       "workPaths": [
         "src/server/reads.mjs"
       ]
+    },
+    {
+      "task": "0xe8de95e4bed8d1aa1931a5a5ef7a6aa5aae04c4004beeacc80a3afdcadaacf6c",
+      "repo": "mech-market",
+      "item": "live-scheduler",
+      "sourceCommit": "17da6c453b1dfee88921eb2283902beef0bb9a33",
+      "checkSha": "3e432979708b1eb57ab91f3651fe6c5e446dc638",
+      "ciRun": 43407810691,
+      "reward": "220000",
+      "files": [
+        {
+          "path": "src/server/scheduler.mjs",
+          "sha": "19dbe6b30423d2190068695abeae0b1ce6848762"
+        }
+      ],
+      "workPaths": [
+        "src/server/scheduler.mjs"
+      ]
     }
   ]
 }
