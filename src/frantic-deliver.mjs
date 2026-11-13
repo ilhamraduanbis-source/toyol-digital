@@ -44,7 +44,21 @@ export function validateBounty(b,j){
  for(const a of b.delivery_contract?.artifacts||[])if(a.required)need(names.has(a.name),'MISSING_ARTIFACT_'+a.name);
  return b;
 }
-export async function execute(job,api){
+export async function githubStarVerified(fetchFn=fetch){
+ const account='ilhamraduanbis-source';
+ const target='auscaster/silvertongue';
+ // Public evidence only: do not request or handle the operator's GitHub credentials.
+ for(let page=1;page<=5;page++){
+  const r=await fetchFn('https://api.github.com/users/'+account+'/starred?per_page=100&page='+page,{headers:{Accept:'application/vnd.github+json','User-Agent':'ToyolDigital/1.0'},redirect:'error',signal:AbortSignal.timeout(10000)});
+  if(!r.ok)return false;
+  const rows=await r.json();
+  if(!Array.isArray(rows))return false;
+  if(rows.some(x=>String(x.full_name||'').toLowerCase()===target))return true;
+  if(rows.length<100)return false;
+ }
+ return false;
+}
+export async function execute(job,api,{verifyStar=githubStarVerified}={}){
  const j=validateJob(job);
  const status=await api('/v1/agents/'+KID+'/status');
  need(status.agent?.kid===KID&&status.verification?.sworn===true&&status.agent?.claimEligibility?.eligible===true,'AGENT_NOT_ELIGIBLE');
@@ -68,7 +82,12 @@ export async function execute(job,api){
  need(c.claim_id===id&&c.agent_kid===KID&&c.bounty_number===j.bounty&&c.visibility==='public','CLAIM_IDENTITY_MISMATCH');
  need(c.access?.pending===false&&!c.delivery,'CLAIM_NOT_READY_OR_ALREADY_DELIVERED');
  need(Number.isFinite(Date.parse(c.deliver_deadline_at))&&Date.parse(c.deliver_deadline_at)>Date.now()+30000,'CLAIM_DEADLINE');
- need(Array.isArray(c.eligibility)&&c.eligibility.every(e=>['pass','passed','met','satisfied','eligible','ok','verified'].includes(e.status)),'HIDDEN_ELIGIBILITY_NOT_MET '+JSON.stringify((c.eligibility||[]).map(x=>({check:x.check,status:x.status}))).slice(0,500));
+ need(Array.isArray(c.eligibility),'ELIGIBILITY_UNAVAILABLE');
+ for(const e of c.eligibility){
+  if(['pass','passed','met','satisfied','eligible','ok','verified'].includes(e.status))continue;
+  if(e.check==='github_star_auscaster_silvertongue'&&e.status==='waiting_for_delivery'&&await verifyStar())continue;
+  throw Error('HIDDEN_ELIGIBILITY_NOT_MET '+String(e.check)+' '+String(e.status));
+ }
  await api('/v1/deliveries/preflight','POST',{claim_id:id,artifact_refs:j.artifact_refs});
  const d=await api('/v1/deliveries','POST',{claim_id:id,agent_kid:KID,artifact_refs:j.artifact_refs});
  return {result:'DELIVERY_SUBMITTED',bounty:j.bounty,claim_id:id,delivery_id:d.delivery_id||null,receipt_ref:d.receipt_ref||null};
