@@ -17,7 +17,8 @@ const SOURCES=[
  {name:'Jobbi agent gigs',url:'https://jobbi.org/gigs.json?lane=agent&limit=1000'},
  {name:'Taskmarket open',url:'https://api.taskmarket.dev/api/tasks?status=open&sort=newest&limit=100'},
  {name:'BasedAgents tasks',url:'https://api.basedagents.ai/v1/tasks?status=open'},
- {name:'Frantic funded bounties',url:'https://gofrantic.com/v1/board?status=open&limit=50'}
+ {name:'Frantic funded bounties',url:'https://gofrantic.com/v1/board?status=open&limit=50'},
+ {name:'SwarmMemo cash rewards',url:'https://swarmmemo.com/api/works?kind=earn&limit=100'}
 ];
 const skillText=/(code|bug|fix|program|script|api|json|csv|data|documentation|readme|test|research|content|translate|summari|article|report|spreadsheet|analysis|markdown|python|javascript|typescript|extract|parse|validate|audit|design|write)/i;
 const danger=/(?:\bpay (?:a |the )?(?:fee|deposit)\b|\bupfront (?:fee|payment|deposit)\b|\bstaking required\b|\bstake required\b|\btransfer funds\b|\bwallet seed\b|\bprivate key\b|\bsecret token\b|\bpassword\b|\bdeanonymize\b|\bhack (?:into|an account)\b|\baccount takeover\b|\breferral (?:scheme|chain)\b)/i;
@@ -82,6 +83,19 @@ export function fromFrantic(b){
   stake_terms_unverified:false,task_status:'OPEN_DIRECT_API',requires_registration:'REGISTERED_AGENT_TOKEN',
   source_primary_verified:true};
 }
+export function fromSwarmMemo(w){
+ const st=w?.standing||{},tiers=Array.isArray(st.tiers)?st.tiers:[];
+ if(w?.state!=='open'||w.claimable!==true||!(st.open>0)||!Number.isInteger(st.results)||!Number.isInteger(st.results_max)||st.results>=st.results_max||!/^[a-f0-9]{32}$/.test(w.id||''))return null;
+ const cash=tiers.map(x=>Number(x.usdc)).filter(money);
+ if(!cash.length)return null;
+ return {id:'swarmmemo:'+w.id,source:'SwarmMemo',url:'https://swarmmemo.com/work/'+w.id,
+ title:clean(w.title,140),brief:clean(w.request?.text||w.description,500),
+ reward_amount:Math.min(...cash),reward_currency:'USDC',payout_rail:'BASE_USDC_AFTER_REQUESTER_SETTLEMENT',
+ funding_signal:'USDC_PROMISED_NOT_ESCROWED',acceptance:'REQUESTER_VERDICT_AND_CHAIN_SETTLEMENT',
+ competition:'AVAILABLE_SEATS_'+st.open,deadline:w.deadline?new Date(Number(w.deadline)*1000).toISOString():null,
+ stake_required:false,stake_terms_unverified:false,task_status:'OPEN_DIRECT_API',requires_registration:'SIGNED_AGENT_KEY',
+ source_primary_verified:true};
+}
 export function fromBasedAgents(task){
  const id=String(task?.id||task?.task_id||'');
  const raw=task?.bounty_amount??task?.bountyAmount??task?.reward??task?.bounty;
@@ -105,6 +119,7 @@ export function analyzeTask(item){
  const blocked=[];
  if(danger.test(content))blocked.push('REQUESTS_UNSAFE_PAYMENT_OR_SECRETS');
  if(purchaseRequired.test(content))blocked.push('REQUIRES_PURCHASE_OR_OUTLAY');
+ if(/paid promotion|share a lumen house ware|affiliate marketing|social media post|post on (?:reddit|twitter|instagram|facebook|linkedin)/i.test(content))blocked.push('EXCLUDED_PAID_PROMOTION');
  if(item.stake_required)blocked.push('REQUIRES_STAKE');
  // Provider reference: https://docs.taskmarket.dev/reference/competing
  // Free only for the first 5 per worker AND fewer than 50 total task submissions.
@@ -181,7 +196,7 @@ export function report(data){
  const lines=[
  '# 🧟 Toyol — Paid Tasks (not job vacancies)','',
  '**REAL MONEY RECEIVED: RM0. ADVERTISED REWARDS ARE NOT EARNINGS.**','',
- 'Source API: [Jobbi](https://jobbi.org/gigs), [Taskmarket](https://docs.taskmarket.dev/api/reference), [BasedAgents](https://basedagents.ai/docs/agents), [Frantic](https://gofrantic.com).',
+ 'Source API: [Jobbi](https://jobbi.org/gigs), [Taskmarket](https://docs.taskmarket.dev/api/reference), [BasedAgents](https://basedagents.ai/docs/agents), [Frantic](https://gofrantic.com), [SwarmMemo](https://swarmmemo.com/work?kind=earn).',
  'No owner cash, deposits, stakes, platform fees, wallet spending, or other people’s unclaimed money.','',
  'Only public work explicitly open to a participant may be attempted. Payment and Malaysia cashout must be verified before reporting profit.',''
  ];
@@ -213,7 +228,7 @@ export function report(data){
 }
 async function getJSON(url){
  const u=new URL(url);
- if(!['jobbi.org','api.taskmarket.dev','api.basedagents.ai','gofrantic.com'].includes(u.hostname))throw Error('unapproved API host');
+ if(!['jobbi.org','api.taskmarket.dev','api.basedagents.ai','gofrantic.com','swarmmemo.com'].includes(u.hostname))throw Error('unapproved API host');
  const ac=new AbortController(),timer=setTimeout(()=>ac.abort(),15000);
  try{
   const res=await fetch(url,{signal:ac.signal,headers:{Accept:'application/json','User-Agent':'ToyolPaidTasks/1.0 (+public agent tasks; once daily)'}});
@@ -223,17 +238,18 @@ async function getJSON(url){
   return JSON.parse(body);
  }finally{clearTimeout(timer);}
 }
-export async function scan(fetchJSON=getJSON){
+export async function scan(fetchJSON=getJSON,{directOnly=process.env.TOYOL_DIRECT_ONLY==='1'}={}){
  const sources=[],all=[];
- for(const s of SOURCES){
+ for(const s of SOURCES.filter(x=>!directOnly||!x.name.startsWith('Jobbi'))){
   try{
    const x=await fetchJSON(s.url);
    const rows=s.name.startsWith('Jobbi')?(Array.isArray(x.items)?x.items:[]):
     s.name==='Taskmarket open'?(Array.isArray(x.tasks)?x.tasks:[]):
-    s.name.startsWith('Frantic')?(Array.isArray(x.board?.bounties)?x.board.bounties:[]):
+    s.name.startsWith('Frantic')?(Array.isArray(x.board?.open_bounties)?x.board.open_bounties:Array.isArray(x.board?.bounties)?x.board.bounties:[]):
+    s.name.startsWith('SwarmMemo')?(Array.isArray(x.data?.works)?x.data.works:[]):
     Array.isArray(x)?x:Array.isArray(x.tasks)?x.tasks:Array.isArray(x.data)?x.data:[];
    const mapped=rows.slice(0,1000).map(s.name.startsWith('Jobbi')?fromJobbi:
-    s.name==='Taskmarket open'?fromTaskmarket:s.name.startsWith('Frantic')?fromFrantic:fromBasedAgents).filter(Boolean);
+    s.name==='Taskmarket open'?fromTaskmarket:s.name.startsWith('Frantic')?fromFrantic:s.name.startsWith('SwarmMemo')?fromSwarmMemo:fromBasedAgents).filter(Boolean);
    sources.push({name:s.name,status:'OK',count:rows.length,normalized:mapped.length,
     examples:mapped.slice(0,8).map(t=>({title:t.title,url:t.url,amount:t.reward_amount,currency:t.reward_currency,brief:t.brief.slice(0,160)}))});
    all.push(...mapped);
