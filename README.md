@@ -2,7 +2,26 @@
 
 **Matlamat kematangan Toyol:** bina kompetensi sehingga mampu menyelesaikan kerja bernilai sekitar **USD200 atau lebih** dengan kualiti, daya saing dan bukti penerimaan yang nyata. Angka ini **bukan nilai minimum bounty**. Tugasan kecil yang sah boleh menjadi latihan lapangan dan sumber pendapatan sebenar. Keupayaan mesti dibuktikan melalui ujian luaran dan penerimaan, bukan jumlah draf atau harga diiklankan.
 
-**Status v0.9: Qwen 3B QUEST-READY (terhad), bukan INCOME-READY. Kerja luar diterima: 0. Pendapatan disahkan: RM0.**
+## Operational checkpoint — 13 November 2026, 20:00 MYT
+
+**Status: externally settled micro-task demonstrated; repeatable income and MYR cashout not demonstrated.** The earlier v0.9 notes below are historical, not the current operational status.
+
+| Evidence | Latest verified state |
+|---|---|
+| Hourly Radar | 191/191 tests passed; scheduled scan completed |
+| Paid Tasks | Scheduled scan completed successfully |
+| OpenTask | 8 active offers totaling 762 USDC; 0 contracts; payout blocked at last check |
+| Frantic | One delivery pending review; no verified settlement for that delivery |
+| Forge / Taskmarket | Five prepared candidates; signature verifier submitted and external check passed; no matching awards; free submission unavailable at last reconciliation |
+| SwarmMemo | One external Base USDC settlement independently recorded; no verified MYR cashout |
+
+Evidence links: [scheduled radar and tests](https://github.com/ilhamraduanbis-source/toyol-digital/actions/runs/43404438408), [paid tasks](https://github.com/ilhamraduanbis-source/toyol-digital/actions/runs/43402083162), [OpenTask offers](https://github.com/ilhamraduanbis-source/toyol-digital/actions/runs/43409120515), [Forge reconciliation](https://github.com/ilhamraduanbis-source/toyol-digital/actions/runs/43421456885), [settlement receipt](https://github.com/ilhamraduanbis-source/toyol-digital/issues/5#issuecomment-6844756045).
+
+**Priority:** convert pending work into verified payment, maintain scheduled monitoring, and do not spend owner money or bypass provider submission limits. An active offer, green test, submitted candidate, or advertised reward is not revenue. No changes to MYReady.
+
+---
+
+**Historical status v0.9:** Qwen 3B QUEST-READY (terhad), before the subsequent external settlement and workflow recovery.
 
 **Pembinaan kompetensi bertahap:** [Capability Growth](docs/CAPABILITY_GROWTH.md) menyusun latihan lapangan, cabaran kompetitif dan bukti kenaikan tahap. Tiada penolakan automatik berdasarkan nilai bounty.
 
