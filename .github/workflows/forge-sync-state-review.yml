@@ -1,0 +1,21 @@
+name: Toyol — Sync State Contract Review
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-sync-state-review.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          node --input-type=module <<'JS'
+          const root='https://agent-forge-hb.fly.dev/v1/repos/mech-market',ref='1991fae581a7530e813bc932a48034715abb0740';
+          for(const path of ['docs/PRD.md','docs/CONTRACTS.md','src/core/roster.mjs','src/server/episode.mjs','src/episode/state.mjs','src/episode/reducer.mjs','src/server/reducer.mjs']){
+            try{const r=await fetch(root+'/blob?ref='+ref+'&path='+encodeURIComponent(path),{redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok){console.log('MISSING '+path+' '+r.status);continue;}const j=await r.json(),lines=j.text.split('\n');
+            if(path.startsWith('docs/')){const keep=new Set();for(let i=0;i<lines.length;i++)if(/market\.degraded|market\.settled|upgrade\.|award|dispatch|cutoff|captain.*wallet|episode.*state|reducer/i.test(lines[i]))for(let k=Math.max(0,i-2);k<Math.min(lines.length,i+3);k++)keep.add(k);console.log('DOC '+JSON.stringify({path,text:[...keep].sort((a,b)=>a-b).map(i=>(i+1)+': '+lines[i]).join('\n')}).slice(0,40000));}else console.log('CODE '+JSON.stringify({path,text:j.text}).slice(0,40000));
+            }catch(e){console.log('ERR '+path+' '+e.message);}
+          }
+          const p=await fetch('https://api.taskmarket.dev/api/tasks/0x1dba00625b7a9aa13cbba1cfaad66a182f800721305aa2911aa294704618fe75',{signal:AbortSignal.timeout(15000)});const j=await p.json(),t=j.task??j;console.log('SYNC_LIVE '+JSON.stringify({id:t.id,status:t.status,chainId:t.chainId,reward:t.reward,escrow:t.escrow,submissionCount:t.submissionCount,stakeRequired:t.stakeRequired,actions:t.pendingActions}));
+          JS
