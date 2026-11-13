@@ -1,0 +1,74 @@
+name: Toyol — Team Panels Browser Candidate
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-team-panels-test.yml','deliverables/forge-team-panels/**']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run untouched Forge page check with actual Chromium
+        run: |
+          set -eu
+          ROOT="$RUNNER_TEMP/mech-team-panels"
+          git -c core.hooksPath=/dev/null clone --quiet --no-checkout https://agent-forge-hb.fly.dev/r/mech-market.git "$ROOT"
+          git -C "$ROOT" -c core.hooksPath=/dev/null checkout --quiet --detach 93622c5bc48ed1bd122effc6e6b99907a4e78145
+          test "$(git -C "$ROOT" rev-parse HEAD:.plan/checks/team-panels.mjs)" = f017e6dc61a83daeae18bf5fff6f217554f1199e
+          test ! -e "$ROOT/web/teams.mjs"
+          cp deliverables/forge-team-panels/web/teams.mjs "$ROOT/web/teams.mjs"
+          cd "$ROOT"
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.51.1
+          npx --no-install playwright install chromium
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {createServer} from 'node:http';
+          import {readFile} from 'node:fs/promises';
+          import {resolve,extname} from 'node:path';
+          import {chromium} from 'playwright';
+          import frozen from './.plan/checks/team-panels.mjs';
+          const root=process.cwd();
+          const server=createServer(async(req,res)=>{
+            try{
+              const u=new URL(req.url,'http://localhost');
+              if(!/^\/(fixtures|web|src)\/[a-zA-Z0-9_./-]+$/.test(u.pathname)||u.pathname.split('/').includes('..')){res.writeHead(404);res.end();return;}
+              const f=resolve(root,'.'+u.pathname);
+              if(!f.startsWith(root+'/'))throw Error('PATH');
+              const b=await readFile(f);
+              res.writeHead(200,{'content-type':extname(f)==='.html'?'text/html':'text/javascript'});res.end(b);
+            }catch{res.writeHead(404);res.end();}
+          });
+          await new Promise(r=>server.listen(0,'127.0.0.1',r));
+          const origin='http://127.0.0.1:'+server.address().port;
+          let browser;
+          try{
+            browser=await chromium.launch({headless:true});
+            const page=await browser.newPage();
+            const open=async path=>{await page.goto(origin+'/'+path);};
+            console.log('ORIGINAL_FORGE_PAGE_CHECK_PASS '+await frozen({page,open,root}));
+            await open('fixtures/blank.html');
+            const result=await page.evaluate(async()=>{
+              const m=await import('/web/teams.mjs');
+              const root=document.querySelector('#root'),v=m.mountTeams(root);
+              const data=[{id:'ember',name:'Ember',points:4,hull:80,energy:40,budget:{capMicros:3000000,committedMicros:100001,spentMicros:200002},policy:{aggression:50}},{id:'cobalt',name:'Cobalt',points:1,hull:30,energy:10,budget:{capMicros:1000000,committedMicros:0,spentMicros:0}},{id:'moss',name:'Moss',points:0,hull:90,energy:100,budget:{capMicros:10,committedMicros:9,spentMicros:1}}];
+              const snap=JSON.stringify(data);m.renderTeams(v,data);
+              const first=root.querySelector('article'),text=root.textContent;
+              m.renderTeams(v,[{...data[0],name:'<script>bad()</script>',points:5},...data.slice(1)]);
+              const unchanged=root.querySelector('article')===first, safe=!root.querySelector('script'),count=root.querySelectorAll('article:not([hidden])').length;
+              const labels=[...root.querySelectorAll('article')].map(x=>x.getAttribute('aria-label'));
+              m.disposeTeams(v);m.disposeTeams(v);
+              return {text,unchanged,safe,count,labels,disposed:!root.querySelector('.team-panels'),inputIntact:JSON.stringify(data)===snap};
+            });
+            assert.match(result.text,/2\.699997 OUSD/);assert.match(result.text,/0\.100001 OUSD/);assert.match(result.text,/0\.200002 OUSD/);
+            assert.equal(result.count,3);assert.ok(result.unchanged&&result.safe&&result.disposed&&result.inputIntact);
+            assert.equal(result.labels[0],'<script>bad()</script>');
+            console.log('TEAM_PANELS_BROWSER_REGRESSION_PASS');
+          }finally{await browser?.close();await new Promise(r=>server.close(r));}
+          JS
+      - name: Observe current runner queue submissions
+        run: node src/taskmarket-forge-watch.mjs
