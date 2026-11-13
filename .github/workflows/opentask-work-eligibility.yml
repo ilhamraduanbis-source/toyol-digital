@@ -1,0 +1,60 @@
+name: Toyol OpenTask — Verify Work and Bid Eligibility
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/opentask-work-eligibility.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Test Toyol-owned tabular conversion prototype
+        run: python3 -m pytest -q skills/tabular-conversion
+      - name: Read verified seller's bid eligibility and payout readiness
+        if: always()
+        env:
+          TOYOL_OPENTASK_SELLER_TOKEN: ${{ secrets.TOYOL_OPENTASK_SELLER_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const token=process.env.TOYOL_OPENTASK_SELLER_TOKEN;
+          if(!token)throw Error('MISSING_SELLER_TOKEN');
+          const root='https://opentask.ai';
+          const code=v=>typeof v==='string'&&/^[A-Za-z0-9_:-]{1,100}$/.test(v)?v:null;
+          const get=async path=>{
+            const res=await fetch(root+path,{headers:{Authorization:'Bearer '+token,Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(12000)});
+            if(!res.ok)throw Error('HTTP_'+res.status);
+            return res.json();
+          };
+          const me=await get('/api/agent/me');
+          if(me?.profile?.id!=='cmwebq871016a08jtv7b35au1')throw Error('IDENTITY_MISMATCH');
+          function readiness(o){
+            if(!o||typeof o!=='object')return null;
+            return {ready:typeof o.ready==='boolean'?o.ready:null,eligible:typeof o.eligible==='boolean'?o.eligible:null,status:code(o.status??o.state),code:code(o.code??o.reasonCode??o.blockerCode),userDetail:typeof o.userDetail==='string'?o.userDetail.replace(/[\x00-\x1f]/g,' ').slice(0,200):null,blockers:Array.isArray(o.blockers)?o.blockers.map(v=>code(typeof v==='string'?v:v?.code)).filter(Boolean):null};
+          }
+          console.log('PAYMENT_READINESS '+JSON.stringify(readiness(me.paymentReadiness??me.profile.paymentReadiness)));
+          try{
+            const m=await get('/api/agent/me/payout-methods');
+            console.log('PAYOUT_READINESS '+JSON.stringify(readiness(m.paymentReadiness)));
+            const methods=Array.isArray(m)?m:m.payoutMethods??m.methods;
+            console.log('PAYOUT_METHOD_COUNT '+(Array.isArray(methods)?methods.length:'UNKNOWN'));
+          }catch(e){console.log('PAYOUT_READ_UNAVAILABLE '+code(e.message));}
+          const caps=await get('/api/agent/me/capabilities');
+          const rows=Array.isArray(caps)?caps:caps.capabilities;
+          const c=Array.isArray(rows)?rows.find(c=>c.name==='Flat CSV and JSON conversion'&&c.status==='published'):null;
+          console.log('PUBLISHED_CAPABILITY '+(code(c?.id)||'UNVERIFIED'));
+          for(const id of ['cmpupoqmm0027kw04351wcfhz','cmp545t0n0011l704htzztdbb','cmpx7dhcf000ai604p64ziut3']){
+            try{
+              const j=await get('/api/agent/tasks/'+id);
+              const t=j.task??j;
+              const raw=j.availableActions??t.availableActions;
+              const actions=Array.isArray(raw)?raw.map(a=>typeof a==='string'?{id:code(a)}:{id:code(a.id??a.action??a.key??a.type??a.name),allowed:typeof a.allowed==='boolean'?a.allowed:typeof a.available==='boolean'?a.available:null,reason:code(a.reasonCode??a.blockerCode??a.code)}):null;
+              console.log('TASK_ELIGIBILITY '+JSON.stringify({id,state:code(t.state??t.status),mode:code(t.executionMode),updatedAt:typeof t.updatedAt==='string'?t.updatedAt:null,actions,actionKeys:raw&&typeof raw==='object'&&!Array.isArray(raw)?Object.keys(raw).filter(code):null,payment:readiness(j.paymentReadiness??t.paymentReadiness)}));
+            }catch(e){console.log('TASK_READ_UNAVAILABLE '+id+' '+code(e.message));}
+          }
+          JS
