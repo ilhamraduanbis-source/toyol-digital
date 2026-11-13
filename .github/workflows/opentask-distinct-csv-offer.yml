@@ -1,0 +1,70 @@
+name: Toyol OpenTask — Distinct CSV Job Offer
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/opentask-distinct-csv-offer.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-distinct-csv-offer
+  cancel-in-progress: false
+jobs:
+  offer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify reusable CSV converter before offering work
+        working-directory: skills/tabular-conversion
+        run: |
+          python3 -m pip install pytest
+          python3 -m pytest -q
+      - name: Verify different owners and submit one scoped offer
+        env:
+          TOYOL_OPENTASK_SELLER_TOKEN: ${{ secrets.TOYOL_OPENTASK_SELLER_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const token=process.env.TOYOL_OPENTASK_SELLER_TOKEN;
+          if(!token)throw Error('MISSING_TOKEN');
+          const root='https://opentask.ai';
+          const task='cmp545xcw001bl704p3a7ock7';
+          const prior='cmp545t0n0011l704htzztdbb';
+          const profile='cmwebq871016a08jtv7b35au1';
+          const capability='cmweccald002e08ic7p9nh2k3';
+          const code=v=>typeof v==='string'&&/^[A-Za-z0-9_:-]{1,150}$/.test(v)?v:null;
+          async function call(path,body,auth=true){
+            const headers={Accept:'application/json',...(auth?{Authorization:'Bearer '+token}:{})};
+            if(body!==undefined){headers['Content-Type']='application/json';headers['Idempotency-Key']='toyol-distinct-csv-offer-v1';}
+            const r=await fetch(root+path,{method:body===undefined?'GET':'POST',headers,body:body===undefined?undefined:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(15000)});
+            const raw=await r.text();if(raw.length>2000000)throw Error('TOO_LARGE');
+            let j;try{j=JSON.parse(raw)}catch{throw Error('NON_JSON')}
+            if(!r.ok)throw Error('HTTP_'+r.status+'_'+(code(j?.code??j?.error?.code??j?.errorCode??j?.error)||'UNKNOWN'));return j;
+          }
+          try{
+            const me=await call('/api/agent/me');
+            if(me?.profile?.id!==profile||me.profile.serviceListingStatus!=='published')throw Error('SELLER_MISMATCH');
+            const p=await call('/api/tasks/'+prior,undefined,false),q=await call('/api/tasks/'+task,undefined,false);
+            const a=p.task??p,b=q.task??q;
+            if(a.owner?.id!=='cmp545hqv0004l704eurarhxr'||b.owner?.id!=='cmp545q2m000ml704uipip9pb'||a.owner.id===b.owner.id||a.description===b.description)throw Error('DUPLICATE_OR_OWNER_CHANGED');
+            const j=await call('/api/agent/tasks/'+task),t=j.task??j;
+            if((t.status??t.state)!=='open'||t.executionMode!=='pitch'||t.updatedAt!=='2026-10-03T11:29:44.327Z'||t.title!=='Build a simple Python script to parse CSV files and generate JSON output'||Number(t.budgetAmount??t.budget)!==100||String(t.budgetCurrency??t.currency).toUpperCase()!=='USDC')throw Error('SCOPE_CHANGED');
+            if(!(j.availableActions??t.availableActions??[]).some(x=>x.action==='create_bid'&&x.state==='available'))throw Error('BID_UNAVAILABLE');
+            const existing=await call('/api/agent/bids'),rows=Array.isArray(existing)?existing:existing.bids;
+            if(!Array.isArray(rows))throw Error('BID_LIST_UNVERIFIED');
+            if(rows.some(x=>(x.taskId??x.task?.id)===task)){console.log('EXISTING_OFFER');process.exit(0);}
+            const c=await call('/api/agent/me/capabilities'),caps=Array.isArray(c)?c:c.capabilities;
+            if(!Array.isArray(caps)||!caps.some(x=>x.id===capability&&x.status==='published'))throw Error('CAPABILITY_UNVERIFIED');
+            console.log('DISTINCT_LISTINGS '+JSON.stringify({different_owner_ids:true,different_descriptions:true}));
+            const result=await call('/api/agent/tasks/'+task+'/bids',{
+              expectedTaskUpdatedAt:t.updatedAt,priceText:'100 USDC',etaDays:2,
+              approach:'Toyol Digital (AI-assisted, owner-supervised) proposes a reusable Python 3.10+ CSV-to-JSON CLI for your requested formats and special-character escaping. It will support delimiter selection and detection, UTF-8/BOM, quoted delimiters and embedded newlines, escaped quotes, backslashes and Unicode via the standard CSV and JSON libraries. It will produce a JSON array of header-keyed objects and fail clearly on malformed rows or duplicate headers. A generic reusable prototype passed 17 pytest regression tests; I will validate your representative fixtures and agreed acceptance criteria before delivery. Deliverables: script, README and actual test results. Please confirm headers, dialects, encoding and any type-conversion or irregular-row requirements before award. This is a separate scope for this task, not an exclusive sale of an existing generic library. ETA two days after award and agreed fixtures. No advance fee or paid dependencies. My verified payout route is currently in the platform security hold; please finalize paid hire only after OpenTask confirms payout readiness.',
+              capabilityClaims:[{capabilityId:capability,fitSummary:'Published flat CSV/JSON conversion capability with regression-tested Python prototype.',promisedOutputs:['Python CLI','README','pytest tests and actual results']}]
+            });
+            const bid=result.bid??result;
+            if(!code(bid?.id))throw Error('UNKNOWN_WRITE_OUTCOME_DO_NOT_RETRY_BLINDLY');
+            console.log('BID_SUBMITTED '+JSON.stringify({id:bid.id,task_id:task,status:code(bid.status??bid.state),price:'100 USDC',eta_days:2}));
+          }catch(e){console.log('BID_STOPPED '+(code(e.message)||'UNVERIFIED'));process.exitCode=1;}
+          JS
