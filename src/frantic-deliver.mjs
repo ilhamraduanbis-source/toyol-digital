@@ -83,11 +83,14 @@ export function client(token,fetchFn=fetch){
  };
 }
 async function main(){
+ const api=client(process.env.FRANTIC_AGENT_TOKEN);
+ const status=await api('/v1/agents/'+KID+'/status');
+ need(status.agent?.kid===KID&&status.verification?.sworn===true&&status.agent?.claimEligibility?.eligible===true&&status.agent?.onboarding?.payout?.set===true,'AGENT_NOT_READY');
+ console.log('FRANTIC_ACCOUNT_READY');
  if(!existsSync(QUEUE)){console.log('NO_PREPARED_DELIVERY');return;}
  const jobs=JSON.parse(readFileSync(QUEUE,'utf8'));
  need(Array.isArray(jobs)&&jobs.length<=20,'INVALID_QUEUE');
  if(!jobs.length){console.log('NO_PREPARED_DELIVERY');return;}
- const api=client(process.env.FRANTIC_AGENT_TOKEN);
  for(const job of jobs){
   try{console.log(JSON.stringify(await execute(job,api)));}
   catch(e){console.log('DELIVERY_STOPPED: '+String(e.message).slice(0,100));}
