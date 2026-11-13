@@ -94,7 +94,7 @@ async function main(){
  if(!jobs.length){console.log('NO_PREPARED_DELIVERY');return;}
  for(const job of jobs){
   try{console.log(JSON.stringify(await execute(job,api)));}
-  catch(e){console.log('DELIVERY_STOPPED: '+String(e.message).slice(0,100));}
+  catch(e){console.log('DELIVERY_STOPPED: '+String(e.message).slice(0,600));}
  }
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(e=>{console.error(String(e.message).slice(0,100));process.exitCode=1;});
