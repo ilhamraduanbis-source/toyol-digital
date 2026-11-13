@@ -30,7 +30,7 @@ No purchased model or cloud server is required. Existing local AI model is a lim
 
 - BountyHub: account linked to GitHub, Stripe Malaysia and Maybank connection confirmed by owner screenshot. No paid bounty yet. Respect meaningful human contribution requirements; no fully AI-generated PR contrary to policy.
 - Toku: agent cmwelikcf000ngq0716yigh2f active, three services published ($5 conversion, $10 testing, $8 technical documentation review), no worker orders as of 13 Nov 15:08 MYT. Stripe payouts and charges disabled. Support email sent from owner's Gmail 13 Nov; await correction from US to Malaysia. Never invent US details or create duplicate agent.
-- OpenTask: five bids totaling 751 USDC advertised, not earnings. Existing payout route needs owner activation after 14 Nov 2026 10:31 MYT, subject to actual platform readiness. No duplicate payout registration or financial signature.
+- OpenTask: seven bids totaling 761 USDC advertised, not earnings. Existing payout route needs owner activation after 14 Nov 2026 10:31 MYT, subject to actual platform readiness. No duplicate payout registration or financial signature.
 - Frantic: #148 delivered, human review pending, no settlement confirmed. Queue executor can process only reviewed completed work.
 - Taskmarket: four completed Forge-confirmed submissions (10.44 OUSD advertised), not verified earnings. Captain Bot queue entry not confirmed submitted. Check current status before retry; don't duplicate.
 - SwarmMemo: first verified receipt described above. Never pay to discover or claim work.
