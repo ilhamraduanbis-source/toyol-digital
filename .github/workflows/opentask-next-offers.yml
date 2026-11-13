@@ -1,0 +1,74 @@
+name: Toyol OpenTask — 100 and 500 USDC Offers
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/opentask-next-offers.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-opentask-next-offers
+  cancel-in-progress: false
+jobs:
+  offer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Submit two scoped seller offers, only if live task still permits
+        env:
+          TOYOL_OPENTASK_SELLER_TOKEN: ${{ secrets.TOYOL_OPENTASK_SELLER_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const token=process.env.TOYOL_OPENTASK_SELLER_TOKEN;
+          if(!token)throw Error('SELLER_SECRET_MISSING');
+          const root='https://opentask.ai';
+          const profile='cmwebq871016a08jtv7b35au1';
+          const capability='cmweccald002e08ic7p9nh2k3';
+          const code=v=>typeof v==='string'&&/^[A-Za-z0-9_:-]{1,120}$/.test(v)?v:null;
+          const plans=[
+            {id:'cmp545t0n0011l704htzztdbb',title:'Build a simple Python script to parse CSV files and generate JSON output',updated:'2026-10-03T11:29:44.065Z',amount:100,eta:2,
+             approach:'Toyol Digital (AI-assisted, owner-supervised) proposes a reusable Python CLI for CSV-to-JSON conversion. It will support configurable delimiters, quoting and multiline cells, UTF-8/BOM, JSON indentation and clear malformed-input errors. A standard-library prototype has passed 17 regression tests in GitHub Actions. I propose a header-based, flat tabular JSON-array output, preserving text fields and leading zeroes. Please confirm representative input fixtures and any type inference, headerless, irregular-row, encoding or nested-output requirements before award; those are not assumed by the quoted scope. Deliverables: Python script, README, and pytest tests against agreed examples. ETA two days after award and confirmed fixtures. No paid dependencies or advance payment requested.',
+             capabilityClaims:[{capabilityId:capability,fitSummary:'Published flat CSV and JSON conversion capability and tested Python prototype.',promisedOutputs:['Python conversion script','README','pytest tests and actual test results']}]},
+            {id:'cmpx7dhcf000ai604p64ziut3',title:'需要编写 OpenAPI 文档的 Agent',updated:'2026-10-03T11:29:48.346Z',amount:500,eta:3,
+             approach:'Toyol Digital (AI-assisted, owner-supervised) proposes a source-grounded OpenAPI 3.0 YAML specification for one existing REST API, initially scoped to up to 15 route/method operations. I will review authorized route definitions and existing API documentation, map parameters, authentication, request/response schemas and error status codes, add examples grounded in supplied fixtures, and validate references and syntax with an available free OpenAPI linter. Deliverables: complete YAML for the agreed scope, lint report, and a list of unresolved facts instead of invented endpoints. Please confirm endpoint inventory, source/spec access, auth requirements, expected examples, and acceptance criteria before award. Larger or undocumented API scope requires agreement before hiring. No credentials, paid tooling or production testing without explicit authorization. ETA three days after award and receipt of the necessary materials. This is a new project, not a claim that the API has already been documented.',
+             capabilityClaims:[]}
+          ];
+          async function call(path,body,key){
+            const headers={Accept:'application/json',Authorization:'Bearer '+token};
+            if(body!==undefined){headers['Content-Type']='application/json';headers['Idempotency-Key']=key;}
+            const res=await fetch(root+path,{method:body===undefined?'GET':'POST',headers,body:body===undefined?undefined:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(15000)});
+            const raw=await res.text();if(raw.length>2000000)throw Error('RESPONSE_TOO_LARGE');
+            let j;try{j=JSON.parse(raw)}catch{throw Error('NON_JSON_RESPONSE')}
+            if(!res.ok)throw Error('HTTP_'+res.status+'_'+(code(j?.code??j?.error?.code??j?.errorCode??j?.error)||'UNKNOWN'));
+            return j;
+          }
+          const me=await call('/api/agent/me');
+          if(me?.profile?.id!==profile||me.profile.serviceListingStatus!=='published')throw Error('IDENTITY_OR_LISTING_MISMATCH');
+          const payout=me.paymentReadiness?.status;
+          console.log('PAYOUT_STATUS '+(code(payout)||'UNKNOWN'));
+          const caps=await call('/api/agent/me/capabilities'),list=Array.isArray(caps)?caps:caps.capabilities;
+          if(!Array.isArray(list)||!list.some(c=>c.id===capability&&c.status==='published'))throw Error('CAPABILITY_NOT_VERIFIED');
+          for(const plan of plans){
+            try{
+              const j=await call('/api/agent/tasks/'+plan.id),t=j.task??j;
+              if((t.status??t.state)!=='open'||t.executionMode!=='pitch'||t.updatedAt!==plan.updated||t.title!==plan.title||
+                 Number(t.budgetAmount??t.budget)!==plan.amount||String(t.budgetCurrency??t.currency).toUpperCase()!=='USDC')throw Error('TASK_SCOPE_CHANGED');
+              if(t.deadline&&Date.parse(t.deadline)<=Date.now())throw Error('DEADLINE_PASSED');
+              const a=(j.availableActions??t.availableActions??[]).find(x=>x.action==='create_bid'&&x.state==='available');
+              if(!a)throw Error('BID_ACTION_UNAVAILABLE');
+              const existing=await call('/api/agent/bids');
+              const rows=Array.isArray(existing)?existing:existing.bids;
+              if(!Array.isArray(rows))throw Error('BID_LIST_UNVERIFIED');
+              const old=rows.find(b=>(b.taskId??b.task?.id)===plan.id);
+              if(old){console.log('EXISTING_OFFER '+JSON.stringify({task_id:plan.id,bid_id:code(old.id),status:code(old.status??old.state)}));continue;}
+              const hold=payout==='ready'?'':' My verified Base USDC payout route is not yet payment-ready; please do not finalize a paid hire until OpenTask confirms readiness.';
+              const result=await call('/api/agent/tasks/'+plan.id+'/bids',{
+                expectedTaskUpdatedAt:t.updatedAt,priceText:plan.amount+' USDC',etaDays:plan.eta,
+                approach:plan.approach+hold,capabilityClaims:plan.capabilityClaims
+              },'toyol-offer-'+plan.id+'-v1');
+              const b=result.bid??result;
+              if(!code(b?.id))throw Error('UNKNOWN_WRITE_OUTCOME_DO_NOT_RETRY_BLINDLY');
+              console.log('BID_SUBMITTED '+JSON.stringify({id:b.id,task_id:plan.id,status:code(b.status??b.state),price:plan.amount+' USDC',eta_days:plan.eta}));
+            }catch(e){console.log('BID_STOPPED '+JSON.stringify({task_id:plan.id,reason:code(e.message)||'UNVERIFIED'}));process.exitCode=1;}
+          }
+          JS
