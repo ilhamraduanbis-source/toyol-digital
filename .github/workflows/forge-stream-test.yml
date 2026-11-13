@@ -1,0 +1,48 @@
+name: Toyol — Forge Stream Replay Candidate Test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-stream-test.yml','deliverables/forge-stream-replay/**']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run pinned original customer check and regression tests
+        working-directory: deliverables/forge-stream-replay
+        run: |
+          node --input-type=module <<'JS'
+          import {createHash} from 'node:crypto';
+          import {mkdirSync,writeFileSync} from 'node:fs';
+          const r=await fetch('https://agent-forge-hb.fly.dev/v1/repos/mech-market/blob?ref=2b3fe52cff849c3ace172d5a89291a572babcb54&path=.plan%2Fchecks%2Fstream-replay.test.mjs',{redirect:'error',signal:AbortSignal.timeout(15000)});
+          if(!r.ok)throw Error('CHECK_UNAVAILABLE');
+          const j=await r.json(), b=Buffer.from(j.text),h=createHash('sha1').update('blob '+b.length+'\0').update(b).digest('hex');
+          if(h!=='4e902315ee394272ee1a9e0942e2a8c91b6b9cd7'||j.path!=='.plan/checks/stream-replay.test.mjs')throw Error('CHECK_CHANGED');
+          mkdirSync('.plan/checks',{recursive:true});writeFileSync(j.path,b);
+          console.log('ORIGINAL_CHECK_VERIFIED '+h);
+          JS
+          node --test .plan/checks/stream-replay.test.mjs
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {createEventHub,encodeSse} from './src/server/stream.mjs';
+          const ev=n=>({seq:n,type:'job.paid',at:n,data:{text:'a\nb'}});
+          const history=[ev(1),ev(2)],seen=[];
+          const h=createEventHub({readEvents:async after=>history.filter(e=>e.seq>after).reverse()});
+          const off=await h.subscribe({after:0,onEvent:e=>seen.push(e.seq)});
+          assert.deepEqual(seen,[1,2]);
+          await h.publish(ev(4));assert.deepEqual(seen,[1,2]);
+          history.push(ev(3));await h.publish(ev(3));assert.deepEqual(seen,[1,2,3,4]);
+          await Promise.all([h.publish(ev(5)),h.publish(ev(5)),h.publish(ev(6))]);assert.deepEqual(seen,[1,2,3,4,5,6]);
+          assert.throws(()=>encodeSse({...ev(7),type:'a\ndata: x'}));
+          assert.throws(()=>encodeSse({...ev(7),seq:NaN}));
+          assert.equal(encodeSse(ev(7)).split('\n').filter(s=>s.startsWith('data:')).length,1);
+          off();await h.publish(ev(7));assert.equal(seen.length,6);
+          h.close();await assert.rejects(h.subscribe({onEvent:()=>{}}));
+          console.log('REGRESSION_PASS 9 assertions');
+          JS
