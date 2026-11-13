@@ -36,6 +36,24 @@
       "workPaths": [
         "src/identity/verify.mjs"
       ]
+    },
+    {
+      "task": "0xc9d80a80d7261661525fd1bd2c0da46df186b59df10f4a4fc61dcb37fa4b3ca8",
+      "repo": "mech-market",
+      "item": "public-read-routes",
+      "sourceCommit": "42a80249e450a0332557732313013677d15af894",
+      "checkSha": "e2b95c285b55529a25696f61196613d08d49b981",
+      "ciRun": 43407372162,
+      "reward": "220000",
+      "files": [
+        {
+          "path": "src/server/reads.mjs",
+          "sha": "75ec30c32d856e28fe3385370ae382947b248bb3"
+        }
+      ],
+      "workPaths": [
+        "src/server/reads.mjs"
+      ]
     }
   ]
 }
