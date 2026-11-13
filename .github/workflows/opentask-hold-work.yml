@@ -1,0 +1,55 @@
+name: Toyol — Work During Payout Hold
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/opentask-hold-work.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Inspect seller action gates and previously submitted work
+        env:
+          TOYOL_OPENTASK_SELLER_TOKEN: ${{ secrets.TOYOL_OPENTASK_SELLER_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const token=process.env.TOYOL_OPENTASK_SELLER_TOKEN;
+          if(!token)throw Error('MISSING_TOKEN');
+          const code=v=>typeof v==='string'&&/^[A-Za-z0-9_ .:-]{1,120}$/.test(v)?v:null;
+          async function read(url,auth=false){
+            const res=await fetch(url,{headers:{Accept:'application/json',...(auth?{Authorization:'Bearer '+token}:{})},redirect:'error',signal:AbortSignal.timeout(12000)});
+            if(!res.ok)throw Error('HTTP_'+res.status);
+            return res.json();
+          }
+          const root='https://opentask.ai';
+          const me=await read(root+'/api/agent/me',true);
+          if(me?.profile?.id!=='cmwebq871016a08jtv7b35au1')throw Error('IDENTITY_MISMATCH');
+          const task='cmpupoqmm0027kw04351wcfhz';
+          const j=await read(root+'/api/agent/tasks/'+task,true),t=j.task??j;
+          // Action metadata only, not private messages or arbitrary response content.
+          const raw=j.availableActions??t.availableActions;
+          const fields=/^(id|key|name|type|kind|action|actionId|actionKey|label|status|state|allowed|enabled|available|reason|reasonCode|blockerCode|code|method|path|href|endpoint|disabled|canExecute|requiresConfirmation|blocked)$/i;
+          const out=Array.isArray(raw)?raw.map(a=>typeof a==='string'?code(a):Object.fromEntries(Object.entries(a??{}).filter(([k])=>fields.test(k)).map(([k,v])=>[k,typeof v==='boolean'?v:code(v)]))):null;
+          console.log('BID_GATE '+JSON.stringify({id:task,status:code(t.status??t.state),mode:code(t.executionMode),actions:out,action_fields:Array.isArray(raw)?raw.map(a=>Object.keys(a??{})):null,payout_status:code(me.paymentReadiness?.status)}));
+          try{
+            const b=await read(root+'/api/agent/bids?status=active',true);
+            const rows=Array.isArray(b)?b:b.bids;
+            console.log('ACTIVE_BID_COUNT '+(Array.isArray(rows)?rows.length:'UNKNOWN'));
+          }catch(e){console.log('BID_LIST_UNAVAILABLE '+code(e.message));}
+          try{
+            const f=await read('https://gofrantic.com/v1/agents/agent-65c3b0/status');
+            if(f?.ok!==true||f.agent?.kid!=='agent-65c3b0')throw Error('FRANTIC_IDENTITY_MISMATCH');
+            const summary=f.work?.summary??{};
+            console.log('FRANTIC_STATUS '+JSON.stringify({invitations:Array.isArray(f.agent?.invites)?f.agent.invites.length:null,review_pending:summary.deliveredPendingReview??null,awaiting_payout:summary.awaitingPayout??null,settled:Array.isArray(f.work?.settled)?f.work.settled.length:null}));
+          }catch(e){console.log('FRANTIC_UNAVAILABLE '+code(e.message));}
+          try{
+            const id='65ba0fb3af541b65f34cf4bbd2b40c03';
+            const a=await read('https://swarmmemo.com/api/work/'+id);
+            if(a?.ok!==true||a.data?.work?.id!==id)throw Error('SWARM_IDENTITY_MISMATCH');
+            const r=(a.data.work.results??[]).find(x=>x.result_id==='6aaba9998e6a4f41ca2872a5eac1b273');
+            console.log('SWARM_STATUS '+JSON.stringify({submission_found:!!r,state:code(r?.state??r?.status),payment_state:code(r?.money?.usdc?.state)}));
+          }catch(e){console.log('SWARM_UNAVAILABLE '+code(e.message));}
+          JS
