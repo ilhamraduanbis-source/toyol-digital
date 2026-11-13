@@ -1,0 +1,25 @@
+name: Toyol — Parallel Forge Contracts
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-parallel-contracts.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          node --input-type=module <<'JS'
+          const root='https://agent-forge-hb.fly.dev/v1/repos/mech-market';
+          async function get(u){const r=await fetch(u,{redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();}
+          for(const [item,file] of [['public-read-routes','src/server/reads.mjs'],['live-scheduler','src/server/scheduler.mjs'],['team-panels','web/teams.mjs']]){
+            try{
+              const p=await get(root+'/packets/'+item),t=p.task_packet?.find(x=>x.item===item),w=p.work?.find(x=>x.item===item);
+              console.log('PACKET '+JSON.stringify({item,main:p.main,task:t,work:w}));
+              for(const path of [file,'.plan/checks/'+item+'.test.mjs','.plan/checks/'+item+'.mjs','docs/CONTRACTS.md']){
+                try{const j=await get(root+'/blob?ref='+p.main+'&path='+encodeURIComponent(path));let s=j.text;if(path==='docs/CONTRACTS.md'){const i=s.indexOf('## '+item);s=s.slice(i,i+3000);}console.log('BLOB '+JSON.stringify({item,path,sha:j.sha??j.blob,text:s}).slice(0,25000));}catch(e){console.log('MISSING '+item+' '+path+' '+e.message);}
+              }
+            }catch(e){console.log('ERR '+item+' '+e.message);}
+          }
+          JS
