@@ -29,3 +29,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 src/swarmmemo-payout-observer.py
+
+      - name: Record RM400 mission checkpoint (no revenue inference)
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from datetime import datetime, timedelta, timezone
+          import json
+          start = datetime.fromisoformat("2026-11-13T10:49:00+08:00")
+          first = start + timedelta(hours=48)
+          now = datetime.now(timezone.utc)
+          extension = max(0, int((now-first).total_seconds() // 86400)+1) if now >= first else 0
+          checkpoint = first + timedelta(days=extension)
+          print("MISSION_CHECKPOINT " + json.dumps({
+              "target_myr": 400,
+              "original_checkpoint_myt": first.isoformat(),
+              "current_checkpoint_myt": checkpoint.isoformat(),
+              "extension_days_if_target_unmet": extension,
+              "policy": "Continue and diversify if target unmet; no reset of verified receipts",
+              "accounting": "Separate verified chain receipts, net MYR equivalents and actual MYR cashout; this clock is not payment evidence."
+          }))
+          PY
