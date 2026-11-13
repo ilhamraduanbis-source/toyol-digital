@@ -1,5 +1,6 @@
 // Public read-only observer for confirmed Forge/Taskmarket entries.
 // Platform awards are not independently verified settlement; never report as cash.
+import {readFileSync} from 'node:fs';
 const JOBS=[
  {TASK:'0xa114b9accc85b6b110b1e8ac3a9b1434cfc34874c818dd2645b59abe05fd7d2d',ENTRY:'c4e99302-4645-433c-b46a-35c8c64a4c98',COMMIT:'ea6767ec7f1804761ecdfb744b42ce02ad286292',title:'Budget Ledger',reward:'220000'},
  {TASK:'0xd0339fc83b4591024b407fa2a91fb28b0ff35178d4f2b3166b9e51adc96a59d5',ENTRY:'4a7f0236-76ad-4fc3-915e-fb7e63c410b1',COMMIT:'444ad5a6de0aab1f37116e13d707b521a3c349f8',title:'Stream Replay',reward:'220000'},
@@ -34,7 +35,24 @@ async function inspect({TASK,ENTRY,COMMIT,title,reward}){
  // A matching award still requires canonical token, successful receipt, transfer recipient,
  // amount, and finality validation on Tempo. No payout notification or income inference here.
 }
+async function observeQueue(){
+ const q=JSON.parse(readFileSync(new URL('../runner/queue.json',import.meta.url),'utf8'));
+ if(q.version!==1||!Array.isArray(q.jobs)||q.jobs.length>8)throw Error('QUEUE_INVALID');
+ for(const j of q.jobs){
+  if(!/^0x[a-f0-9]{64}$/.test(j.task)||!/^[-a-z0-9]{1,64}$/.test(j.item)||!['mech-market','hobby-hub'].includes(j.repo)||JOBS.some(x=>x.TASK===j.task))continue;
+  try{
+   const a=await get('/api/tasks/'+j.task),t=a.task??a;
+   if((t.id??t.taskId)!==j.task||Number(t.chainId)!==4217)throw Error('TASK_IDENTITY_MISMATCH');
+   const rows=await get('/api/tasks/'+j.task+'/submissions?chainId=4217');
+   if(!Array.isArray(rows))throw Error('SUBMISSIONS_SCHEMA');
+   const own=rows.filter(z=>z.taskId===j.task&&lower(z.workerAddress)===WALLET&&typeof z.id==='string'&&/^[a-zA-Z0-9_-]{8,150}$/.test(z.id));
+   const awards=(Array.isArray(t.awards)?t.awards:[]).filter(a=>own.some(z=>z.id===a.submissionId)&&lower(a.workerAddress??a.worker)===WALLET);
+   console.log('RUNNER_QUEUE_OBSERVED '+JSON.stringify({item:j.item,task:j.task,source_commit:j.sourceCommit,task_status:safe(t.status),own_submissions:own.map(z=>({id:z.id,rejected:Boolean(z.rejectedAt)})),matching_awards:awards.length,forge_confirmation:'NOT_ESTABLISHED_BY_SUBMISSION_LIST',payment:'NOT_INDEPENDENTLY_VERIFIED'}));
+  }catch(e){console.log('RUNNER_QUEUE_UNAVAILABLE '+j.item+' '+safe(e.message));}
+ }
+}
 async function main(){
+ await observeQueue();
  for(const job of JOBS){
   try{await inspect(job);}catch(e){console.log('TASKMARKET_STATUS_UNAVAILABLE '+job.title+' '+safe(e.message));process.exitCode=1;}
  }
