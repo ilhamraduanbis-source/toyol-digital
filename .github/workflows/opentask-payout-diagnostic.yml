@@ -30,7 +30,7 @@ jobs:
           const m=await get('/api/agent/me/payout-methods');
           const rows=Array.isArray(m)?m:m.payoutMethods??m.methods;
           if(!Array.isArray(rows))throw Error('PAYOUT_SCHEMA_UNVERIFIED');
-          const allowed=/^(id|symbol|token|network|chainId|status|state|active|isActive|verified|isVerified|verificationStatus|ownershipVerified|ownershipStatus|routerCompatible|routerCompatibility|routerStatus|compatible|enabled|isDefault|cooldownEndsAt|cooldownUntil|availableAt|eligibleAt|createdAt|updatedAt|verifiedAt|activatedAt|reasonCode|blockerCode|code|ready|eligible|role|roles|verificationMethod|destinationType|type|kind|payoutMethodId|activationStatus|disabledReason|pendingUntil|effectiveAt|selectable|routerEligible|ownershipVerifiedAt)$/i;
+          const allowed=/^(id|symbol|token|network|chainId|status|state|active|isActive|verified|isVerified|verificationStatus|ownershipVerified|ownershipStatus|routerCompatible|routerCompatibility|routerStatus|compatible|enabled|isDefault|payoutChangeHoldUntil|payoutChangeHeld|cooldownEndsAt|cooldownUntil|availableAt|eligibleAt|createdAt|updatedAt|verifiedAt|activatedAt|reasonCode|blockerCode|code|ready|eligible|role|roles|verificationMethod|destinationType|type|kind|payoutMethodId|activationStatus|disabledReason|pendingUntil|effectiveAt|selectable|routerEligible|ownershipVerifiedAt)$/i;
           const safe=v=>typeof v==='boolean'||typeof v==='number'||v===null?v:typeof v==='string'&&/^[A-Za-z0-9_. :+-]{1,120}$/.test(v)?v:undefined;
           for(const p of rows){
             const out={fields:Object.keys(p).filter(k=>/^[A-Za-z0-9_]{1,60}$/.test(k)),matches_expected_wallet:typeof (p.address??p.walletAddress)==='string'&&(p.address??p.walletAddress).toLowerCase()===wallet};
