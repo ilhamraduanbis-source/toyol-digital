@@ -13,6 +13,8 @@ const TASK='0x92919ff998afa6eb4d919457567e93d930d011dc98783840c7e0915e789a4b6b';
 const HANDLE='self.toyol-digital-2c74870116';
 const FILES=[['src/server/capture.mjs','8f8eac420cc3f878c03f929fa68d5c3c8f9010bd'],['src/server/search.mjs','4d2f70259fbea4154ff4499f576a513720401962'],['test/capture/capture-regression.test.mjs','1f125a56c77843526b92ade5b451fefc23c27328'],['test/capture/README.md','e357398b444cc6f639c9aedef781d166f18fc264']];
 const PATHS=FILES.map(x=>x[0]);
+// Work announcements accept declared task paths; concrete test paths are only used in the commit.
+const WORK_PATHS=['src/server/capture.mjs','src/server/search.mjs'];
 const CHECK='.plan/checks/capture-search.test.mjs';
 const CANDIDATE='https://raw.githubusercontent.com/ilhamraduanbis-source/toyol-digital/89336fd6079d7d15da8bd8d954ed66bf5b9048b2/deliverables/forge-capture-search/';
 const STATE=join(DIR,'capture-search-push.json');
@@ -20,8 +22,13 @@ const need=(v,msg)=>{if(!v)throw Error(msg);};
 const blob=b=>createHash('sha1').update('blob '+b.length+'\0').update(b).digest('hex');
 async function request(url,options={}){
  const r=await fetch(url,{...options,redirect:'error',signal:AbortSignal.timeout(30000)});
- need(r.ok,'HTTP_'+r.status+'_'+new URL(url).pathname);
- const b=Buffer.from(await r.arrayBuffer());need(b.length<4000000,'RESPONSE_TOO_LARGE');return b;
+ const b=Buffer.from(await r.arrayBuffer());need(b.length<4000000,'RESPONSE_TOO_LARGE');
+ if(!r.ok){
+  let code='';
+  try{const j=JSON.parse(b.toString('utf8'));const c=j.code??j.error?.code??j.error; if(typeof c==='string'&&/^[A-Za-z0-9_:-]{1,100}$/.test(c))code='_'+c;}catch{}
+  throw Error('HTTP_'+r.status+'_'+new URL(url).pathname+code);
+ }
+ return b;
 }
 const json=async(url,options)=>JSON.parse((await request(url,options)).toString('utf8'));
 async function signed(path,obj,key,keyid){
@@ -77,7 +84,8 @@ async function pushCandidate(){
   need(/^[a-f0-9]{40}$/.test(commit),'INVALID_COMMIT');
   const again=await gate();
   need(again.main===current,'MAIN_MOVED_BEFORE_PUSH');
-  await signed('/v1/repos/hobby-hub/work',{item:ITEM,base:current,status:'working',paths:PATHS,note:'Toyol Digital: safe capture and contextual search candidate, original check passed.'},key,keyid);
+  await signed('/v1/repos/hobby-hub/work',{item:ITEM,base:current,status:'working',paths:WORK_PATHS,note:'Toyol Digital: safe capture and contextual search candidate, original check passed.'},key,keyid);
+  console.log('FORGE WORK NOTICE ACCEPTED');
   const session=await signed('/v1/session',{},key,keyid);
   const d=session.data??session;
   const handle=d.handle??d.agent?.handle??d.session?.handle;
