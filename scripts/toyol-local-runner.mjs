@@ -2,8 +2,11 @@
 import {createHash,createPrivateKey,createPublicKey,randomBytes,sign} from 'node:crypto';
 import {readFileSync,writeFileSync,mkdirSync,mkdtempSync,existsSync,rmSync,renameSync} from 'node:fs';
 import {join} from 'node:path';
+import {pathToFileURL} from 'node:url';
 import {spawnSync} from 'node:child_process';
-const H=process.env.HOME,P=process.env.PREFIX,D=join(H,'.toyol','forge');
+import {setDefaultResultOrder} from 'node:dns';
+setDefaultResultOrder('ipv4first');
+const H=process.env.HOME,P=process.env.PREFIX,D=join(H??'/nonexistent','.toyol','forge');
 const HOST='https://agent-forge-hb.fly.dev',MARKET='https://api.taskmarket.dev';
 const OWNER='ilhamraduanbis-source/toyol-digital',RAW='https://raw.githubusercontent.com/'+OWNER+'/';
 const HANDLE='self.toyol-digital-2c74870116',WALLET='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431';
@@ -19,15 +22,35 @@ const idemId=s=>typeof s==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a
 const plainPath=s=>typeof s==='string'&&s.length<200&&/^(src|web|test)\/[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(s)&&s.split('/').every(x=>x&&x!=='.'&&x!=='..'&&!x.startsWith('.'));
 const log=(...v)=>console.log(new Date().toISOString(),...v);
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
-const cleanEnv={HOME:H,PREFIX:P,PATH:process.env.PATH,TMPDIR:process.env.TMPDIR||join(P,'tmp'),LANG:'C.UTF-8',GIT_CONFIG_GLOBAL:'/dev/null',GIT_CONFIG_NOSYSTEM:'1',GIT_TERMINAL_PROMPT:'0',GIT_CONFIG_COUNT:'0',GIT_TRACE:'0',GIT_TRACE_CURL:'0'};
-async function bytes(url,opts={},limit=2000000){
+const cleanEnv={HOME:H,PREFIX:P,PATH:process.env.PATH,TMPDIR:process.env.TMPDIR||join(P??'/tmp','tmp'),LANG:'C.UTF-8',GIT_CONFIG_GLOBAL:'/dev/null',GIT_CONFIG_NOSYSTEM:'1',GIT_TERMINAL_PROMPT:'0',GIT_CONFIG_COUNT:'0',GIT_TRACE:'0',GIT_TRACE_CURL:'0'};
+// Retry only read-only requests. Signed requests are never retried here.
+export async function boundedRead(url,opts={},limit=2000000,fetcher=fetch){
  const u=new URL(url);need(['raw.githubusercontent.com','api.github.com','api.taskmarket.dev','agent-forge-hb.fly.dev'].includes(u.hostname)&&u.protocol==='https:'&&!u.username&&!u.password,'HOST_BLOCKED');
- const r=await fetch(u,{...opts,redirect:'error',signal:AbortSignal.timeout(25000)});
- need(r.ok,'HTTP_'+r.status+'_'+u.pathname);
- const rd=r.body.getReader(),parts=[];let n=0;
- try{while(true){const {done,value}=await rd.read();if(done)break;n+=value.byteLength;need(n<=limit,'RESPONSE_TOO_LARGE');parts.push(Buffer.from(value));}}finally{await rd.cancel().catch(()=>{});}
- return Buffer.concat(parts);
+ const method=String(opts.method??'GET').toUpperCase(),readOnly=method==='GET';
+ const location=u.hostname+u.pathname;
+ const tries=readOnly?3:1;
+ for(let i=0;i<tries;i++){
+  let reader;
+  try{
+   const r=await fetcher(u,{...opts,redirect:'error',cache:'no-store',signal:AbortSignal.timeout(20000)});
+   if(!r.ok){const e=Error('HTTP_'+r.status);e.retryable=[408,425,429,500,502,503,504].includes(r.status);if(r.body)void r.body.cancel().catch(()=>{});throw e;}
+   need(r.body,'EMPTY_RESPONSE_BODY');
+   reader=r.body.getReader();const parts=[];let n=0;
+   while(true){const {done,value}=await reader.read();if(done)break;n+=value.byteLength;need(n<=limit,'RESPONSE_TOO_LARGE');parts.push(Buffer.from(value));}
+   reader.releaseLock();reader=null;
+   return Buffer.concat(parts);
+  }catch(e){
+   // Do not wait for cancellation of a broken response stream.
+   if(reader){void reader.cancel().catch(()=>{});}
+   const code=String(e.cause?.code??e.code??e.name??'ERROR').replace(/[^A-Za-z0-9_-]/g,'').slice(0,60);
+   const detail=/^HTTP_\d+$|^RESPONSE_TOO_LARGE$|^EMPTY_RESPONSE_BODY$/.test(e.message)?e.message:code;
+   const retryable=e.retryable===true||e instanceof TypeError||['TimeoutError','AbortError'].includes(e.name);
+   if(readOnly&&retryable&&i+1<tries){log('NETWORK_RETRY',location,detail,i+1);await delay(1000*(i+1));continue;}
+   throw Error('NETWORK_'+method+' '+location+' '+detail);
+  }
+ }
 }
+const bytes=boundedRead;
 const json=async(u,o)=>JSON.parse((await bytes(u,o)).toString('utf8'));
 function git(cwd,args,input,extra={}){
  const q=spawnSync('git',['-c','core.hooksPath=/dev/null','-c','credential.helper=','-c','protocol.file.allow=never','-c','protocol.ext.allow=never',...args],{cwd,env:{...cleanEnv,...extra},input,encoding:'utf8',timeout:120000,maxBuffer:2000000});
@@ -81,7 +104,11 @@ async function processJob(j){
  if(st){need(st.task===j.task&&st.sourceCommit===j.sourceCommit&&sha(st.commit),'STATE_MISMATCH');if(st.status==='confirmed'||st.status==='push_attempted'||st.status==='submit_attempted'){log('SKIP_'+st.status.toUpperCase(),j.item);return;}}
  const me=cli(['whoami']);need(me.wallet?.toLowerCase()===WALLET&&me.network==='tempo'&&me.chains?.some(x=>x.chainId===4217&&String(x.agentId)==='834'),'WALLET_MISMATCH');
  if(!st){
+  log('JOB_STAGE',j.item,'verify_ci_and_live');
   await evidence(j);const p=await live(j);
+  const existingEntries=await json(MARKET+'/api/tasks/'+j.task+'/submissions?chainId=4217');
+  need(Array.isArray(existingEntries)&&!existingEntries.some(z=>String(z.workerAddress??'').toLowerCase()===WALLET),'EXISTING_PUBLIC_SUBMISSION_RECONCILE');
+  log('JOB_STAGE',j.item,'prepare_git_objects');
   const tmp=mkdtempSync(join(D,'runner-work-'));
   try{
    const repo=join(tmp,'repo'),remote=HOST+'/r/'+j.repo+'.git';
@@ -105,6 +132,7 @@ async function processJob(j){
    const tree=git(repo,['write-tree'],undefined,env);
    const commit=git(repo,['-c','user.name=Toyol Digital','-c','user.email=toyol-digital@invalid.example','-c','commit.gpgsign=false','commit-tree',tree,'-p',p.main,'-m','Implement '+j.item]);
    need(sha(commit)&&(await live(j)).main===p.main,'MAIN_MOVED');
+   log('JOB_STAGE',j.item,'forge_work_session');
    await signed('/v1/repos/'+j.repo+'/work',{item:j.item,base:p.main,status:'working',paths:j.workPaths,note:'Toyol Digital: candidate tested in CI, requesting Forge acceptance.'});
    const s=await signed('/v1/session',{}),handle=s.handle??s.agent?.handle??s.session?.handle,token=s.push_token??s.pushToken??s.token??s.session?.token??s.session?.push_token??s.session?.pushToken;
    need(handle===HANDLE&&typeof token==='string'&&token.length>8&&token.length<4096&&!/[\r\n]/.test(token),'SESSION_INVALID');
@@ -112,6 +140,7 @@ async function processJob(j){
    writeFileSync(ask,'#!'+P+'/bin/sh\ncase "$1" in *Username*|*username*) printf "%s\\n" "$TOYOL_FORGE_HANDLE";; *) printf "%s\\n" "$TOYOL_FORGE_PUSH_TOKEN";; esac\n',{mode:0o700});
    st={task:j.task,sourceCommit:j.sourceCommit,commit,status:'push_attempted'};
    save(f,st,true);
+   log('JOB_STAGE',j.item,'push_attempted');
    git(repo,['-c','credential.username='+HANDLE,'push',remote,commit+':refs/for/task/'+j.task+'/'+HANDLE],undefined,{GIT_ASKPASS:ask,TOYOL_FORGE_HANDLE:HANDLE,TOYOL_FORGE_PUSH_TOKEN:token});
    st.status='pushed';save(f,st);log('PUSH_CONFIRMED',j.item,commit);
   }finally{rmSync(tmp,{recursive:true,force:true});}
@@ -147,10 +176,12 @@ async function processJob(j){
  st.status='confirmed';save(f,st);log('DELIVERY_COMPLETE_NOT_PAID',j.item,st.entry,st.commit);
 }
 async function cycle(){
+ log('SCAN_BEGIN');
  const q=await json(QUEUE);
  need(q.version===1&&Array.isArray(q.jobs)&&q.jobs.length<=8,'QUEUE_SCHEMA');
  if(!q.jobs.length){log('IDLE_NO_NEW_JOB');return;}
- for(const j of q.jobs){if(existsSync(join(D,'runner.stop')))break;try{await processJob(j);}catch(e){log('JOB_STOPPED',itemId(j?.item)?j.item:'INVALID',String(e.message).slice(0,160));}}
+ log('SCAN_QUEUE',q.jobs.length);
+ for(const j of q.jobs){if(existsSync(join(D,'runner.stop')))break;try{await processJob(j);}catch(e){log('JOB_STOPPED',itemId(j?.item)?j.item:'INVALID',String(e.message).slice(0,240));}}
 }
 async function main(){
  need(H&&P&&existsSync(join(D,'agent.pem')),'TERMUX_IDENTITY_REQUIRED');
@@ -158,4 +189,4 @@ async function main(){
  const lock=join(D,'runner.lock');try{mkdirSync(lock,{mode:0o700});}catch{throw Error('RUNNER_LOCK_EXISTS');}
  try{log('RUNNER_STARTED');while(!existsSync(join(D,'runner.stop'))){try{await cycle();}catch(e){log('SCAN_STOPPED',String(e.message).slice(0,160));}for(let i=0;i<12&&!existsSync(join(D,'runner.stop'));i++)await delay(5000);}}finally{rmSync(lock,{recursive:true,force:true});log('RUNNER_STOPPED');}
 }
-main().catch(e=>{log('RUNNER_ERROR',String(e.message).slice(0,160));process.exitCode=1;});
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(e=>{log('RUNNER_ERROR',String(e.message).slice(0,240));process.exitCode=1;});
