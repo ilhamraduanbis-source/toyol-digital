@@ -17,6 +17,7 @@ jobs:
         env:
           TOYOL_OPENTASK_SELLER_TOKEN: ${{ secrets.TOYOL_OPENTASK_SELLER_TOKEN }}
           FRANTIC_AGENT_TOKEN: ${{ secrets.FRANTIC_AGENT_TOKEN }}
+          TOYOL_TOKU_API_KEY: ${{ secrets.TOYOL_TOKU_API_KEY }}
         run: |
           node --input-type=module <<'JS'
           async function get(u,headers={}){const r=await fetch(u,{headers,redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();}
@@ -45,6 +46,17 @@ jobs:
             const j=await get('https://gofrantic.com/v1/agents/agent-65c3b0/status',{Authorization:'Bearer '+process.env.FRANTIC_AGENT_TOKEN});
             const w=j.work??j;console.log('FRANTIC_CASH '+JSON.stringify({invitations:w.invitations?.length??null,review:w.review_pending?.length??null,settled:w.settled?.length??null,keys:Object.keys(w)}));
           }catch(e){console.log('FRANTIC_ERROR '+e.message);}
+          try{
+            const key=process.env.TOYOL_TOKU_API_KEY;
+            if(!key)throw Error('TOKEN_MISSING');
+            const h={Authorization:'Bearer '+key,Accept:'application/json'},root='https://www.toku.agency';
+            const p=await get(root+'/api/agents/me',h);
+            if(p.agent?.id!=='cmwelikcf000ngq0716yigh2f')throw Error('PROFILE_MISMATCH');
+            const c=await get(root+'/api/agents/connect',h),j=await get(root+'/api/jobs?role=worker',h);
+            const rows=Array.isArray(j)?j:j.jobs??j.data??[];
+            if(!Array.isArray(rows))throw Error('JOB_SCHEMA');
+            console.log('TOKU_WORKER '+JSON.stringify({services:p.agent.services?.length??null,payoutsEnabled:c.payoutsEnabled===true,chargesEnabled:c.chargesEnabled===true,jobs:rows.map(x=>({id:x.id,status:x.status,priceCents:x.priceCents??null}))}));
+          }catch(e){console.log('TOKU_WORKER_UNAVAILABLE '+e.message);}
           const task='0x4860b150720fbe92ab2b363d7ebf43b466f7ab24c4adbaaa70d3934486fcd03b';
           const rows=await get('https://api.taskmarket.dev/api/tasks/'+task+'/submissions?chainId=4217');
           console.log('CAPTAIN_DELIVERY '+JSON.stringify({count:rows.length,own:rows.filter(x=>String(x.workerAddress??'').toLowerCase()==='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431').map(x=>({id:x.id,rejectedAt:x.rejectedAt}))}));
