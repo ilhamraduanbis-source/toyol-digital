@@ -1,4 +1,23 @@
 {
   "version": 1,
-  "jobs": []
+  "jobs": [
+    {
+      "task": "0x4860b150720fbe92ab2b363d7ebf43b466f7ab24c4adbaaa70d3934486fcd03b",
+      "repo": "mech-market",
+      "item": "captain-bot",
+      "sourceCommit": "efee15f4e0b9269239588d21da3b3c161c8dc28e",
+      "checkSha": "d6fe36444965a2f9ea26bd4a7f17265d47690abf",
+      "ciRun": 43376043180,
+      "reward": "220000",
+      "files": [
+        {
+          "path": "src/agents/captain.mjs",
+          "sha": "589979eefdf581e5c9f93d32789179db37b24f5c"
+        }
+      ],
+      "workPaths": [
+        "src/agents/captain.mjs"
+      ]
+    }
+  ]
 }
