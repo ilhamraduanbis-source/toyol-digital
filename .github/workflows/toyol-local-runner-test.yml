@@ -1,0 +1,47 @@
+name: Toyol — Local Runner Safety Check
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-local-runner-test.yml','scripts/toyol-local-runner.mjs','runner/queue.json']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Syntax and offline queue validation
+        run: |
+          node --check scripts/toyol-local-runner.mjs
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          const q=JSON.parse(readFileSync('runner/queue.json','utf8'));
+          assert.equal(q.version,1);assert.ok(Array.isArray(q.jobs));
+          const s=readFileSync('scripts/toyol-local-runner.mjs','utf8');
+          assert.ok(s.includes("'clone','--bare'"));
+          assert.ok(!s.includes("['--test'"));
+          assert.ok(s.includes("TOYOL_DENY_ALL_FEES"));
+          assert.ok(s.includes("status='submit_attempted'"));
+          assert.ok(s.includes("DONE.has(j.task)"));
+          console.log('RUNNER_SYNTAX_AND_STATIC_GUARDS_PASS');
+          JS
+      - name: Exercise Git object-only commit without checkout
+        run: |
+          set -eu
+          d=$(mktemp -d)
+          git init --bare "$d/repo"
+          export GIT_INDEX_FILE="$d/index"
+          cd "$d/repo"
+          git read-tree --empty
+          blob=$(printf 'test file' | git hash-object -w --stdin)
+          git update-index --add --cacheinfo "100644,$blob,src/test.mjs"
+          tree=$(git write-tree)
+          c=$(git -c user.name=Toyol -c user.email=toyol@invalid.example commit-tree "$tree" -m fixture)
+          test "$(git show "$c:src/test.mjs")" = 'test file'
+          echo RUNNER_GIT_OBJECT_FLOW_PASS
+          rm -rf "$d"
