@@ -1,0 +1,97 @@
+name: Toyol — Continuity Guardian
+on:
+  workflow_dispatch:
+    inputs:
+      recover:
+        description: Restart eligible stale workflows
+        type: boolean
+        default: false
+  schedule:
+    - cron: '53 */6 * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-continuity.yml'
+      - 'scripts/toyol-keepalive.mjs'
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: toyol-continuity-guardian
+  cancel-in-progress: false
+jobs:
+  guardian:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Test local supervisor primitives
+        run: |
+          node --check scripts/toyol-keepalive.mjs
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {validPid,alive,matching,readPid,findRunner} from './scripts/toyol-keepalive.mjs';
+          import {mkdtempSync,writeFileSync,rmSync} from 'node:fs';
+          import {tmpdir} from 'node:os';
+          import {join} from 'node:path';
+          const d=mkdtempSync(join(tmpdir(),'toyol-guard-'));
+          try {
+            const p=join(d,'pid');
+            writeFileSync(p,String(process.pid));assert.equal(readPid(p),process.pid);
+            assert.equal(alive(process.pid),true);assert.equal(validPid(-1),false);
+            assert.equal(matching(process.pid,'/nonexistent/toyol-runner.mjs'),false);
+            assert.deepEqual(findRunner('/nonexistent/toyol-runner.mjs'),[]);
+            writeFileSync(p,'123; arbitrary command');assert.equal(readPid(p),null);
+            console.log('SUPERVISOR_PRIMITIVES_PASS');
+          } finally {rmSync(d,{recursive:true,force:true});}
+          JS
+      - name: Check scheduled execution, recover only allowlisted stale workflows
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RECOVER: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.recover) }}
+        run: |
+          node --input-type=module <<'JS'
+          import {appendFileSync} from 'node:fs';
+          const root='https://api.github.com/repos/ilhamraduanbis-source/toyol-digital';
+          const recover=process.env.RECOVER==='true',now=Date.now();
+          const workflows=[
+            ['frantic-deliver.yml',6,'prepared deliveries; existing safety gate'],
+            ['toyol-usdc-receipt-watch.yml',6,'verified receipt and delivery observation'],
+            ['toyol-cash-priority.yml',6,'cash and contracts'],
+            ['opentask-offer-watch.yml',6,'existing offers'],
+            ['toyol-fiat-radar.yml',8,'fiat discovery'],
+            ['toyol.yml',8,'bounded draft worker'],
+            ['world-radar.yml',8,'source checks and receipts'],
+            ['brain-proof.yml',36,'local AI drafts only']
+          ];
+          async function api(path,method='GET',body){
+            const r=await fetch(root+path,{method,headers:{Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','User-Agent':'ToyolContinuity',...(body?{'Content-Type':'application/json'}:{})},redirect:'error',signal:AbortSignal.timeout(15000),...(body?{body:JSON.stringify(body)}:{})});
+            if(!r.ok)throw Error('HTTP_'+r.status);
+            return r.status===204?null:r.json();
+          }
+          let dispatched=0;
+          const lines=['## Toyol continuity','', 'Recovery: '+(recover?'enabled':'dry run'),'', '| Workflow | Last real run | Result | Guardian |','|---|---|---|---|'];
+          for(const [name,hours,purpose] of workflows){
+            try{
+              const w=await api('/actions/workflows/'+name);
+              if(w.state!=='active'){lines.push('| '+name+' | — | '+w.state+' | Owner must review; not enabled automatically |');continue;}
+              const p=await api('/actions/workflows/'+name+'/runs?branch=main&per_page=20');
+              const rows=(p.workflow_runs??[]).filter(x=>['schedule','workflow_dispatch'].includes(x.event)||(name!=='toyol.yml'&&x.event==='push'));
+              const newest=rows[0],pending=rows.some(x=>x.status!=='completed');
+              const age=newest?(now-Date.parse(newest.created_at))/3600000:Infinity;
+              let decision=pending?'Already queued/running':age<=hours?'Recent execution':'Stale';
+              if(!pending&&age>hours&&recover&&dispatched<2){
+                await api('/actions/workflows/'+name+'/dispatches','POST',{ref:'main'});
+                dispatched++;decision='Recovery requested (not completed)';
+              }
+              lines.push('| '+name+' | '+(newest?.created_at??'None')+' | '+(newest?.conclusion??newest?.status??'Unknown')+' | '+decision+' |');
+              console.log('CONTINUITY '+JSON.stringify({name,purpose,ageHours:Number.isFinite(age)?Math.round(age*10)/10:null,state:w.state,lastRun:newest?.id??null,lastConclusion:newest?.conclusion??null,decision}));
+            }catch(e){lines.push('| '+name+' | — | Unavailable | '+String(e.message).slice(0,80)+' |');console.log('CONTINUITY_UNAVAILABLE '+name+' '+e.message);}
+          }
+          lines.push('','Recovery requests: '+dispatched+'. No payment or receipt inferred. GitHub scheduling may be delayed; disabled workflows require owner review. No model API, new paid runner, deposit or wallet action.');
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY,lines.join('\n')+'\n');
+          console.log('CONTINUITY_COMPLETE '+dispatched);
+          JS
