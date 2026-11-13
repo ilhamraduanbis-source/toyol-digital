@@ -1,0 +1,40 @@
+name: Toyol — Connected Workspace Candidate
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-workspace-test.yml','deliverables/forge-connected-workspace/**','scripts/forge-workspace-run.mjs']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Confirm current bounty status and retrieve frozen check
+        working-directory: deliverables/forge-connected-workspace
+        run: |
+          node --input-type=module <<'JS'
+          import {createHash} from 'node:crypto';
+          import {mkdirSync,writeFileSync} from 'node:fs';
+          const id='0x94013e835f1b58aab608d8bc17b8faf18f73ee0ec7a39a253e036edf3afd537c';
+          const get=async u=>{const r=await fetch(u,{redirect:'error',signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();};
+          const a=await get('https://api.taskmarket.dev/api/tasks/'+id),t=a.task??a;
+          console.log('LIVE_WORKSPACE '+JSON.stringify({status:t.status,reward:t.reward,chainId:t.chainId,stakeRequired:t.stakeRequired,escrow:t.escrow,submissionCount:t.submissionCount,awardCount:t.awardCount,submit:(t.pendingActions??[]).filter(x=>x.role==='worker'&&x.action==='submit')}));
+          const j=await get('https://agent-forge-hb.fly.dev/v1/repos/hobby-hub/blob?ref=ccc5636d4a32aa45ad80cf8b15d74d63a6b0989d&path=.plan%2Fchecks%2Fconnected-workspace.test.mjs');
+          const b=Buffer.from(j.text),h=createHash('sha1').update('blob '+b.length+'\0').update(b).digest('hex');
+          if(h!=='1ba097e3f25e1ed871add2efc2952f9b2b07291a'||j.path!=='.plan/checks/connected-workspace.test.mjs')throw Error('CHECK_CHANGED');
+          mkdirSync('.plan/checks',{recursive:true});writeFileSync(j.path,b);
+          console.log('ORIGINAL_CHECK_VERIFIED '+h);
+          JS
+          node --test .plan/checks/connected-workspace.test.mjs
+          if test -f ../../scripts/forge-workspace-run.mjs; then node --check ../../scripts/forge-workspace-run.mjs; fi
+      - name: Exercise real Chromium against synthetic localhost API
+        working-directory: deliverables/forge-connected-workspace
+        run: |
+          npm install --prefix "$RUNNER_TEMP/toyol-browser" --no-audit --no-fund playwright@1.56.1
+          "$RUNNER_TEMP/toyol-browser/node_modules/.bin/playwright" install chromium --with-deps
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/toyol-browser/node_modules/playwright" node test/ui/browser-smoke.mjs
