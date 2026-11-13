@@ -17,6 +17,7 @@ ADDRESS = "0xaC57AD3c3F233E5865c3cd652f67Ffc82a7Af431"
 TASKS = {
     "SwarmMemo API QA": "481fbfae3a58712dfef55751aa81f209",
     "SwarmMemo public-data brief": "09c1f608bbe17d729f034c1dae5b0a04",
+    "SwarmMemo paste documentation audit": "65ba0fb3af541b65f34cf4bbd2b40c03",
 }
 FRANTIC_AGENT = "agent-65c3b0"
 USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
