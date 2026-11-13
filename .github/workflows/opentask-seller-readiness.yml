@@ -1,0 +1,82 @@
+name: Toyol OpenTask — Seller Readiness and Public Hunt
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/opentask-seller-readiness.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Inspect existing seller identity and public opportunities (read only)
+        env:
+          TOYOL_OPENTASK_TOKEN: ${{ secrets.TOYOL_OPENTASK_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const token=process.env.TOYOL_OPENTASK_TOKEN;
+          if(!token)throw Error('Missing OpenTask secret');
+          const root='https://opentask.ai';
+          const expected='cmwebq871016a08jtv7b35au1';
+          const identifier=v=>typeof v==='string' && /^[A-Za-z0-9_-]{1,100}$/.test(v)?v:null;
+          const str=(v,n=150)=>typeof v==='string'?v.replace(/[\x00-\x1f\x7f]/g,' ').slice(0,n):null;
+          async function read(path,auth=true){
+            const headers={Accept:'application/json'};
+            if(auth)headers.Authorization='Bearer '+token;
+            const res=await fetch(root+path,{headers,redirect:'error',signal:AbortSignal.timeout(12000)});
+            if(!res.ok)throw Error('HTTP_'+res.status);
+            const raw=await res.text();
+            if(raw.length>2000000)throw Error('RESPONSE_TOO_LARGE');
+            return JSON.parse(raw);
+          }
+          const me=await read('/api/agent/me');
+          if(me?.profile?.id!==expected)throw Error('IDENTITY_MISMATCH');
+          const p=me.profile;
+          console.log('SELLER_PROFILE_STATUS '+JSON.stringify({
+            kind:identifier(p.kind),listing:identifier(p.serviceListingStatus),
+            bio_present:typeof p.bio==='string'&&p.bio.trim().length>0,
+            skills_count:Array.isArray(p.skillsTags)?p.skillsTags.length:null,
+            description_present:typeof p.serviceDescription==='string'&&p.serviceDescription.trim().length>0,
+            card_ready:me.profileAgentCardReadiness?.ready??null,
+            payment_ready:me.paymentReadiness?.ready??null,
+            payment_blocker:identifier(me.paymentReadiness?.code)
+          }));
+          try{
+            const o=await read('/api/agent/onboarding/status?role=seller&intent=find_work');
+            const steps=Array.isArray(o.actions)?o.actions:Array.isArray(o.requiredActions)?o.requiredActions:[];
+            console.log('SELLER_ONBOARDING '+JSON.stringify({
+              checkpoint:identifier(o.checkpoint),connection_ready:o.connectionReady??null,
+              seller_ready:o.sellerReady??null,actions:steps.slice(0,20).map(s=>({
+                id:identifier(s.id??s.action??s.key??s.code),status:identifier(s.status),
+                reason:identifier(s.reasonCode??s.blockerCode??s.code),
+                scopes:Array.isArray(s.requiredScopes)?s.requiredScopes.filter(v=>typeof v==='string'&&/^[a-z]+:[a-z]+$/.test(v)):[]
+              }))
+            }));
+          }catch(e){console.log('ONBOARDING_UNAVAILABLE '+str(e.message,50))}
+          try{
+            const c=await read('/api/agent/me/capabilities');
+            const rows=Array.isArray(c)?c:c.capabilities;
+            console.log('CAPABILITY_COUNT '+(Array.isArray(rows)?rows.length:'UNKNOWN'));
+          }catch(e){console.log('CAPABILITIES_UNAVAILABLE '+str(e.message,50))}
+          try{
+            const m=await read('/api/agent/me/payout-methods');
+            const rows=Array.isArray(m)?m:m.payoutMethods;
+            console.log('PAYOUT_STATUS '+JSON.stringify({method_count:Array.isArray(rows)?rows.length:null,
+              ready:m.paymentReadiness?.ready??null,code:identifier(m.paymentReadiness?.code)}));
+          }catch(e){console.log('PAYOUT_UNAVAILABLE '+str(e.message,50))}
+          // Only public marketplace information, no private briefs or notifications.
+          const d=await read('/api/tasks?sort=new&limit=30',false);
+          const rows=Array.isArray(d)?d:Array.isArray(d.tasks)?d.tasks:Array.isArray(d.items)?d.items:[];
+          console.log('PUBLIC_TASKS_COUNT '+rows.length);
+          for(const t of rows.slice(0,30)){
+            const id=identifier(t.id);
+            if(!id)continue;
+            const budget=t.budget??t.budgetAmount??t.priceAmount??t.rewardAmount;
+            console.log('PUBLIC_TASK '+JSON.stringify({id,title:str(t.title),mode:identifier(t.executionMode),
+              status:identifier(t.status),budget:typeof budget==='number'||(typeof budget==='string'&&/^\d+(\.\d+)?$/.test(budget))?budget:null,
+              currency:identifier(t.currency??t.denomination),deadline:str(t.deadline??t.deadlineAt,40),
+              offers:Number.isSafeInteger(t.activeBidCount??t.bidCount)?(t.activeBidCount??t.bidCount):null}));
+          }
+          JS
