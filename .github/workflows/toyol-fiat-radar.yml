@@ -1,0 +1,54 @@
+name: Toyol — Fiat Work Radar
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 * * * *'
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-fiat-radar.yml']
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Screen agent-native USD jobs and public software bounties
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'JS'
+          async function get(u,headers={}){
+            const r=await fetch(u,{headers,redirect:'error',signal:AbortSignal.timeout(15000)});
+            if(!r.ok)throw Error('HTTP_'+r.status);
+            const b=await r.text();if(b.length>8000000)throw Error('RESPONSE_TOO_LARGE');return JSON.parse(b);
+          }
+          const root='https://www.toku.agency',seen=new Map();
+          try{
+            let offset=0,total=0;
+            for(let n=0;n<8;n++){
+              const j=await get(root+'/api/agents/jobs?status=OPEN&view=cards&sort=newest&limit=100&offset='+offset);
+              if(!Array.isArray(j.jobPosts)||!Number.isSafeInteger(j.total)||!Number.isSafeInteger(j.limit)||j.limit<=0||j.offset!==offset)throw Error('SCHEMA');
+              total=j.total;
+              for(const x of j.jobPosts)if(typeof x.id==='string')seen.set(x.id,x);
+              offset+=j.limit;if(offset>=total)break;
+            }
+            console.log('TOKU_COUNTS '+JSON.stringify({scanned:seen.size,reported:total}));
+            const relevant=[...seen.values()].filter(x=>x.status==='OPEN'&&Number(x.budgetCents)>=500&&(!x.deadline||Date.parse(x.deadline)>Date.now()+3600000)&&!/^(available|for hire|hire me|i offer|i am offering|selling|service offer)\b/i.test(x.title??'')&&!/\b(deposit|stake|referral|affiliate|social media|twitter|telegram followers|buy gift card|virtual card|wallet funding)\b/i.test((x.title??'')+' '+(x.descriptionPreview??'')));
+            relevant.sort((a,b)=>(a.bidCount??999)-(b.bidCount??999)||b.budgetCents-a.budgetCents);
+            for(const x of relevant.slice(0,15))console.log('TOKU_LEAD '+JSON.stringify({id:x.id,title:x.title,budgetCents:x.budgetCents,bids:x.bidCount,instantAcceptCents:x.instantAcceptCents,deadline:x.deadline,poster:x.poster?.name,preview:x.descriptionPreview,payment:'BUYER_COMPLETION_REQUIRED',eligibility:'REVIEW_REQUIRED'}));
+          }catch(e){console.log('TOKU_UNAVAILABLE '+e.message);}
+          try{
+            const j=await get('https://raw.githubusercontent.com/krishi-shah/dailybugbounties/main/data/bounties.json');
+            const a=(j.bounties??[]).filter(x=>['algora','issuehunt','opire','upwork'].includes(x.payout)&&x.state==='OPEN'&&!x.archived&&Number(x.amount_usd)>=10);
+            console.log('FIAT_INDEX '+JSON.stringify({count:a.length,generated_at:j.generated_at}));
+            a.sort((x,y)=>(x.open_prs??99)-(y.open_prs??99)||(x.claims??99)-(y.claims??99)||Date.parse(y.updated_at)-Date.parse(x.updated_at));
+            for(const x of a.slice(0,12)){
+              if(!/^[\w.-]+\/[\w.-]+$/.test(x.repo_full)||!Number.isSafeInteger(x.number))continue;
+              try{
+                const v=await get('https://api.github.com/repos/'+x.repo_full+'/issues/'+x.number,{Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json','User-Agent':'ToyolFiatRadar'});
+                console.log('FIAT_ISSUE '+JSON.stringify({url:v.html_url,title:v.title,state:v.state,assignees:v.assignees?.length,comments:v.comments,reward:x.amount_usd,payout:x.payout,index_open_prs:x.open_prs,verified_payer_index:x.verified_payer,eligibility:'FUNDING_AND_POLICY_REQUIRE_DIRECT_CHECK'}));
+              }catch(e){console.log('ISSUE_UNAVAILABLE '+x.repo_full+'#'+x.number+' '+e.message);}
+            }
+          }catch(e){console.log('FIAT_INDEX_UNAVAILABLE '+e.message);}
+          JS
