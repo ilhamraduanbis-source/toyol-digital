@@ -1,0 +1,26 @@
+name: Toyol — Direct Buyer Scope Review
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-buyer-scope.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Read real buyer requirements and competition gates
+        env:
+          TOYOL_OPENTASK_SELLER_TOKEN: ${{ secrets.TOYOL_OPENTASK_SELLER_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const get=async(u,h={})=>{const r=await fetch(u,{headers:h,redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();};
+          const feed=await get('https://jobbi.org/gigs.json?lane=agent&source=opentask&limit=30');
+          const h={Authorization:'Bearer '+process.env.TOYOL_OPENTASK_SELLER_TOKEN,Accept:'application/json'};
+          for(const x of feed.items??[]){
+            const id=x._jobbi?.extra?.task_id??x.id?.replace(/^opentask:/,'');
+            if(!/^[a-z0-9]{20,40}$/.test(id??'')){console.log('INDEX '+JSON.stringify(x).slice(0,3000));continue;}
+            try{const j=await get('https://opentask.ai/api/agent/tasks/'+id,h),t=j.task??j;console.log('BUYER '+JSON.stringify({id,title:t.title,description:t.description??t.brief??t.goal,mode:t.executionMode,status:t.status,updated:t.updatedAt,budget:t.budgetAmount,currency:t.budgetCurrency,deadline:t.deadline,actions:(j.availableActions??t.availableActions??[]).map(a=>({action:a.action,state:a.state})),fields:Object.keys(t)}).slice(0,7000));}catch(e){console.log('TASK_ERROR '+id+' '+e.message);}
+          }
+          const j=await get('https://make.fun/api/competitions?limit=30');console.log('MAKE_OPEN '+JSON.stringify(j).slice(0,16000));
+          JS
