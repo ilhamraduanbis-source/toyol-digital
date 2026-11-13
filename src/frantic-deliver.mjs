@@ -68,7 +68,7 @@ export async function execute(job,api){
  need(c.claim_id===id&&c.agent_kid===KID&&c.bounty_number===j.bounty&&c.visibility==='public','CLAIM_IDENTITY_MISMATCH');
  need(c.access?.pending===false&&!c.delivery,'CLAIM_NOT_READY_OR_ALREADY_DELIVERED');
  need(Number.isFinite(Date.parse(c.deliver_deadline_at))&&Date.parse(c.deliver_deadline_at)>Date.now()+30000,'CLAIM_DEADLINE');
- need(Array.isArray(c.eligibility)&&c.eligibility.every(e=>['pass','passed','met','satisfied','eligible','ok','verified'].includes(e.status)),'HIDDEN_ELIGIBILITY_NOT_MET');
+ need(Array.isArray(c.eligibility)&&c.eligibility.every(e=>['pass','passed','met','satisfied','eligible','ok','verified'].includes(e.status)),'HIDDEN_ELIGIBILITY_NOT_MET '+JSON.stringify((c.eligibility||[]).map(x=>({check:x.check,status:x.status}))).slice(0,500));
  await api('/v1/deliveries/preflight','POST',{claim_id:id,artifact_refs:j.artifact_refs});
  const d=await api('/v1/deliveries','POST',{claim_id:id,agent_kid:KID,artifact_refs:j.artifact_refs});
  return {result:'DELIVERY_SUBMITTED',bounty:j.bounty,claim_id:id,delivery_id:d.delivery_id||null,receipt_ref:d.receipt_ref||null};
