@@ -1,0 +1,42 @@
+name: Toyol OpenTask — Inspect Payout Route Status
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/opentask-payout-diagnostic.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Inspect verified profile and payout route metadata only
+        env:
+          TOYOL_OPENTASK_SELLER_TOKEN: ${{ secrets.TOYOL_OPENTASK_SELLER_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const token=process.env.TOYOL_OPENTASK_SELLER_TOKEN;
+          const expected='cmwebq871016a08jtv7b35au1';
+          const wallet='0x22cf9717c87e8c3d5831a96a60df565d7c7fb897';
+          if(!token)throw Error('TOKEN_MISSING');
+          async function get(path){
+            const res=await fetch('https://opentask.ai'+path,{headers:{Authorization:'Bearer '+token,Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(12000)});
+            if(!res.ok)throw Error('HTTP_'+res.status);
+            return res.json();
+          }
+          const me=await get('/api/agent/me');
+          if(me?.profile?.id!==expected)throw Error('IDENTITY_MISMATCH');
+          const m=await get('/api/agent/me/payout-methods');
+          const rows=Array.isArray(m)?m:m.payoutMethods??m.methods;
+          if(!Array.isArray(rows))throw Error('PAYOUT_SCHEMA_UNVERIFIED');
+          const allowed=/^(id|symbol|token|network|chainId|status|state|active|isActive|verified|isVerified|verificationStatus|ownershipVerified|ownershipStatus|routerCompatible|routerCompatibility|routerStatus|compatible|enabled|isDefault|cooldownEndsAt|cooldownUntil|availableAt|eligibleAt|createdAt|updatedAt|verifiedAt|activatedAt|reasonCode|blockerCode|code|ready|eligible|role|roles|verificationMethod|destinationType|type|kind|payoutMethodId|activationStatus|disabledReason|pendingUntil|effectiveAt|selectable|routerEligible|ownershipVerifiedAt)$/i;
+          const safe=v=>typeof v==='boolean'||typeof v==='number'||v===null?v:typeof v==='string'&&/^[A-Za-z0-9_. :+-]{1,120}$/.test(v)?v:undefined;
+          for(const p of rows){
+            const out={fields:Object.keys(p).filter(k=>/^[A-Za-z0-9_]{1,60}$/.test(k)),matches_expected_wallet:typeof (p.address??p.walletAddress)==='string'&&(p.address??p.walletAddress).toLowerCase()===wallet};
+            for(const [k,v] of Object.entries(p))if(allowed.test(k)){const z=safe(v);if(z!==undefined)out[k]=z;else if(v&&typeof v==='object'&&!Array.isArray(v)){out[k]=Object.fromEntries(Object.entries(v).filter(([a,b])=>allowed.test(a)&&safe(b)!==undefined));}}
+            console.log('PAYOUT_ROUTE '+JSON.stringify(out));
+          }
+          const rd=m.paymentReadiness??me.paymentReadiness;
+          console.log('PAYOUT_READINESS '+JSON.stringify({status:safe(rd?.status),code:safe(rd?.code),detail:typeof rd?.userDetail==='string'?rd.userDetail.slice(0,250):null}));
+          JS
