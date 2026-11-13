@@ -1,0 +1,32 @@
+name: Toyol — Capture Search Candidate Tests
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-capture-test.yml','deliverables/forge-capture-search/**']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run exact pinned customer check and real local PDF demonstration
+        working-directory: deliverables/forge-capture-search
+        run: |
+          node --input-type=module <<'JS'
+          import {createHash} from 'node:crypto';
+          import {mkdirSync,writeFileSync} from 'node:fs';
+          const r=await fetch('https://agent-forge-hb.fly.dev/v1/repos/hobby-hub/blob?ref=ccc5636d4a32aa45ad80cf8b15d74d63a6b0989d&path=.plan%2Fchecks%2Fcapture-search.test.mjs',{redirect:'error',signal:AbortSignal.timeout(15000)});
+          if(!r.ok)throw Error('CHECK_UNAVAILABLE');
+          const j=await r.json(),b=Buffer.from(j.text),h=createHash('sha1').update('blob '+b.length+'\0').update(b).digest('hex');
+          if(h!=='a284eb3690a3dff688a0989320f33755213beb38'||j.path!=='.plan/checks/capture-search.test.mjs')throw Error('CHECK_CHANGED');
+          mkdirSync('.plan/checks',{recursive:true});writeFileSync(j.path,b);
+          console.log('ORIGINAL_CHECK_VERIFIED '+h);
+          JS
+          command -v pdftotext || (sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends poppler-utils)
+          pdftotext -v
+          REQUIRE_PDF_EXTRACTOR=1 node --test .plan/checks/capture-search.test.mjs test/capture/capture-regression.test.mjs
