@@ -1,0 +1,49 @@
+name: Toyol — Cash Priority Gate
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-cash-priority.yml']
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Find actual cash rewards and inspect active seller commitments
+        env:
+          TOYOL_OPENTASK_SELLER_TOKEN: ${{ secrets.TOYOL_OPENTASK_SELLER_TOKEN }}
+          FRANTIC_AGENT_TOKEN: ${{ secrets.FRANTIC_AGENT_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          async function get(u,headers={}){const r=await fetch(u,{headers,redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();}
+          for(const kind of ['rewarded','earn']){
+            try{
+              const j=await get('https://swarmmemo.com/api/works?kind='+kind+'&limit=100');
+              const rows=j.data?.works??j.works??[];
+              console.log('SWARM_SCAN '+JSON.stringify({kind,count:rows.length}));
+              for(const w of rows){
+                const s=w.standing??{},r=w.reward??{},u=w.reward_usdc??r.usdc??s.usdc;
+                if(u||s.tiers?.some(t=>Number(t.usdc)>0)||/\bUSDC\b/i.test(w.title??''))console.log('SWARM_CASH '+JSON.stringify({id:w.id,title:w.title,state:w.state,claimable:w.claimable,reward_usdc:u,reward:r,standing:{open:s.open,results:s.results,max:s.results_max,tiers:s.tiers,usdc_day_max:s.usdc_day_max},requester:w.requester?.handle}));
+              }
+            }catch(e){console.log('SWARM_ERROR '+e.message);}
+          }
+          const root='https://opentask.ai/api/agent';
+          try{
+            const token=process.env.TOYOL_OPENTASK_SELLER_TOKEN;
+            if(!token)throw Error('TOKEN_MISSING');
+            const h={Authorization:'Bearer '+token,Accept:'application/json'};
+            const me=await get(root+'/me',h);if(me.profile?.id!=='cmwebq871016a08jtv7b35au1')throw Error('PROFILE_MISMATCH');
+            for(const [path,kind] of [['/bids','bids'],['/contracts','contracts']]){
+              try{const j=await get(root+path,h),rows=Array.isArray(j)?j:j[kind]??j.data?.[kind]??[];console.log('OPENTASK '+JSON.stringify({kind,count:rows.length,states:rows.map(x=>({id:x.id,status:x.status??x.state,taskId:x.taskId,price:x.priceText??null}))}));}catch(e){console.log('OPENTASK_ERROR '+kind+' '+e.message);}
+            }
+          }catch(e){console.log('OPENTASK_ERROR '+e.message);}
+          try{
+            const j=await get('https://gofrantic.com/v1/agents/agent-65c3b0/status',{Authorization:'Bearer '+process.env.FRANTIC_AGENT_TOKEN});
+            const w=j.work??j;console.log('FRANTIC_CASH '+JSON.stringify({invitations:w.invitations?.length??null,review:w.review_pending?.length??null,settled:w.settled?.length??null,keys:Object.keys(w)}));
+          }catch(e){console.log('FRANTIC_ERROR '+e.message);}
+          const task='0x4860b150720fbe92ab2b363d7ebf43b466f7ab24c4adbaaa70d3934486fcd03b';
+          const rows=await get('https://api.taskmarket.dev/api/tasks/'+task+'/submissions?chainId=4217');
+          console.log('CAPTAIN_DELIVERY '+JSON.stringify({count:rows.length,own:rows.filter(x=>String(x.workerAddress??'').toLowerCase()==='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431').map(x=>({id:x.id,rejectedAt:x.rejectedAt}))}));
+          JS
