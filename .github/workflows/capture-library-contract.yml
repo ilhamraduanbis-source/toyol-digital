@@ -1,0 +1,22 @@
+name: Toyol — Capture Library Contract
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/capture-library-contract.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - run: |
+          node --input-type=module <<'JS'
+          const base='https://agent-forge-hb.fly.dev/v1/repos/hobby-hub';
+          const ref='ccc5636d4a32aa45ad80cf8b15d74d63a6b0989d';
+          async function get(path){const r=await fetch(base+'/blob?ref='+ref+'&path='+encodeURIComponent(path),{redirect:'error',signal:AbortSignal.timeout(12000)});return r.ok?(await r.json()).text:null;}
+          const prd=await get('docs/PRD.md');console.log('PRD '+JSON.stringify(prd).slice(0,26000));
+          const contract=await get('docs/BUILD-CONTRACT.md');console.log('FOUNDATION '+JSON.stringify(contract).slice(0,11000));
+          for(const path of ['src/shared/model.mjs','src/server/library.mjs','src/shared/item.mjs','package.json','src/server/capture.mjs','src/server/search.mjs'])console.log('FILE '+JSON.stringify({path,text:(await get(path))?.slice(0,14000)??null}));
+          JS
