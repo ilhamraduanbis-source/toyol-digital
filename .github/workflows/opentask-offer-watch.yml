@@ -1,0 +1,62 @@
+name: Toyol OpenTask — Offer and Contract Watch
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '43 * * * *'
+  push:
+    branches: [main]
+    paths: ['.github/workflows/opentask-offer-watch.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-opentask-offer-watch
+  cancel-in-progress: false
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Read known offers, contract count, and payout readiness
+        env:
+          TOYOL_OPENTASK_TOKEN: ${{ secrets.TOYOL_OPENTASK_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const token=process.env.TOYOL_OPENTASK_TOKEN;
+          if(!token)throw Error('TOKEN_MISSING');
+          const root='https://opentask.ai';
+          const expected='cmwebq871016a08jtv7b35au1';
+          const offers=[
+            ['cmwed8daz01vo08jtt6gea8ss','cmpupoqmm0027kw04351wcfhz',50],
+            ['cmwedandf01x608jt8qb8gfgw','cmp545t0n0011l704htzztdbb',100],
+            ['cmwedanmz01x908jtjy4ul8pa','cmpx7dhcf000ai604p64ziut3',500]
+          ];
+          const safe=v=>typeof v==='string'&&/^[A-Za-z0-9_:-]{1,120}$/.test(v)?v:null;
+          async function get(path){
+            const res=await fetch(root+path,{headers:{Accept:'application/json',Authorization:'Bearer '+token},redirect:'error',signal:AbortSignal.timeout(12000)});
+            if(!res.ok)throw Error('HTTP_'+res.status);
+            const raw=await res.text();
+            if(raw.length>2000000)throw Error('RESPONSE_TOO_LARGE');
+            return JSON.parse(raw);
+          }
+          const me=await get('/api/agent/me');
+          if(me?.profile?.id!==expected)throw Error('PROFILE_MISMATCH');
+          const readiness=me.paymentReadiness??me.profile.paymentReadiness;
+          console.log('PAYOUT '+JSON.stringify({status:safe(readiness?.status),code:safe(readiness?.code)}));
+          for(const [id,task,amount] of offers){
+            try{
+              const j=await get('/api/agent/bids/'+id),b=j.bid??j;
+              if(b.id!==id||(b.taskId??b.task?.id)!==task)throw Error('BID_IDENTITY_MISMATCH');
+              console.log('TRACKED_OFFER '+JSON.stringify({id,task_id:task,status:safe(b.status??b.state),advertised_offer_usdc:amount}));
+            }catch(e){console.log('OFFER_UNAVAILABLE '+id+' '+(safe(e.message)||'UNVERIFIED'));}
+          }
+          try{
+            const j=await get('/api/agent/contracts?limit=30');
+            const rows=Array.isArray(j)?j:j.contracts;
+            if(!Array.isArray(rows))throw Error('CONTRACT_SCHEMA_UNVERIFIED');
+            const counts={};
+            for(const c of rows){const s=safe(c.status??c.state)||'UNKNOWN';counts[s]=(counts[s]||0)+1;}
+            console.log('CONTRACT_PAGE '+JSON.stringify({count:rows.length,status_counts:counts,more:!!(j.nextCursor??j.pagination?.nextCursor)}));
+          }catch(e){console.log('CONTRACTS_UNAVAILABLE '+(safe(e.message)||'UNVERIFIED'));}
+          // Read-only: no hiring, delivery, payment or wallet action. No customer content in logs.
+          // Offer amounts are not verified earnings. Contract status alone is not on-chain payment evidence.
+          JS
