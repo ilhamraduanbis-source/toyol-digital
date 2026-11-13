@@ -8,6 +8,7 @@ on:
     paths:
       - '.github/workflows/toyol-usdc-receipt-watch.yml'
       - 'src/swarmmemo-payout-observer.py'
+      - 'src/taskmarket-forge-watch.mjs'
 permissions:
   contents: read
   issues: write
@@ -29,6 +30,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 src/swarmmemo-payout-observer.py
+
+      - name: Track confirmed Taskmarket Forge entry (public read only)
+        if: always()
+        run: node src/taskmarket-forge-watch.mjs
 
       - name: Record RM400 mission checkpoint (no revenue inference)
         if: always()
