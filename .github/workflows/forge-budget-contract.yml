@@ -19,8 +19,9 @@ jobs:
           const p=await get('/v1/repos/mech-market/packets/budget-ledger');
           console.log('PACKET_KEYS '+JSON.stringify(Object.keys(p)));
           const d=(p.documents??[]).find(x=>x.path==='docs/CONTRACTS.md');
-          const s=d?.text??'';
-          const lines=s.split('\n');
+          const full=await get('/v1/repos/mech-market/blob?ref='+encodeURIComponent(p.main)+'&path='+encodeURIComponent('docs/CONTRACTS.md'));
+          const s=full.text??'';
+          const lines=s.replace(/\\n/g,'\n').split('\n');
           const indexes=lines.map((v,i)=>/budget-ledger|createBudget|reserveBudget|settleBudget|releaseBudget/i.test(v)?i:-1).filter(i=>i>=0);
           console.log('EXACT_CONTRACT '+JSON.stringify(indexes.map(i=>lines.slice(Math.max(0,i-3),i+17).join('\n')).slice(0,8)));
           const frozen=await get('/v1/repos/mech-market/blob?ref='+encodeURIComponent(p.main)+'&path='+encodeURIComponent('.plan/checks/budget-ledger.test.mjs'));
