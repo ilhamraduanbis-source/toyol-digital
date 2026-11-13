@@ -28,7 +28,8 @@ jobs:
           const offers=[
             ['cmwed8daz01vo08jtt6gea8ss','cmpupoqmm0027kw04351wcfhz',50],
             ['cmwedandf01x608jt8qb8gfgw','cmp545t0n0011l704htzztdbb',100],
-            ['cmwedanmz01x908jtjy4ul8pa','cmpx7dhcf000ai604p64ziut3',500]
+            ['cmwedanmz01x908jtjy4ul8pa','cmpx7dhcf000ai604p64ziut3',500],
+            ['cmwedjhh6003z08l60o170g5v','cmv11tua3007606jj2ne1mbwc',1]
           ];
           const safe=v=>typeof v==='string'&&/^[A-Za-z0-9_:-]{1,120}$/.test(v)?v:null;
           async function get(path){
