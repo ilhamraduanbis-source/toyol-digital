@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {fromJobbi,fromTaskmarket,fromBasedAgents,fromFrantic,fromSwarmMemo,analyzeTask,shortlist,scan} from '../src/paid-task-radar.mjs';
+import {fromJobbi,fromTaskmarket,fromBasedAgents,fromFrantic,fromSwarmMemo,fromBigHunt,analyzeTask,shortlist,scan} from '../src/paid-task-radar.mjs';
 const source={id:'algora:1',title:'Fix a Python data parser',url:'https://github.com/example/example/issues/4',
   content_text:'Write test and fix parser',_jobbi:{lane:'agent',reward:{amount:0.01,currency:'USD',rail:'stripe'},
   payment_state:'escrowed',acceptance_type:'review',source:'algora',claims_open:true}};
@@ -57,7 +57,7 @@ test('partial API outages are not silently presented as a healthy zero',async()=
   if(url.includes('basedagents'))return {tasks:[]};
   return {items:[source]};
  });
- assert.equal(x.sources.length,5);
+ assert.equal(x.sources.length,6);
  assert.equal(x.sources.filter(y=>y.status==='ERROR').length,1);
  assert.equal(x.tasks.length,1);
  assert.equal(x.verified_myr_received,0);
@@ -119,7 +119,21 @@ test('SwarmMemo reports minimum cash tier, never treats credit as cash or promis
 test('scheduled direct scan leaves Jobbi to its separate hourly workflow',async()=>{
  const urls=[];
  const x=await scan(async url=>{urls.push(url);return {tasks:[],data:{works:[]},board:{open_bounties:[]}};},{directOnly:true});
- assert.equal(x.sources.length,4);
+ assert.equal(x.sources.length,5);
  assert.ok(!urls.some(u=>u.includes('jobbi.org')));
  assert.ok(urls.some(u=>u.includes('swarmmemo.com')));
+});
+
+test('Big Hunt accepts indexed large issue leads without inventing escrow or earnings',()=>{
+ const b={owner:'example',repo:'demo',number:12,kind:'issue',state:'OPEN',title:'Fix Python parser',amount_usd:900,payout:'crypto',open_prs:0};
+ const t=analyzeTask(fromBigHunt(b));
+ assert.equal(t.reward_amount,900);
+ assert.equal(t.url,'https://github.com/example/demo/issues/12');
+ assert.equal(t.funding_from_primary_verified,false);
+ assert.equal(t.earned_myr_verified,0);
+ assert.equal(fromBigHunt({...b,amount_usd:199}),null);
+ assert.equal(fromBigHunt({...b,archived:true}),null);
+ assert.equal(fromBigHunt({...b,kind:'challenge'}),null);
+ assert.equal(fromBigHunt({...b,owner:'../../evil'}),null);
+ assert.equal(fromBigHunt({...b,deadline:'2020-01-01T00:00:00Z'}),null);
 });
