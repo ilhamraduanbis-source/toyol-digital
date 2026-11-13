@@ -33,3 +33,19 @@ test('original-source verification filters closed issues while retaining unverif
  assert.equal(result.active[0].original_issue.status,'UNVERIFIED');
  assert.equal(result.checked_github,2);
 });
+
+test('archived repositories, locked issues and hold labels reject stale bounty leads',()=>{
+ for(const issue of [{state:'open',repository_archived:true},{state:'open',repository_disabled:true},{state:'open',locked:true},{state:'open',labels:[{name:'⏸️ Hold'}]}]){
+  const result=evaluateOriginalIssue(task,issue);
+  assert.equal(result.suitable_for_draft,false);
+ }
+});
+test('official reward restrictions are hard gates but random comments are not',()=>{
+ const restriction={body:'External contributors are not eligible for rewards at this time.',html_url:'https://github.com/sample/project/issues/10#issuecomment-1',author_association:'MEMBER'};
+ const result=evaluateOriginalIssue(task,{state:'open',eligibility_comments:[restriction]});
+ assert.equal(result.next_action,'REJECT_REWARD_RESTRICTED');
+ assert.equal(result.original_issue.evidence_url,restriction.html_url);
+ assert.equal(evaluateOriginalIssue(task,{state:'open',eligibility_comments:[{...restriction,author_association:'NONE'}]}).suitable_for_draft,true);
+ const bot={user:{login:'ubiquity-os[bot]'},body:'You must be a core team member, or an administrator to start this task'};
+ assert.equal(evaluateOriginalIssue(task,{state:'open',eligibility_comments:[bot]}).next_action,'REJECT_REWARD_RESTRICTED');
+});
