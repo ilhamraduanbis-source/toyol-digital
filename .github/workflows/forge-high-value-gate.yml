@@ -1,0 +1,42 @@
+name: Toyol — Higher Value Forge Gate
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-high-value-gate.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify live higher-value bounties, actual checks, and workload
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://agent-forge-hb.fly.dev';
+          async function get(u){const r=await fetch(u,{redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);const s=await r.text();if(s.length>3000000)throw Error('TOO_LARGE');return JSON.parse(s);}
+          const candidates=[
+            ['0x92919ff998afa6eb4d919457567e93d930d011dc98783840c7e0915e789a4b6b','capture-search'],
+            ['0x94013e835f1b58aab608d8bc17b8faf18f73ee0ec7a39a253e036edf3afd537c','connected-workspace']
+          ];
+          for(const [id,item] of candidates){
+            try{
+              const q=await get('https://api.taskmarket.dev/api/tasks/'+id),t=q.task??q;
+              console.log('CANDIDATE '+JSON.stringify({id,item,status:t.status,mode:t.mode,reward:t.reward,netReward:t.netReward,chainId:t.chainId,stakeRequired:t.stakeRequired,submissionCount:t.submissionCount,awardCount:t.awardCount,escrow:t.escrow,worker_submit:(t.pendingActions??[]).filter(x=>x.role==='worker'&&x.action==='submit'),description:t.description}));
+              if(t.status!=='open'||t.stakeRequired!==false)continue;
+              const p=await get(root+'/v1/repos/hobby-hub/packets/'+item);
+              console.log('PACKET '+JSON.stringify({item,main:p.main,task_packet:p.task_packet,work:p.work}));
+              const blob=async path=>get(root+'/v1/repos/hobby-hub/blob?ref='+encodeURIComponent(p.main)+'&path='+encodeURIComponent(path));
+              const d=await blob('docs/BUILD-CONTRACT.md'),lines=d.text.split('\n'),i=lines.findIndex(x=>x.startsWith('##')&&x.includes(item));
+              console.log('CONTRACT '+JSON.stringify({item,text:i>=0?lines.slice(i,i+40).join('\n'):d.text.slice(0,16000)}));
+              const check=p.task_packet?.find(x=>x.item===item)?.check?.path;
+              if(typeof check==='string'&&check.startsWith('.plan/checks/'))console.log('FROZEN '+JSON.stringify({item,check:await blob(check)}).slice(0,24000));
+            }catch(e){console.log('CANDIDATE_ERROR '+item+' '+String(e.message).slice(0,100));}
+          }
+          const j=await get('https://api.taskmarket.dev/api/tasks?status=open&sort=newest&limit=100');
+          for(const t of j.tasks??[]){
+            if(Number(t.reward)<1000000||t.stakeRequired!==false||Number(t.chainId)!==4217||t.mode!=='bounty')continue;
+            console.log('OTHER '+JSON.stringify({id:t.id,reward:t.reward,count:t.submissionCount,description:(t.description??'').slice(0,1400)}));
+          }
+          JS
