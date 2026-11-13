@@ -30,10 +30,9 @@ function publicIP(addr){
  }
  if(v===6){
   const a=addr.toLowerCase();
-  const first=parseInt(a.split(':')[0],16);
+  const first=parseInt(a.split(':')[0],16), second=parseInt(a.split(':')[1]||'0',16);
   // Allow global unicast only, excluding transition and special documentation ranges.
-  return first>=0x2000&&first<=0x3fff&&!a.startsWith('2001:db8:')&&a!=='2001:db8'&&
-   !(first===0x2001&&parseInt(a.split(':')[1]||'0',16)<0x200)&&
+  return first>=0x2000&&first<=0x3fff&&!(first===0x2001&&(second<0x200||second===0xdb8))&&
    first!==0x2002&&first!==0x3fff;
  }
  return false;
