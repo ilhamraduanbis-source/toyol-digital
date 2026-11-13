@@ -1,0 +1,20 @@
+name: Toyol — Task Sync Dependency Review
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-sync-dependencies.yml']
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          node --input-type=module <<'JS'
+          const root='https://agent-forge-hb.fly.dev/v1/repos/mech-market',ref='1991fae581a7530e813bc932a48034715abb0740';
+          for(const path of ['src/market/taskmarket.mjs','src/market/submission.mjs','src/market/settlement.mjs','src/market/upgrades.mjs','src/market/budget.mjs','src/server/state.mjs','src/core/state.mjs','docs/CONTRACTS.md']){
+            try{const r=await fetch(root+'/blob?ref='+ref+'&path='+encodeURIComponent(path),{redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok){console.log('DEP_MISSING '+path+' '+r.status);continue;}const j=await r.json();console.log('DEP '+JSON.stringify({path,text:j.text}).slice(0,28000));}catch(e){console.log('DEP_ERROR '+path+' '+e.message);}
+          }
+          const task='0x4860b150720fbe92ab2b363d7ebf43b466f7ab24c4adbaaa70d3934486fcd03b',wallet='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431';
+          const r=await fetch('https://api.taskmarket.dev/api/tasks/'+task+'/submissions',{signal:AbortSignal.timeout(15000)});if(r.ok){const rows=await r.json();console.log('PILOT '+JSON.stringify({count:rows.length,keys:Object.keys(rows[0]??{}),own:rows.filter(x=>String(x.workerAddress??x.worker_address??x.worker??'').toLowerCase()===wallet).map(x=>({id:x.id??x.submissionId,status:x.status,workerAddress:x.workerAddress}))}));}
+          JS
