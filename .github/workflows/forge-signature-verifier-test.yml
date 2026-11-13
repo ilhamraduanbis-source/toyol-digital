@@ -1,0 +1,52 @@
+name: Toyol — Signature Verifier Candidate
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-signature-verifier-test.yml','deliverables/forge-signature-verifier/**']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify untouched original check and candidate against pinned Forge main
+        run: |
+          set -eu
+          ROOT="$RUNNER_TEMP/mech-signature"
+          git -c core.hooksPath=/dev/null clone --quiet --no-checkout https://agent-forge-hb.fly.dev/r/mech-market.git "$ROOT"
+          git -C "$ROOT" -c core.hooksPath=/dev/null checkout --quiet --detach 93622c5bc48ed1bd122effc6e6b99907a4e78145
+          test "$(git -C "$ROOT" rev-parse HEAD:.plan/checks/signature-verifier.test.mjs)" = db1878231c06831e6444cab683271d92c376068d
+          test "$(git -C "$ROOT" rev-parse HEAD:vendor/tap-verify/index.mjs)" = a6a0aa17af4707695dd999b6777f884d9abae4b5
+          test ! -e "$ROOT/src/identity/verify.mjs"
+          cp deliverables/forge-signature-verifier/src/identity/verify.mjs "$ROOT/src/identity/verify.mjs"
+          cd "$ROOT"
+          node --test .plan/checks/signature-verifier.test.mjs
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {createIdentityVerifier} from './src/identity/verify.mjs';
+          import {newKey,publicJwk,keyId,signRequest} from './src/identity/sign.mjs';
+          const origin='https://game.example',url=origin+'/v1/jobs/link?x=1',key=newKey(),jwk=publicJwk(key),kid=keyId(jwk);
+          const seen=new Set(),nonceStore={reserve(k){if(seen.has(k))return false;seen.add(k);return true;}};
+          const resolveKey=async id=>id===kid?{jwk}:{code:'tap_key_unknown'};
+          const v=createIdentityVerifier({origin,resolveKey,nonceStore});
+          const body='{"id":"1"}';
+          const request=(n,target=url,created=1000,actualBody=body)=>new Request(target,{method:'POST',headers:signRequest({url,method:'POST',body,privateKey:key,now:created,nonce:Buffer.alloc(32,n).toString('base64'),ttl:60}),body:actualBody});
+          assert.equal((await v.verify(new Request(url,{method:'POST',body}),1001)).code,'tap_missing');
+          assert.equal((await v.verify(request(1),1001)).keyId,kid);
+          assert.equal((await v.verify(request(1),1001)).code,'tap_replayed');
+          assert.equal((await v.verify(request(2,origin+'/v1/jobs/link?x=2'),1001)).ok,false);
+          assert.equal((await v.verify(request(3,'https://other.example/v1/jobs/link?x=1'),1001)).ok,false);
+          assert.equal((await v.verify(request(4,url,1000,'{"id":"2"}'),1001)).ok,false);
+          assert.equal((await v.verify(request(5),1060)).code,'tap_expired');
+          assert.equal((await v.verify(request(6),994)).code,'tap_expired');
+          assert.equal((await v.verify(request(7),NaN)).ok,false);
+          const unknown=createIdentityVerifier({origin,resolveKey:async()=>({code:'tap_key_unknown'}),nonceStore});
+          assert.equal((await unknown.verify(request(8),1001)).code,'tap_key_unknown');
+          const unavailable=createIdentityVerifier({origin,resolveKey:async()=>{throw Error('unavailable')},nonceStore});
+          assert.equal((await unavailable.verify(request(9),1001)).code,'tap_trust_unavailable');
+          console.log('SIGNATURE_REGRESSION_PASS 11');
+          JS
