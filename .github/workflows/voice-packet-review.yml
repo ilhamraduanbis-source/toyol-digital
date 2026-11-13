@@ -1,0 +1,84 @@
+name: Toyol — Voice packet review
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/voice-packet-review.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-frantic-delivery
+  cancel-in-progress: false
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Reserve available paid work and retrieve free voice packet
+        env:
+          FRANTIC_AGENT_TOKEN: ${{ secrets.FRANTIC_AGENT_TOKEN }}
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          const token=process.env.FRANTIC_AGENT_TOKEN;
+          if(!token)throw Error('Missing configured access');
+          const kid='agent-65c3b0';
+          const origin='https://gofrantic.com';
+          async function api(path,body){
+            const r=await fetch(origin+path,{method:body?'POST':'GET',redirect:'error',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(20000)});
+            const j=await r.json();if(!r.ok||j.ok!==true)throw Error('Frantic HTTP '+r.status);
+            return j;
+          }
+          const status=await api('/v1/agents/'+kid+'/status');
+          if(status.agent?.kid!==kid||!status.verification?.sworn||!status.agent?.claimEligibility?.eligible||!status.agent?.onboarding?.payout?.set)throw Error('Account not ready');
+          const board=(await api('/v1/board?status=open&limit=50')).board;
+          const candidate=(board.open_bounties||board.bounties||[]).find(b=>b.visibility==='public'&&b.funded===true&&b.price_usd===1&&b.title==='Write one draft in a famous voice with Silvertongue\'s MCP server');
+          if(!candidate){console.log('NO_ELIGIBLE_WORK');process.exit(0);}
+          const b=(await api('/v1/bounties/'+candidate.number)).bounty;
+          if(b.visibility!=='public'||b.funded!==true||b.price_cents!==100||!b.funded_receipt_ref||b.criteria?.verification?.profile!=='dogfood_report_v1')throw Error('Unexpected terms');
+          const active=(status.work?.open||[]).find(x=>x.bounty?.number===b.number&&x.stage==='delivery_due');
+          if((status.work?.settled||[]).some(x=>x.bounty?.number===b.number)){console.log('ALREADY_FINISHED');process.exit(0);}
+          let claimId=active?.claimId;
+          if(!claimId){
+            if((status.work?.open||[]).length||b.work_status!=='open'||!(b.claim_progress?.available>0)){console.log('NO_AVAILABLE_SLOT');process.exit(0);}
+            const c=await api('/v1/claims',{bounty:b.number,agent_kid:kid});
+            claimId=c.claim_id;
+            console.log('PAID_WORK_RESERVED');
+          }
+          const claim=await api('/v1/claims/'+claimId);
+          if(claim.agent_kid!==kid||claim.visibility!=='public'||claim.access?.pending||claim.delivery)throw Error('Claim not ready');
+          console.log('CLAIM_READY');
+          const url='https://mcp.silvertongue.dev/mcp?ref=frantic-mcp-1&receipt=1';
+          let session,protocol='2025-03-26',seq=0;
+          async function mcp(method,params={},notification=false){
+            const request={jsonrpc:'2.0',method,params,...(notification?{}:{id:++seq})};
+            const r=await fetch(url,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream','MCP-Protocol-Version':protocol,...(session?{'Mcp-Session-Id':session}:{})},body:JSON.stringify(request),signal:AbortSignal.timeout(30000)});
+            if(!r.ok)throw Error('MCP HTTP '+r.status);
+            session=r.headers.get('mcp-session-id')||session;
+            if(notification){await r.text();return;}
+            const raw=await r.text();
+            let data;
+            if(r.headers.get('content-type')?.includes('text/event-stream')){
+              data=raw.split('\n').filter(x=>x.startsWith('data:')).map(x=>JSON.parse(x.slice(5).trim())).find(x=>x.id===request.id);
+            }else data=JSON.parse(raw);
+            if(!data||data.error)throw Error('MCP request failed '+method);
+            return data.result;
+          }
+          const init=await mcp('initialize',{protocolVersion:protocol,capabilities:{},clientInfo:{name:'Toyol Digital MCP client',version:'1.0.0'}});
+          protocol=init.protocolVersion||protocol;
+          await mcp('notifications/initialized',{},true);
+          const list=await mcp('tools/list');
+          console.log('MCP_TOOLS '+JSON.stringify(list.tools));
+          const tools=list.tools||[];
+          const tool=tools.find(t=>/^(?:get_voice|voice_packet|fetch_voice|get_voice_packet|silvertongue_get_voice)$/.test(t.name))||tools.find(t=>/voice/.test(t.name)&&!/list|search|suggest|catalog|find/.test(t.name));
+          if(!tool)throw Error('No voice fetch tool identified');
+          const props=tool.inputSchema?.properties||{},args={};
+          for(const k of Object.keys(props)){
+            if(/^(?:slug|id|voice|voice_id|voice_slug|profile|profile_id|name|voice_name)$/.test(k)&&props[k].type==='string')args[k]=k==='name'||k==='voice_name'?'William Shakespeare':'shakespeare';
+            if(/^(?:text|prompt|message|input)$/.test(k)&&props[k].type==='string')args[k]='Write a brief note to my operator reminding them to keep access keys private and report only actual payments, without promising earnings.';
+          }
+          if((tool.inputSchema?.required||[]).some(k=>!Object.hasOwn(args,k)))throw Error('Voice tool requires further review');
+          const packet=await mcp('tools/call',{name:tool.name,arguments:args});
+          if(packet.isError)throw Error('Voice fetch error');
+          console.log('MCP_VOICE_PACKET '+JSON.stringify(packet));
+          JS
