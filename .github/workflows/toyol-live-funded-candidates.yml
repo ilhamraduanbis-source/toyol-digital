@@ -1,0 +1,29 @@
+name: Toyol — Live Funded Candidate Gate
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-live-funded-candidates.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - run: |
+          node --input-type=module <<'JS'
+          const root='https://api.taskmarket.dev';
+          async function get(u){const r=await fetch(u,{redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();}
+          const j=await get(root+'/api/tasks?status=open&sort=newest&limit=100'),rows=j.tasks??[];
+          console.log('INVENTORY '+rows.length);
+          for(const t of rows){
+            if(t.status!=='open'||t.stakeRequired!==false||!t.escrow?.tracked||Number(t.escrow.booked)<=0)continue;
+            const a=(t.pendingActions??[]).find(x=>x.role==='worker'&&x.action==='submit'&&x.requiresPayment===false);
+            if(!a)continue;
+            console.log('CANDIDATE '+JSON.stringify({id:t.id,chain:t.chainId,reward:t.reward,token:t.rewardToken,mode:t.mode,description:(t.description??'').slice(0,2000),count:t.submissionCount,due:a.dueAt}));
+          }
+          for(const id of ['0x4860b150720fbe92ab2b363d7ebf43b466f7ab24c4adbaaa70d3934486fcd03b','0x94013e835f1b58aab608d8bc17b8faf18f73ee0ec7a39a253e036edf3afd537c']){
+            const x=await get(root+'/api/tasks/'+id),t=x.task??x;
+            console.log('TRACK '+JSON.stringify({id,status:t.status,count:t.submissionCount,awards:t.awardCount}));
+          }
+          JS
