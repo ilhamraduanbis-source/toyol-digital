@@ -1,0 +1,29 @@
+name: Toyol — Runner Pilot Observation
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-runner-pilot-observe.yml']
+permissions:
+  contents: read
+jobs:
+  observe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Inspect public runner delivery and next candidate
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://agent-forge-hb.fly.dev/v1/repos/mech-market';
+          const task='0x4860b150720fbe92ab2b363d7ebf43b466f7ab24c4adbaaa70d3934486fcd03b', wallet='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431';
+          async function get(u){const r=await fetch(u,{redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();}
+          const t=await get('https://api.taskmarket.dev/api/tasks/'+task),a=t.task??t;
+          console.log('PILOT_TASK '+JSON.stringify({status:a.status,submissionCount:a.submissionCount,awardCount:a.awardCount}));
+          for(const path of ['/api/tasks/'+task+'/submissions','/api/tasks/'+task+'/entries']){
+            try{const j=await get('https://api.taskmarket.dev'+path),rows=Array.isArray(j)?j:j.submissions??j.data?.submissions??j.entries??[];console.log('PILOT_SUBMISSIONS '+JSON.stringify({path,keys:Object.keys(j),count:rows.length,own:rows.filter(x=>String(x.workerAddress??x.worker_address??x.worker??'').toLowerCase()===wallet).map(x=>({id:x.id??x.submissionId,status:x.status,workerAddress:x.workerAddress??x.worker_address,fields:Object.keys(x)}))}));}catch(e){console.log('PILOT_SOURCE_UNAVAILABLE '+path+' '+e.message);}
+          }
+          const p=await get(root+'/packets/task-sync');console.log('SYNC_PACKET '+JSON.stringify({repo:p.repo,item:p.item,main:p.main,task_packet:p.task_packet,work:p.work}));
+          const blob=path=>get(root+'/blob?ref='+p.main+'&path='+encodeURIComponent(path));
+          const d=await blob('docs/CONTRACTS.md'),lines=d.text.split('\n'),i=lines.findIndex(x=>x.startsWith('##')&&x.includes('task-sync'));console.log('SYNC_CONTRACT '+JSON.stringify(lines.slice(i,i+20).join('\n')));
+          console.log('SYNC_CHECK '+JSON.stringify(await blob('.plan/checks/task-sync.test.mjs')).slice(0,25000));
+          JS
