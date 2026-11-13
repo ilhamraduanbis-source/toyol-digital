@@ -2,7 +2,7 @@ name: Toyol Paid Tasks — Agent Earning Opportunities
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17 */6 * * *'
+    - cron: '17 * * * *'
   push:
     branches: [main]
     paths:
@@ -35,6 +35,7 @@ jobs:
         run: node src/paid-task-radar.mjs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOYOL_DIRECT_ONLY: '1'
       - name: Notify only for verified Frantic USDC settlement
         run: node src/frantic-payout-notice.mjs
         env:
