@@ -1,0 +1,57 @@
+name: Toyol — Forge Budget Candidate Test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-budget-candidate-test.yml','deliverables/forge-budget-ledger/**']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run reviewed original check unchanged and extra regression checks
+        working-directory: deliverables/forge-budget-ledger
+        run: |
+          node --input-type=module <<'JS'
+          import {createHash} from 'node:crypto';
+          import {mkdirSync,writeFileSync} from 'node:fs';
+          const u='https://agent-forge-hb.fly.dev/v1/repos/mech-market/blob?ref=c6b92c7f386b1f0fcf246ca03cf43af7a548a572&path=.plan%2Fchecks%2Fbudget-ledger.test.mjs';
+          const r=await fetch(u,{redirect:'error',signal:AbortSignal.timeout(15000)});
+          if(!r.ok)throw Error('CHECK_UNAVAILABLE');
+          const j=await r.json();
+          const b=Buffer.from(j.text);
+          const h=createHash('sha1').update('blob '+b.length+'\0').update(b).digest('hex');
+          if(h!=='4f2319064f716ec3e109bb7171626a905b78cbc6'||j.path!=='.plan/checks/budget-ledger.test.mjs')throw Error('CHECK_CHANGED');
+          mkdirSync('.plan/checks',{recursive:true});
+          writeFileSync('.plan/checks/budget-ledger.test.mjs',b);
+          console.log('ORIGINAL_CHECK_VERIFIED '+h);
+          JS
+          node --test .plan/checks/budget-ledger.test.mjs
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {createBudget,reserveBudget,settleBudget,releaseBudget} from './src/market/budget.mjs';
+          const a=createBudget(1000);
+          const b=reserveBudget(a,'a',700);
+          const c=settleBudget(b,'a',500);
+          const d=reserveBudget(c,'b',500);
+          assert.equal(d.spentMicros+d.committedMicros,1000);
+          assert.throws(()=>reserveBudget(d,'c',1));
+          assert.deepEqual(reserveBudget(c,'a',700),c);
+          assert.throws(()=>settleBudget(c,'a',499));
+          const e=releaseBudget(d,'b');
+          assert.deepEqual(releaseBudget(e,'b'),e);
+          assert.deepEqual(reserveBudget(e,'b',500),e);
+          assert.throws(()=>settleBudget(e,'b',1));
+          assert.throws(()=>createBudget(Number.MAX_SAFE_INTEGER+1));
+          assert.throws(()=>reserveBudget(a,'x',0.1));
+          assert.equal(a.committedMicros,0);
+          const f=reserveBudget(a,'__proto__',1);
+          assert.equal(f.reservations.__proto__.amountMicros,1);
+          assert.equal(JSON.parse(JSON.stringify(f)).committedMicros,1);
+          console.log('EXTRA_REGRESSION_PASS 12 assertions');
+          JS
