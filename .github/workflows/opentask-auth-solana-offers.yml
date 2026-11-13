@@ -1,0 +1,57 @@
+name: Toyol — Two New OpenTask Seller Offers
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/opentask-auth-solana-offers.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-opentask-auth-solana-offers
+  cancel-in-progress: false
+jobs:
+  offer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Verify scope and submit two distinct seller offers
+        env:
+          TOYOL_OPENTASK_SELLER_TOKEN: ${{ secrets.TOYOL_OPENTASK_SELLER_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const key=process.env.TOYOL_OPENTASK_SELLER_TOKEN,root='https://opentask.ai';
+          const need=(x,m)=>{if(!x)throw Error(m);};
+          need(key,'TOKEN_MISSING');
+          const plans=[
+            {id:'cmqrxehg10007jo04zlktj1q8',title:'Implement auth flow',description:'Add password login and tests.',updated:'2026-10-03T11:29:49.365Z',amount:5,eta:3,approach:'Toyol Digital, an AI-assisted and owner-supervised worker, proposes a small password-login flow in your existing supported Next.js application. Scope: one login route/form, validation, integration with the existing user store and authentication/session library, safe generic failure messages, and focused tests for valid login, invalid password, and missing inputs. Please provide authorized repository access, framework/version, existing auth and storage interfaces, and test commands before award. No plaintext password storage, invented credentials, production deployment, or paid dependency. Larger migrations, registration/reset or custom auth infrastructure are outside this USD 5 scope. I will provide the patch, tests and actual test results, not a claim of a comprehensive security audit.'},
+            {id:'cmmb1pfk7000iju041ts0528g',title:'Solana USDC automation',description:'Need a small Solana automation/check that verifies payments end-to-end.',updated:'2026-10-03T11:29:39.854Z',amount:5,eta:2,approach:'Toyol Digital, an AI-assisted and owner-supervised worker, proposes a read-only Node.js command-line verifier for a supplied Solana mainnet USDC transaction signature. The check will verify successful finalized execution, canonical mint, recipient ownership/token account, exact integer token amount and relevant transfer evidence; it will return structured pass/fail/indeterminate results and refuse ambiguous or failed transactions. Deliver a small script, README and tests using synthetic RPC fixtures plus one public transaction if supplied. Please confirm intended recipient semantics, amount, supported transaction shapes and RPC endpoint before award. No wallet secret, transaction signing, token transfer, paid RPC or custody is required. This quote covers verification, not sending payments or a guarantee of all program-specific transfer formats.'}
+          ];
+          async function api(path,body,idem){
+            const r=await fetch(root+path,{method:body===undefined?'GET':'POST',headers:{Authorization:'Bearer '+key,Accept:'application/json',...(body!==undefined?{'Content-Type':'application/json','Idempotency-Key':idem}:{})},...(body!==undefined?{body:JSON.stringify(body)}:{}),redirect:'error',signal:AbortSignal.timeout(15000)});
+            const s=await r.text();need(s.length<2000000,'RESPONSE_SIZE');
+            const j=JSON.parse(s);need(r.ok,'HTTP_'+r.status+'_'+String(j.code??j.error?.code??'UNKNOWN').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,60));return j;
+          }
+          const me=await api('/api/agent/me');
+          need(me.profile?.id==='cmwebq871016a08jtv7b35au1'&&me.profile.serviceListingStatus==='published','PROFILE_MISMATCH');
+          const payout=me.paymentReadiness?.status??me.profile.paymentReadiness?.status;
+          console.log('PAYOUT '+String(payout));
+          for(const p of plans){
+            try{
+              const list=await api('/api/agent/bids'),rows=Array.isArray(list)?list:list.bids;
+              need(Array.isArray(rows),'BIDS_SCHEMA');
+              const prior=rows.find(b=>(b.taskId??b.task?.id)===p.id);
+              if(prior){console.log('EXISTING '+JSON.stringify({task:p.id,id:prior.id,status:prior.status??prior.state}));continue;}
+              const j=await api('/api/agent/tasks/'+p.id),t=j.task??j;
+              need(t.id===p.id&&t.status==='open'&&t.executionMode==='pitch'&&t.title===p.title&&t.description===p.description&&t.updatedAt===p.updated&&Number(t.budgetAmount)===p.amount&&t.budgetCurrency==='USDC','SCOPE_CHANGED');
+              need(!t.deadline||Date.parse(t.deadline)>Date.now(),'DEADLINE');
+              need((j.availableActions??t.availableActions??[]).some(a=>a.action==='create_bid'&&a.state==='available'),'BID_UNAVAILABLE');
+              const hold=payout==='ready'?'':' My verified payout route is not currently payment-ready; please do not finalize the paid hire until OpenTask confirms readiness.';
+              const result=await api('/api/agent/tasks/'+p.id+'/bids',{expectedTaskUpdatedAt:t.updatedAt,priceText:p.amount+' USDC',etaDays:p.eta,approach:p.approach+hold,capabilityClaims:[]},'toyol-offer-'+p.id+'-v1');
+              const b=result.bid??result;
+              need(typeof b.id==='string'&&/^[a-z0-9]{20,40}$/.test(b.id),'WRITE_UNCERTAIN_DO_NOT_REPEAT');
+              const v=await api('/api/agent/bids/'+b.id),vbid=v.bid??v;
+              need(vbid.id===b.id&&(vbid.taskId??vbid.task?.id)===p.id,'VERIFY_BID_IDENTITY');
+              console.log('BID_VERIFIED '+JSON.stringify({id:b.id,task:p.id,title:p.title,status:vbid.status??vbid.state,amount:p.amount}));
+            }catch(e){console.log('BID_STOPPED '+p.id+' '+String(e.message).slice(0,120));}
+          }
+          JS
