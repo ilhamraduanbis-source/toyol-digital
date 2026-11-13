@@ -15,7 +15,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Test Toyol-owned tabular conversion prototype
-        run: python3 -m pytest -q skills/tabular-conversion
+        run: |
+          python3 -m venv /tmp/toyol-pytest
+          /tmp/toyol-pytest/bin/pip install pytest==8.3.5
+          /tmp/toyol-pytest/bin/python -m pytest -q skills/tabular-conversion
       - name: Read verified seller's bid eligibility and payout readiness
         if: always()
         env:
