@@ -8,6 +8,8 @@ const FRANTIC='agent-65c3b0';
 const SWARM_WORK='65ba0fb3af541b65f34cf4bbd2b40c03';
 const SWARM_RESULT='6aaba9998e6a4f41ca2872a5eac1b273';
 const OPEN_TASK='https://opentask.ai';
+// Owner-authorized profile verified by Actions run 43348892555.
+const VERIFIED_OPENTASK_PROFILE_ID='cmwebq871016a08jtv7b35au1';
 const paths=new Set(['/api/agent/me','/api/agent/onboarding/status?role=seller&intent=monitor','/api/agent/proposals?limit=30','/api/agent/me/task-recommendations?limit=20','/api/agent/notifications?unreadOnly=1&limit=30']);
 const count=x=>Array.isArray(x)?x.length:null;
 const safeError=e=>/^HTTP_[0-9]{3}$/.test(String(e?.message))?e.message:'SOURCE_UNAVAILABLE';
@@ -23,7 +25,7 @@ async function readJSON(url,token=''){
  if(raw.length>2000000)throw Error('RESPONSE_TOO_LARGE');
  return JSON.parse(raw);
 }
-export async function membershipHunt({read=readJSON,token=process.env.TOYOL_OPENTASK_TOKEN||'',expectedId=process.env.TOYOL_OPENTASK_PROFILE_ID||''}={}){
+export async function membershipHunt({read=readJSON,token=process.env.TOYOL_OPENTASK_TOKEN||'',expectedId=process.env.TOYOL_OPENTASK_PROFILE_ID||VERIFIED_OPENTASK_PROFILE_ID}={}){
  const result={checked_at:new Date().toISOString(),owner_spend_authorized:false,providers:[]};
  try{
   const x=await read('https://gofrantic.com/v1/agents/'+FRANTIC+'/status');
