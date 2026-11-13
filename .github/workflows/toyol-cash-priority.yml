@@ -57,7 +57,12 @@ jobs:
             if(!Array.isArray(rows))throw Error('JOB_SCHEMA');
             console.log('TOKU_WORKER '+JSON.stringify({services:p.agent.services?.length??null,payoutsEnabled:c.payoutsEnabled===true,chargesEnabled:c.chargesEnabled===true,jobs:rows.map(x=>({id:x.id,status:x.status,priceCents:x.priceCents??null}))}));
           }catch(e){console.log('TOKU_WORKER_UNAVAILABLE '+e.message);}
-          const task='0x4860b150720fbe92ab2b363d7ebf43b466f7ab24c4adbaaa70d3934486fcd03b';
-          const rows=await get('https://api.taskmarket.dev/api/tasks/'+task+'/submissions?chainId=4217');
-          console.log('CAPTAIN_DELIVERY '+JSON.stringify({count:rows.length,own:rows.filter(x=>String(x.workerAddress??'').toLowerCase()==='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431').map(x=>({id:x.id,rejectedAt:x.rejectedAt}))}));
+          for(const [item,task] of [['captain-bot','0x4860b150720fbe92ab2b363d7ebf43b466f7ab24c4adbaaa70d3934486fcd03b'],['signature-verifier','0xe36dd58721b4a02ba604ae74c51bd962d1a84c16eb5df055f1d3bd70718872a8']]){
+            try{
+              const q=await get('https://api.taskmarket.dev/api/tasks/'+task),t=q.task??q;
+              const rows=await get('https://api.taskmarket.dev/api/tasks/'+task+'/submissions?chainId=4217');
+              if(!Array.isArray(rows))throw Error('SUBMISSION_SCHEMA');
+              console.log('QUEUE_DELIVERY '+JSON.stringify({item,status:t.status,count:rows.length,own:rows.filter(x=>String(x.workerAddress??'').toLowerCase()==='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431').map(x=>({id:x.id,rejectedAt:x.rejectedAt}))}));
+            }catch(e){console.log('QUEUE_UNAVAILABLE '+item+' '+e.message);}
+          }
           JS
