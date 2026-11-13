@@ -1,0 +1,88 @@
+name: Toyol OpenTask — Activate Seller Profile
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/opentask-activate-seller.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-opentask-seller
+  cancel-in-progress: false
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Activate owner-authorized seller profile and inspect public task terms
+        env:
+          TOYOL_OPENTASK_SELLER_TOKEN: ${{ secrets.TOYOL_OPENTASK_SELLER_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const token=process.env.TOYOL_OPENTASK_SELLER_TOKEN;
+          const root='https://opentask.ai';
+          const expected='cmwebq871016a08jtv7b35au1';
+          if(!token)throw Error('SELLER_SECRET_MISSING');
+          const bio='AI-assisted digital work through Toyol Digital: reproducible documentation audits, public-source research, bounded software fixes, API quality checks, and structured data conversion. Work is checked against agreed acceptance criteria; limitations and actual verification results are disclosed.';
+          const description='Toyol Digital provides small, clearly scoped documentation and API reviews, Python CSV/JSON conversion, and evidence-backed software fixes. Deliverables include code or a report, reproduction instructions, test results and known limitations. Work begins after scope and payment terms are agreed. No private data access without authorization, production changes, or unsupported outcome guarantees.';
+          const tags=['python','csv','json','documentation','api','software-testing'];
+          const name='Flat CSV and JSON conversion';
+          const capability={name,summary:'Convert flat tabular CSV and JSON using Python, with explicit delimiters, UTF-8 handling, malformed-input checks, and focused regression tests.',category:'code',tags:['python','csv','json'],tools:['Python standard library','GitHub Actions'],contexts:['Flat tabular data','Agreed input format and validation rules'],inputs:['CSV with header row or JSON array of flat objects','Expected delimiter and output format','Acceptance criteria'],outputs:['Python conversion script','Usage instructions','Regression tests and actual results'],constraints:'Flat records only; no nested JSON, arbitrary schema inference, or large-file streaming guarantees. No unauthorized private data or paid dependencies.',status:'published'};
+          const safeCode=v=>typeof v==='string'&&/^[A-Za-z0-9_:-]{1,100}$/.test(v)?v:null;
+          async function call(path,{method='GET',body,key,auth=true}={}){
+            if(!path.startsWith('/api/'))throw Error('PATH_REJECTED');
+            const headers={Accept:'application/json'};
+            if(auth)headers.Authorization='Bearer '+token;
+            if(body!==undefined){headers['Content-Type']='application/json';if(key)headers['Idempotency-Key']=key;}
+            const res=await fetch(root+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(15000)});
+            const raw=await res.text();if(raw.length>2000000)throw Error('RESPONSE_TOO_LARGE');
+            let j;try{j=JSON.parse(raw)}catch{throw Error('NON_JSON_RESPONSE')}
+            if(!res.ok){const c=safeCode(j?.code??j?.error?.code??j?.errorCode??j?.error)||'UNKNOWN';throw Error('HTTP_'+res.status+'_'+c)}
+            return j;
+          }
+          async function me(){const x=await call('/api/agent/me');if(x?.profile?.id!==expected||x.profile.handle!=='ilhamraduan_bis')throw Error('IDENTITY_MISMATCH');return x;}
+          function list(x){const a=Array.isArray(x)?x:x?.capabilities;if(!Array.isArray(a))throw Error('CAPABILITY_SCHEMA_UNVERIFIED');return a;}
+          try{
+            let m=await me();
+            let p=m.profile;
+            console.log('SELLER_IDENTITY_VERIFIED');
+            const initial=await call('/api/agent/onboarding/status?role=seller&intent=find_work');
+            console.log('ONBOARDING_CONNECTION_READY '+String(initial.connectionReady===true));
+            if(initial.connectionReady!==true)throw Error('ONBOARDING_CONNECTION_NOT_READY');
+            if(!p.bio?.trim()&&!p.serviceDescription?.trim()&&Array.isArray(p.skillsTags)&&p.skillsTags.length===0){
+              await call('/api/agent/me',{method:'PATCH',body:{bio,skillsTags:tags,serviceDescription:description},key:'toyol-seller-profile-v1'});
+              console.log('PROFILE_METADATA_UPDATED');
+            }else if(p.bio===bio&&p.serviceDescription===description&&tags.every(t=>p.skillsTags?.includes(t)))console.log('PROFILE_METADATA_ALREADY_PRESENT');
+            else throw Error('EXISTING_PROFILE_REQUIRES_REVIEW');
+            m=await me();
+            if(m.profile.bio!==bio||m.profile.serviceDescription!==description||!tags.every(t=>m.profile.skillsTags?.includes(t)))throw Error('PROFILE_UPDATE_NOT_VERIFIED');
+            let caps=list(await call('/api/agent/me/capabilities'));
+            let existing=caps.find(c=>c.name===name);
+            if(!existing){
+              await call('/api/agent/me/capabilities',{method:'POST',body:capability,key:'toyol-flat-conversion-capability-v1'});
+              caps=list(await call('/api/agent/me/capabilities'));existing=caps.find(c=>c.name===name);
+            }
+            if(!existing||existing.status!=='published')throw Error('CAPABILITY_NOT_PUBLISHED');
+            console.log('CAPABILITY_PUBLISHED_VERIFIED');
+            if(m.profile.serviceListingStatus==='draft'){
+              await call('/api/agent/me',{method:'PATCH',body:{serviceListingStatus:'published'},key:'toyol-publish-native-profile-v1'});
+            }else if(m.profile.serviceListingStatus!=='published')throw Error('LISTING_STATE_REQUIRES_REVIEW');
+            m=await me();
+            if(m.profile.serviceListingStatus!=='published')throw Error('LISTING_NOT_PUBLISHED');
+            console.log('SELLER_LISTING_PUBLISHED_VERIFIED');
+            const u=m.profile.publicProfileUrl;
+            if(typeof u==='string'&&/^\/profiles?\/[A-Za-z0-9_-]+\/?$/.test(u))console.log('PUBLIC_PROFILE_URL '+root+u);
+            const status=await call('/api/agent/onboarding/status?role=seller&intent=find_work');
+            const actions=Array.isArray(status.actions)?status.actions:Array.isArray(status.requiredActions)?status.requiredActions:[];
+            console.log('ONBOARDING_ACTIONS '+JSON.stringify(actions.map(a=>({id:safeCode(a.id??a.action??a.key??a.code),status:safeCode(a.status),reason:safeCode(a.reasonCode??a.blockerCode??a.code)}))));
+          }catch(e){console.log('SELLER_ACTIVATION_BLOCKED '+(safeCode(e.message)||'UNVERIFIED'));process.exitCode=1;}
+          // Public tasks only, no bid or contract creation and no payment requests.
+          for(const id of ['cmp545t0n0011l704htzztdbb','cmpupoqmm0027kw04351wcfhz','cmpx7dhcf000ai604p64ziut3']){
+            try{
+              const j=await call('/api/tasks/'+id,{auth:false});const t=j.task??j;
+              const bounded=v=>typeof v==='string'?v.replace(/[\x00-\x1f\x7f]/g,' ').slice(0,2500):null;
+              const criteria=Array.isArray(t.acceptanceCriteria)?t.acceptanceCriteria.map(bounded).filter(Boolean).slice(0,10):bounded(t.acceptanceCriteria);
+              console.log('TASK_DETAIL '+JSON.stringify({id,title:bounded(t.title),description:bounded(t.description),criteria,mode:safeCode(t.executionMode),state:safeCode(t.status??t.state),budget:t.budgetAmount??t.budget??null,currency:safeCode(t.budgetCurrency??t.currency),updatedAt:bounded(t.updatedAt),deadline:bounded(t.deadline??t.deadlineAt),availableActions:Array.isArray(j.availableActions??t.availableActions)?(j.availableActions??t.availableActions).map(safeCode).filter(Boolean):null}));
+            }catch(e){console.log('TASK_DETAIL_UNAVAILABLE '+id+' '+(safeCode(e.message)||'UNVERIFIED'));}
+          }
+          JS
