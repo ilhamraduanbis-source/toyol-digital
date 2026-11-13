@@ -1,0 +1,59 @@
+name: Toyol — Live Scheduler Candidate
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-live-scheduler-test.yml','deliverables/forge-live-scheduler/**']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Original check and deterministic three-round integration fixture
+        run: |
+          set -eu
+          ROOT="$RUNNER_TEMP/mech-scheduler"
+          git -c core.hooksPath=/dev/null clone --quiet --no-checkout https://agent-forge-hb.fly.dev/r/mech-market.git "$ROOT"
+          git -C "$ROOT" -c core.hooksPath=/dev/null checkout --quiet --detach 93622c5bc48ed1bd122effc6e6b99907a4e78145
+          test "$(git -C "$ROOT" rev-parse HEAD:.plan/checks/live-scheduler.test.mjs)" = 3e432979708b1eb57ab91f3651fe6c5e446dc638
+          test ! -e "$ROOT/src/server/scheduler.mjs"
+          cp deliverables/forge-live-scheduler/src/server/scheduler.mjs "$ROOT/src/server/scheduler.mjs"
+          cd "$ROOT"
+          node --test .plan/checks/live-scheduler.test.mjs
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {createScheduler} from './src/server/scheduler.mjs';
+          import {createEpisode,transitionEpisode} from './src/market/episode.mjs';
+          async function run(){
+            let state=createEpisode({id:'fixture',seed:42,now:0,marketMs:1000}),clock=999,count=0;
+            const journal=[];
+            const scheduler=createScheduler({getState:()=>state,now:()=>clock,dispatch:async c=>{
+              journal.push(structuredClone(c));
+              if(c.type==='battleTick'){
+                assert.equal(c.expectedTick,state.battle.tick);
+                assert.equal(c.battle.tick,state.battle.tick+1);
+                state={...state,battle:c.battle};
+              }else state=transitionEpisode(state,c);
+            }});
+            await scheduler.step();assert.equal(journal.length,0);
+            clock=1000;
+            await Promise.all([scheduler.step(),scheduler.step(),scheduler.step()]);
+            assert.equal(journal.length,1);assert.equal(state.phase,'battle');
+            while(state.phase!=='finished'&&count++<600){
+              if(state.phase==='market')clock=state.cutoff;else clock++;
+              await scheduler.step();
+            }
+            assert.equal(state.phase,'finished');assert.equal(state.battles.length,3);
+            return {state,journal};
+          }
+          assert.deepEqual(await run(),await run());
+          let active=0,maxActive=0,release;
+          const scheduler=createScheduler({getState:()=>({phase:'results'}),now:()=>1,dispatch:async()=>{active++;maxActive=Math.max(maxActive,active);await new Promise(r=>release=r);active--;}});
+          const a=scheduler.step(),b=scheduler.step();
+          await new Promise(r=>setTimeout(r,0));assert.equal(maxActive,1);release();await Promise.all([a,b]);
+          console.log('SCHEDULER_THREE_ROUND_DETERMINISM_AND_SERIALIZATION_PASS');
+          JS
