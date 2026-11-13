@@ -1,0 +1,26 @@
+name: Toyol — Frantic 149 Contract
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-frantic-149-contract.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Read funded task and contract
+        env:
+          FRANTIC_AGENT_TOKEN: ${{ secrets.FRANTIC_AGENT_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          import {client,contractHash,KID} from './src/frantic-deliver.mjs';
+          const api=client(process.env.FRANTIC_AGENT_TOKEN);
+          const b=(await api('/v1/bounties/149')).bounty;
+          console.log('CONTRACT '+JSON.stringify({number:b.number,title:b.title,description:b.description,criteria:b.criteria,delivery_contract:b.delivery_contract,price_cents:b.price_cents,funded:b.funded,work_status:b.work_status,claim_progress:b.claim_progress,visibility:b.visibility,hash:contractHash(b)}));
+          const s=await api('/v1/agents/'+KID+'/status');
+          console.log('AGENT_STATUS '+JSON.stringify({eligible:s.agent?.claimEligibility?.eligible,payout:s.agent?.onboarding?.payout?.set,open:s.work?.open?.map(x=>({bounty:x.bounty?.number,stage:x.stage})),settled:s.work?.settled?.map(x=>({bounty:x.bounty?.number,stage:x.stage}))}));
+          JS
