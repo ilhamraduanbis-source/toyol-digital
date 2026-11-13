@@ -1,0 +1,20 @@
+name: Toyol — Captain Bot Contract
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-captain-contract.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          node --input-type=module <<'JS'
+          const root='https://agent-forge-hb.fly.dev/v1/repos/mech-market';
+          async function get(u){const r=await fetch(u,{signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();}
+          const p=await get(root+'/packets/captain-bot');console.log('PACKET '+JSON.stringify({repo:p.repo,item:p.item,git:p.git,main:p.main,task_packet:p.task_packet,work:p.work}));
+          const blob=path=>get(root+'/blob?ref='+p.main+'&path='+encodeURIComponent(path));
+          const c=await blob('docs/CONTRACTS.md'),a=c.text.split('\n'),i=a.findIndex(x=>x.startsWith('##')&&x.includes('captain-bot'));console.log('CONTRACT '+JSON.stringify(a.slice(Math.max(0,i),i+25).join('\n')));
+          console.log('CHECK '+JSON.stringify(await blob('.plan/checks/captain-bot.test.mjs')));
+          JS
