@@ -31,7 +31,7 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs: tests
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 5
     permissions:
       contents: read
       issues: write
@@ -58,6 +58,11 @@ jobs:
         run: node src/status.mjs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Membership Hunt (verified identities and private inbox counts)
+        run: node src/membership-hunt.mjs
+        env:
+          TOYOL_OPENTASK_TOKEN: ${{ secrets.TOYOL_OPENTASK_TOKEN }}
+          TOYOL_OPENTASK_PROFILE_ID: ${{ vars.TOYOL_OPENTASK_PROFILE_ID }}
       - name: Preserve opportunity, patch and failure evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -66,5 +71,6 @@ jobs:
             out/stage2/
             out/market/
             out/intelligence/
+            out/membership/
           if-no-files-found: ignore
           retention-days: 7
