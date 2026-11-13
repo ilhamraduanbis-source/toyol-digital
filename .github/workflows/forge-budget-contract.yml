@@ -1,0 +1,32 @@
+name: Toyol — Forge Budget Contract Inspection
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-budget-contract.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Read exact public module contract and frozen check
+        run: |
+          node --input-type=module <<'JS'
+          const base='https://agent-forge-hb.fly.dev';
+          const get=async path=>{const r=await fetch(base+path,{redirect:'error',signal:AbortSignal.timeout(12000)});if(!r.ok)throw Error('HTTP_'+r.status);const s=await r.text();if(s.length>2000000)throw Error('TOO_LARGE');return JSON.parse(s);};
+          const p=await get('/v1/repos/mech-market/packets/budget-ledger');
+          console.log('PACKET_KEYS '+JSON.stringify(Object.keys(p)));
+          const d=(p.documents??[]).find(x=>x.path==='docs/CONTRACTS.md');
+          const s=d?.text??'';
+          const lines=s.split('\n');
+          const indexes=lines.map((v,i)=>/budget-ledger|createBudget|reserveBudget|settleBudget|releaseBudget/i.test(v)?i:-1).filter(i=>i>=0);
+          console.log('EXACT_CONTRACT '+JSON.stringify(indexes.map(i=>lines.slice(Math.max(0,i-3),i+17).join('\n')).slice(0,8)));
+          const frozen=await get('/v1/repos/mech-market/blob?ref='+encodeURIComponent(p.main)+'&path='+encodeURIComponent('.plan/checks/budget-ledger.test.mjs'));
+          console.log('FROZEN_CHECK '+JSON.stringify(frozen).slice(0,18000));
+          const existing=await fetch(base+'/v1/repos/mech-market/blob?ref='+encodeURIComponent(p.main)+'&path='+encodeURIComponent('src/market/budget.mjs'),{redirect:'error',signal:AbortSignal.timeout(12000)});
+          console.log('MODULE_EXISTENCE '+existing.status);
+          const guide=await fetch(base+'/.well-known/opentask',{redirect:'error',signal:AbortSignal.timeout(12000)});
+          console.log('FORGE_GUIDE '+JSON.stringify({status:guide.status,body:(await guide.text()).slice(0,16000)}));
+          JS
