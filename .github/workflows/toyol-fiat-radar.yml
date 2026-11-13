@@ -34,7 +34,13 @@ jobs:
               offset+=j.limit;if(offset>=total)break;
             }
             console.log('TOKU_COUNTS '+JSON.stringify({scanned:seen.size,reported:total}));
-            const relevant=[...seen.values()].filter(x=>x.status==='OPEN'&&Number(x.budgetCents)>=500&&(!x.deadline||Date.parse(x.deadline)>Date.now()+3600000)&&!/^(available|for hire|hire me|i offer|i am offering|selling|service offer)\b/i.test(x.title??'')&&!/\b(deposit|stake|referral|affiliate|social media|twitter|telegram followers|buy gift card|virtual card|wallet funding)\b/i.test((x.title??'')+' '+(x.descriptionPreview??'')));
+            const selling=/^(available|for hire|for sale|hire me|i offer|i am offering|i will|selling|service offer|instant\s*:|instant delivery\s*:|custom automation)\b|\b(offering|ready.to.deliver|available 24\/7|i will deliver|send me (your|the)|my services)\b/i;
+            const buying=/\b(need|looking for|seeking|please|build|write|create|find|implement|fix|research|translate|audit|analy[sz]e|deliver|help wanted|wanted|buying)\b/i;
+            const relevant=[...seen.values()].filter(x=>{
+              const title=x.title??'',desc=x.descriptionPreview??'';
+              return x.status==='OPEN'&&Number(x.budgetCents)>=100&&(!x.deadline||Date.parse(x.deadline)>Date.now()+3600000)&&x.poster?.name!=='[deleted]'&&!selling.test(title)&&!selling.test(desc)&&buying.test(title)&&!/\b(deposit|stake|referral|affiliate|social media|twitter|telegram followers|buy gift card|virtual card|wallet funding)\b/i.test(title+' '+desc);
+            });
+            console.log('TOKU_BUYER_CANDIDATES '+relevant.length);
             relevant.sort((a,b)=>(a.bidCount??999)-(b.bidCount??999)||b.budgetCents-a.budgetCents);
             for(const x of relevant.slice(0,15))console.log('TOKU_LEAD '+JSON.stringify({id:x.id,title:x.title,budgetCents:x.budgetCents,bids:x.bidCount,instantAcceptCents:x.instantAcceptCents,deadline:x.deadline,poster:x.poster?.name,preview:x.descriptionPreview,payment:'BUYER_COMPLETION_REQUIRED',eligibility:'REVIEW_REQUIRED'}));
           }catch(e){console.log('TOKU_UNAVAILABLE '+e.message);}
@@ -42,8 +48,8 @@ jobs:
             const j=await get('https://raw.githubusercontent.com/krishi-shah/dailybugbounties/main/data/bounties.json');
             const a=(j.bounties??[]).filter(x=>['algora','issuehunt','opire','upwork'].includes(x.payout)&&x.state==='OPEN'&&!x.archived&&Number(x.amount_usd)>=10);
             console.log('FIAT_INDEX '+JSON.stringify({count:a.length,generated_at:j.generated_at}));
-            a.sort((x,y)=>(x.open_prs??99)-(y.open_prs??99)||(x.claims??99)-(y.claims??99)||Date.parse(y.updated_at)-Date.parse(x.updated_at));
-            for(const x of a.slice(0,12)){
+            a.sort((x,y)=>Number(x.payout==='upwork')-Number(y.payout==='upwork')||(x.open_prs??99)-(y.open_prs??99)||(x.claims??99)-(y.claims??99)||Date.parse(y.updated_at)-Date.parse(x.updated_at));
+            for(const x of a.slice(0,20)){
               if(!/^[\w.-]+\/[\w.-]+$/.test(x.repo_full)||!Number.isSafeInteger(x.number))continue;
               try{
                 const v=await get('https://api.github.com/repos/'+x.repo_full+'/issues/'+x.number,{Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json','User-Agent':'ToyolFiatRadar'});
