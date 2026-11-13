@@ -21,6 +21,18 @@ export function evaluateOriginalIssue(task, issue) {
     return {...base,original_issue:{status:'CLOSED_AT_SOURCE'},suitable_for_draft:false,
       next_action:'REJECT_SOURCE_CLOSED'};
   }
+  if(issue.repository_archived===true || issue.repository_disabled===true) {
+    return {...base,original_issue:{status:'REPOSITORY_READ_ONLY'},suitable_for_draft:false,next_action:'REJECT_REPOSITORY_READ_ONLY'};
+  }
+  const labels=(Array.isArray(issue.labels)?issue.labels:[]).map(x=>String(x?.name??x));
+  if(issue.locked===true || labels.some(x=>/^(?:[^a-z]*)(?:on hold|hold)(?:\s|$)/i.test(x))) {
+    return {...base,original_issue:{status:'RESTRICTED_OR_ON_HOLD'},suitable_for_draft:false,next_action:'REJECT_RESTRICTED_SOURCE'};
+  }
+  const official=(Array.isArray(issue.eligibility_comments)?issue.eligibility_comments:[]).filter(c=>['OWNER','MEMBER','COLLABORATOR'].includes(c?.author_association)||['ubiquity-os[bot]','ubiquity-os-beta[bot]'].includes(c?.user?.login));
+  const restriction=official.find(c=>/external contributors are not eligible for rewards|must be a core team member, or an administrator to start this task|we stopped the bounty program|we don.t accept any bounty claims/i.test(String(c.body||'').split('<!--')[0]));
+  if(restriction) {
+    return {...base,original_issue:{status:'REWARD_RESTRICTION_REPORTED',evidence_url:restriction.html_url??null},suitable_for_draft:false,next_action:'REJECT_REWARD_RESTRICTED'};
+  }
   const warnings=[];
   const comments=Number.isInteger(issue.comments)&&issue.comments>=0?issue.comments:0;
   if(comments>=20)warnings.push('MANY_EXISTING_DISCUSSIONS');
@@ -47,7 +59,22 @@ export async function validateOriginalIssues(tasks,{fetchIssue,token=process.env
       const url='https://api.github.com/repos/'+encodeURIComponent(loc.owner)+'/'+encodeURIComponent(loc.repo)+'/issues/'+loc.issue;
       const response=await fetch(url,{headers,signal:ac.signal});
       if(!response.ok)throw Error('GITHUB_HTTP_'+response.status);
-      return await response.json();
+      const issue=await response.json();
+      // Index state alone is insufficient: archived projects and official reward restrictions matter.
+      const repoUrl='https://api.github.com/repos/'+encodeURIComponent(loc.owner)+'/'+encodeURIComponent(loc.repo);
+      const repoRes=await fetch(repoUrl,{headers,signal:ac.signal});
+      if(!repoRes.ok)throw Error('GITHUB_REPO_HTTP_'+repoRes.status);
+      const repo=await repoRes.json();
+      issue.repository_archived=repo.archived===true;
+      issue.repository_disabled=repo.disabled===true;
+      if(issue.state==='open' && !issue.repository_archived && !issue.repository_disabled && !issue.locked && Number(issue.comments)>0){
+        const comments=await fetch(url+'/comments?per_page=100&sort=created&direction=desc',{headers,signal:ac.signal});
+        if(!comments.ok)throw Error('GITHUB_COMMENTS_HTTP_'+comments.status);
+        const rows=await comments.json();
+        if(!Array.isArray(rows))throw Error('GITHUB_COMMENTS_BAD_RESPONSE');
+        issue.eligibility_comments=rows;
+      }
+      return issue;
     } finally {clearTimeout(timer);}
   });
   const checked=await Promise.all(tasks.map(async task=>{
