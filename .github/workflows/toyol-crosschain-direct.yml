@@ -1,0 +1,29 @@
+name: Toyol — Cross-chain Direct Work Scan
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-crosschain-direct.yml']
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - run: |
+          node --input-type=module <<'JS'
+          const get=async u=>{const r=await fetch(u,{redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();};
+          const j=await get('https://api.taskmarket.dev/api/tasks?status=open&sort=newest&limit=100'),rows=j.tasks??[];
+          console.log('TASKMARKET_COUNTS '+JSON.stringify({count:rows.length,chains:[...new Set(rows.map(t=>t.chainId))],modes:[...new Set(rows.map(t=>t.mode))]}));
+          for(const t of rows){
+            if(t.stakeRequired!==false||t.status!=='open'||!t.escrow?.tracked||Number(t.escrow.booked)<=0)continue;
+            const x=(t.pendingActions??[]).filter(a=>a.role==='worker'&&a.requiresPayment===false);
+            if(!x.length)continue;
+            console.log('FREE_FUNDED '+JSON.stringify({id:t.id,chainId:t.chainId,reward:t.reward,mode:t.mode,count:t.submissionCount,description:(t.description??'').slice(0,1100),actions:x.map(a=>({action:a.action,dueAt:a.dueAt}))}));
+          }
+          const f=await get('https://gofrantic.com/v1/board?status=open&limit=50');
+          const b=f.bounties??f.board?.bounties??f.items??f.data?.bounties??[];
+          console.log('FRANTIC_BOARD '+JSON.stringify({count:b.length,keys:Object.keys(f)}));
+          for(const t of b)if(t.funded===true&&t.visibility==='public'&&t.work_status==='open'&&(t.claim_slots?.available>0||t.claim_progress?.available>0))console.log('FRANTIC_FUNDED '+JSON.stringify({number:t.number,title:t.title,price_cents:t.price_cents,available:t.claim_slots?.available??t.claim_progress?.available}));
+          JS
