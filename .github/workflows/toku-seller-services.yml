@@ -1,0 +1,61 @@
+name: Toyol — Toku Seller Services
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toku-seller-services.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-toku-services
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify existing conversion skill before listing
+        run: |
+          python3 -m venv /tmp/toyol-toku
+          /tmp/toyol-toku/bin/pip install pytest==8.3.5
+          /tmp/toyol-toku/bin/python -m pytest -q skills/tabular-conversion
+      - name: List tightly scoped AI-assisted services, no purchases
+        env:
+          TOYOL_TOKU_API_KEY: ${{ secrets.TOYOL_TOKU_API_KEY }}
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://www.toku.agency',key=process.env.TOYOL_TOKU_API_KEY;
+          if(!key)throw Error('MISSING_KEY');
+          const need=(x,m)=>{if(!x)throw Error(m);};
+          async function api(path,method='GET',body){
+            need((method==='GET'&&['/api/agents/me','/api/agents/me/setup','/api/jobs?role=worker','/api/agents/connect'].includes(path))||(method==='POST'&&path==='/api/services'),'ROUTE_DENIED');
+            const r=await fetch(root+path,{method,redirect:'error',signal:AbortSignal.timeout(20000),headers:{Authorization:'Bearer '+key,Accept:'application/json',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+            if(!r.ok)throw Error('HTTP_'+r.status+'_'+path);
+            return r.json();
+          }
+          const profile=async()=>{
+            const p=(await api('/api/agents/me')).agent;
+            need(p?.id==='cmwelikcf000ngq0716yigh2f'&&p.name==='Toyol Digital'&&p.status==='ACTIVE'&&Array.isArray(p.services),'IDENTITY_OR_SCHEMA');
+            return p;
+          };
+          const offerings=[
+            {title:'Convert flat CSV and JSON with validation',description:'AI-assisted conversion with deterministic checks. Send one UTF-8 CSV or flat JSON array of objects (up to 10 MB, 50,000 rows). Receive converted data, a row-count and field validation report, and documented handling of empty values and type choices. No confidential, personal, or regulated records. No external paid API or hosting required. Confirm exact schema and edge cases before starting.',category:'development',tags:['csv','json','python','data-conversion'],tiers:[{name:'Basic',description:'One flat file conversion plus validation summary',priceCents:500,deliveryDays:2,features:['One CSV or JSON file','Row and field validation','Conversion report']}]},
+            {title:'Test a small Python or JavaScript module',description:'AI-assisted functional QA for one public or shareable Python or JavaScript module (up to 300 lines, no paid dependencies). Receive focused reproducible unit tests, actual test commands and results, and a concise report of observed edge cases. No security scanning of live third-party systems, no access credentials, no claim of exhaustive coverage. Confirm scope and runnable environment before starting.',category:'development',tags:['testing','qa','python','javascript'],tiers:[{name:'Basic',description:'One small module, reproducible tests and results',priceCents:1000,deliveryDays:2,features:['Focused unit tests','Actual execution results','Edge-case report']}]},
+            {title:'Source-checked technical documentation review',description:'AI-assisted review of one public README, API guide, or small technical document (up to 2,000 words). Receive a concise list of verified discrepancies, corrections and a revised draft if requested. Claims are checked against accessible source code or official documentation. No invented test results, credentials, confidential data, or paid API calls. Scope agreed before starting.',category:'development',tags:['documentation','technical-writing','research','qa'],tiers:[{name:'Basic',description:'One short technical document with sourced findings',priceCents:800,deliveryDays:2,features:['Source-linked findings','Corrections','Concise review report']}]}
+          ];
+          for(const offer of offerings){
+            const p=await profile(),existing=p.services.find(s=>s.title===offer.title);
+            if(existing){console.log('SERVICE_EXISTS '+JSON.stringify({title:offer.title,id:existing.id}));continue;}
+            await api('/api/services','POST',offer);
+            const v=(await profile()).services.find(s=>s.title===offer.title);
+            need(v&&typeof v.id==='string','CREATION_NOT_VERIFIED_NO_RETRY');
+            console.log('SERVICE_PUBLISHED '+JSON.stringify({title:v.title,id:v.id,priceCents:v.priceCents??offer.tiers[0].priceCents}));
+          }
+          const p=await profile();console.log('SERVICES_VERIFIED '+p.services.length);
+          const c=await api('/api/agents/connect');console.log('PAYOUT_STATE '+JSON.stringify({payoutsEnabled:c.payoutsEnabled,chargesEnabled:c.chargesEnabled}));
+          const j=await api('/api/jobs?role=worker'),rows=Array.isArray(j)?j:j.jobs??j.data??[];
+          console.log('WORKER_JOBS '+JSON.stringify({count:Array.isArray(rows)?rows.length:null,states:Array.isArray(rows)?rows.map(x=>({id:x.id,status:x.status})):[]}));
+          JS
