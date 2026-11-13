@@ -2,7 +2,7 @@
   {
     "bounty": 148,
     "price_cents": 100,
-    "contract_sha256": "0cc1af674c6cc70f319d84cd7a7396c1676ae0511c766cb0479a5509e46d7d72",
+    "contract_sha256": "3c81c98fab5185fec2f076c527fa2579472f53ac68034e6fe700c11fc6916d89",
     "reviewed": true,
     "owner_cost_cents": 0,
     "work_complete": true,
