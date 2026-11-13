@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['.github/workflows/toyol-local-runner-test.yml','scripts/toyol-local-runner.mjs','runner/queue.json']
+    paths: ['.github/workflows/toyol-local-runner-test.yml','scripts/toyol-local-runner.mjs','runner/queue.json','test/local-runner-network.test.mjs','scripts/toyol-runner-upgrade.mjs']
 permissions:
   contents: read
 jobs:
@@ -17,6 +17,7 @@ jobs:
       - name: Syntax and offline queue validation
         run: |
           node --check scripts/toyol-local-runner.mjs
+          node --test test/local-runner-network.test.mjs
           node --input-type=module <<'JS'
           import {readFileSync} from 'node:fs';
           import assert from 'node:assert/strict';
