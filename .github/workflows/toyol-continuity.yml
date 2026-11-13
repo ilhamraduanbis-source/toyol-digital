@@ -13,6 +13,7 @@ on:
     paths:
       - '.github/workflows/toyol-continuity.yml'
       - 'scripts/toyol-keepalive.mjs'
+      - 'test/continuity-supervisor.test.mjs'
 permissions:
   contents: read
   actions: write
@@ -31,6 +32,7 @@ jobs:
       - name: Test local supervisor primitives
         run: |
           node --check scripts/toyol-keepalive.mjs
+          node --test test/continuity-supervisor.test.mjs
           node --input-type=module <<'JS'
           import assert from 'node:assert/strict';
           import {validPid,alive,matching,readPid,findRunner} from './scripts/toyol-keepalive.mjs';
