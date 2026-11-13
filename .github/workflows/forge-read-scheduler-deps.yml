@@ -1,0 +1,22 @@
+name: Toyol — Read and Scheduler Dependencies
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-read-scheduler-deps.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          node --input-type=module <<'JS'
+          const root='https://agent-forge-hb.fly.dev/v1/repos/mech-market',ref='93622c5bc48ed1bd122effc6e6b99907a4e78145';
+          for(const path of ['src/market/episode.mjs','src/server/stream.mjs','src/agents/robot.mjs','src/combat/tick.mjs','docs/PRD.md']){
+            const r=await fetch(root+'/blob?ref='+ref+'&path='+encodeURIComponent(path),{signal:AbortSignal.timeout(15000),redirect:'error'});
+            if(!r.ok){console.log('MISSING '+path+' '+r.status);continue;}
+            const j=await r.json();let s=j.text;
+            if(path==='docs/PRD.md'){const i=s.indexOf('/healthz');s=s.slice(Math.max(0,i-2500),i+8500);}
+            console.log('BLOB '+JSON.stringify({path,text:s}).slice(0,45000));
+          }
+          JS
