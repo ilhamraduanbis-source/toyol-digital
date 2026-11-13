@@ -1,0 +1,30 @@
+name: Toyol — Forge Stream Replay Gate
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-stream-gate.yml']
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check live funding, competition and exact original checks
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://agent-forge-hb.fly.dev';
+          const task='0xd0339fc83b4591024b407fa2a91fb28b0ff35178d4f2b3166b9e51adc96a59d5';
+          async function get(u){const r=await fetch(u,{redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();}
+          const q=await get('https://api.taskmarket.dev/api/tasks/'+task),t=q.task??q;
+          console.log('TASK '+JSON.stringify({id:t.id,status:t.status,mode:t.mode,reward:t.reward,chainId:t.chainId,stakeRequired:t.stakeRequired,submissionCount:t.submissionCount,awardCount:t.awardCount,escrow:t.escrow,worker_submit:(t.pendingActions??[]).filter(x=>x.role==='worker'&&x.action==='submit'),description:t.description}));
+          const p=await get(root+'/v1/repos/mech-market/packets/stream-replay');
+          console.log('PACKET '+JSON.stringify({main:p.main,item:p.item,task_packet:p.task_packet,work:p.work}));
+          const blob=async path=>get(root+'/v1/repos/mech-market/blob?ref='+encodeURIComponent(p.main)+'&path='+encodeURIComponent(path));
+          const c=await blob('docs/CONTRACTS.md'),lines=c.text.split('\n'),i=lines.findIndex(x=>x==='## stream-replay');
+          console.log('CONTRACT '+JSON.stringify(lines.slice(i,i+16).join('\n')));
+          console.log('FROZEN '+JSON.stringify(await blob('.plan/checks/stream-replay.test.mjs')));
+          const existing=await fetch(root+'/v1/repos/mech-market/blob?ref='+p.main+'&path=src%2Fserver%2Fstream.mjs',{redirect:'error',signal:AbortSignal.timeout(12000)});
+          console.log('MODULE_EXISTS '+existing.status);
+          JS
