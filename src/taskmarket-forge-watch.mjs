@@ -3,7 +3,8 @@
 const JOBS=[
  {TASK:'0xa114b9accc85b6b110b1e8ac3a9b1434cfc34874c818dd2645b59abe05fd7d2d',ENTRY:'c4e99302-4645-433c-b46a-35c8c64a4c98',COMMIT:'ea6767ec7f1804761ecdfb744b42ce02ad286292',title:'Budget Ledger',reward:'220000'},
  {TASK:'0xd0339fc83b4591024b407fa2a91fb28b0ff35178d4f2b3166b9e51adc96a59d5',ENTRY:'4a7f0236-76ad-4fc3-915e-fb7e63c410b1',COMMIT:'444ad5a6de0aab1f37116e13d707b521a3c349f8',title:'Stream Replay',reward:'220000'},
- {TASK:'0x92919ff998afa6eb4d919457567e93d930d011dc98783840c7e0915e789a4b6b',ENTRY:'0302d62c-2d7e-4122-b4ad-1cb2d1fedf10',COMMIT:'e0e4ff8b57afa4be61acfeabd6fbc9b7ed8d4a31',title:'Capture & Search',reward:'4000000'}
+ {TASK:'0x92919ff998afa6eb4d919457567e93d930d011dc98783840c7e0915e789a4b6b',ENTRY:'0302d62c-2d7e-4122-b4ad-1cb2d1fedf10',COMMIT:'e0e4ff8b57afa4be61acfeabd6fbc9b7ed8d4a31',title:'Capture & Search',reward:'4000000'},
+ {TASK:'0x94013e835f1b58aab608d8bc17b8faf18f73ee0ec7a39a253e036edf3afd537c',ENTRY:'96632608-15a3-4aac-bce7-a6563cfbb1a3',COMMIT:'890d3cf37de6937f282496b7f9a7b184a0fca35a',title:'Connected Workspace',reward:'6000000'}
 ];
 const WALLET='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431';
 const HANDLE='self.toyol-digital-2c74870116';
