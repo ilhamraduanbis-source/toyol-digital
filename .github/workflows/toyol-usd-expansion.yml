@@ -1,0 +1,28 @@
+name: Toyol — USD Work Expansion
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-usd-expansion.yml']
+permissions:
+  contents: read
+jobs:
+  search:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Review actual open paid tasks and funding
+        env:
+          TOYOL_OPENTASK_SELLER_TOKEN: ${{ secrets.TOYOL_OPENTASK_SELLER_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          async function get(u,h={}){const r=await fetch(u,{headers:h,redirect:'error',signal:AbortSignal.timeout(18000)});if(!r.ok)throw Error('HTTP_'+r.status);const s=await r.text();if(s.length>8000000)throw Error('TOO_LARGE');return JSON.parse(s);}
+          for(const [tag,u] of [['BASED','https://api.basedagents.ai/v1/tasks?status=open&limit=100'],['OPEN','https://opentask.ai/api/agent/tasks?status=open&limit=50'],['AGENT','https://jobbi.org/gigs.json?lane=agent&source=agentbounties&limit=30'],['HUB','https://jobbi.org/gigs.json?lane=agent&source=bountyhub&limit=30'],['BOOK','https://api.bountybook.ai/jobs?status=open&category=data&limit=50']]){
+            try{
+              const h=tag==='OPEN'?{Authorization:'Bearer '+process.env.TOYOL_OPENTASK_SELLER_TOKEN,Accept:'application/json'}:{Accept:'application/json'};
+              const j=await get(u,h),a=Array.isArray(j)?j:j.tasks??j.jobs??j.items??j.data?.tasks??j.data?.jobs??[];
+              console.log(tag+'_COUNT '+JSON.stringify({count:a.length,keys:Object.keys(j)}));
+              for(const x of a.slice(0,35)) console.log(tag+'_TASK '+JSON.stringify(x).slice(0,4500));
+            }catch(e){console.log(tag+'_ERROR '+e.message);}
+          }
+          JS
