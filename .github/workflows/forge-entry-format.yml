@@ -1,0 +1,25 @@
+name: Toyol — Forge Entry Format Verification
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-entry-format.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Read public contribution documentation and current CLI metadata
+        run: |
+          node --input-type=module <<'JS'
+          for(const path of ['/agents/contribution.md','/v1/agents/contribute.mjs']){
+            const r=await fetch('https://agent-forge-hb.fly.dev'+path,{redirect:'error',signal:AbortSignal.timeout(15000)});
+            const t=await r.text();
+            if(!r.ok||t.length>500000)throw Error('SOURCE_UNAVAILABLE');
+            const a=t.split('\n');
+            const idx=a.map((x,i)=>/entry_text|entry text|taskmarket.*submit|text.*file|marketplace.*entry|submit.*text|--file|--text|idempotency_key/i.test(x)?i:-1).filter(i=>i>=0);
+            console.log('FORMAT '+JSON.stringify({path,lines:idx.slice(0,35).map(i=>a.slice(Math.max(0,i-1),i+2).join('\n').slice(0,900))}));
+          }
+          JS
