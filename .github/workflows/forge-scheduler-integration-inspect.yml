@@ -1,0 +1,21 @@
+name: Toyol — Scheduler integration inspection
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/forge-scheduler-integration-inspect.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - run: |
+          node --input-type=module <<'JS'
+          const root='https://agent-forge-hb.fly.dev/v1/repos/mech-market',ref='93622c5bc48ed1bd122effc6e6b99907a4e78145';
+          for(const path of ['src/market/lock.mjs','src/combat/observation.mjs','src/combat/state.mjs','src/server/journal.mjs','src/server/writes.mjs','web/demo.mjs','src/server/main.mjs','src/agents/robot.mjs','docs/CONTRACTS.md']){
+            const r=await fetch(root+'/blob?ref='+ref+'&path='+encodeURIComponent(path),{signal:AbortSignal.timeout(12000),redirect:'error'});if(!r.ok){console.log('MISSING '+path+' '+r.status);continue;}
+            const j=await r.json();let s=j.text;if(path==='docs/CONTRACTS.md'){s=s.split('\n').filter(l=>/observation|dispatch|round-lock|advance|stepBattle|decideRobot/i.test(l)).join('\n');}
+            console.log('DEP '+JSON.stringify({path,text:s}).slice(0,36000));
+          }
+          JS
