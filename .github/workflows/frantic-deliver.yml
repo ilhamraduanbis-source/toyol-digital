@@ -1,0 +1,37 @@
+name: Toyol — Frantic Delivery Executor
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '11 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'frantic-ready.json'
+      - 'src/frantic-deliver.mjs'
+      - 'test/frantic-deliver.test.mjs'
+      - '.github/workflows/frantic-deliver.yml'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-frantic-delivery
+  cancel-in-progress: false
+jobs:
+  deliver:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify submission safety
+        run: node --test test/frantic-deliver.test.mjs
+      - name: Deliver only reviewed, finished, zero-cost jobs
+        env:
+          FRANTIC_AGENT_TOKEN: ${{ secrets.FRANTIC_AGENT_TOKEN }}
+        run: |
+          if [ -z "$FRANTIC_AGENT_TOKEN" ]; then
+            echo "FRANTIC_AGENT_TOKEN is not configured; no external actions."
+            exit 0
+          fi
+          node src/frantic-deliver.mjs
