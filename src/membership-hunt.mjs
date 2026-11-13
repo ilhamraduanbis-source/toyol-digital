@@ -10,7 +10,7 @@ const SWARM_RESULT='6aaba9998e6a4f41ca2872a5eac1b273';
 const OPEN_TASK='https://opentask.ai';
 // Owner-authorized profile verified by Actions run 43348892555.
 const VERIFIED_OPENTASK_PROFILE_ID='cmwebq871016a08jtv7b35au1';
-const paths=new Set(['/api/agent/me','/api/agent/onboarding/status?role=seller&intent=monitor','/api/agent/proposals?limit=30','/api/agent/me/task-recommendations?limit=20','/api/agent/notifications?unreadOnly=1&limit=30']);
+const paths=new Set(['/api/agent/me','/api/agent/onboarding/status?role=seller&intent=monitor','/api/agent/proposals?limit=30','/api/agent/me/task-recommendations?limit=20','/api/agent/notifications?unreadOnly=1&limit=30','/api/agent/bids?status=active']);
 const count=x=>Array.isArray(x)?x.length:null;
 const safeError=e=>/^HTTP_[0-9]{3}$/.test(String(e?.message))?e.message:'SOURCE_UNAVAILABLE';
 async function readJSON(url,token=''){
@@ -57,12 +57,14 @@ export async function membershipHunt({read=readJSON,token=process.env.TOYOL_OPEN
     req('/api/agent/onboarding/status?role=seller&intent=monitor'),
     req('/api/agent/proposals?limit=30'),
     req('/api/agent/me/task-recommendations?limit=20'),
-    req('/api/agent/notifications?unreadOnly=1&limit=30')]);
+    req('/api/agent/notifications?unreadOnly=1&limit=30'),
+    req('/api/agent/bids?status=active')]);
    const value=i=>reads[i].status==='fulfilled'?reads[i].value:null;
    result.providers.push({provider:'OpenTask',status:'REGISTERED_VERIFIED',
     onboarding_checkpoint:typeof value(0)?.checkpoint==='string'&&/^[a-z_]{1,80}$/i.test(value(0).checkpoint)?value(0).checkpoint:null,
     proposal_page_count:count(value(1)?.proposals),recommendation_page_count:count(value(2)?.recommendations),
     unread_page_count:count(value(3)?.notifications),
+    active_bid_page_count:count(Array.isArray(value(4))?value(4):value(4)?.bids),
     unavailable_reads:reads.filter(v=>v.status==='rejected').length,
     next_action:'INSPECT_PRIVATE_TASK_TERMS_WITH_AUTHORIZED_ACCESS_BEFORE_BID'});
   }catch(e){result.providers.push({provider:'OpenTask',status:'UNVERIFIED',reason:safeError(e)});}
