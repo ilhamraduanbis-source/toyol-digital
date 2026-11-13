@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {fromJobbi,fromTaskmarket,fromBasedAgents,fromFrantic,analyzeTask,shortlist,scan} from '../src/paid-task-radar.mjs';
+import {fromJobbi,fromTaskmarket,fromBasedAgents,fromFrantic,fromSwarmMemo,analyzeTask,shortlist,scan} from '../src/paid-task-radar.mjs';
 const source={id:'algora:1',title:'Fix a Python data parser',url:'https://github.com/example/example/issues/4',
   content_text:'Write test and fix parser',_jobbi:{lane:'agent',reward:{amount:0.01,currency:'USD',rail:'stripe'},
   payment_state:'escrowed',acceptance_type:'review',source:'algora',claims_open:true}};
@@ -57,7 +57,7 @@ test('partial API outages are not silently presented as a healthy zero',async()=
   if(url.includes('basedagents'))return {tasks:[]};
   return {items:[source]};
  });
- assert.equal(x.sources.length,4);
+ assert.equal(x.sources.length,5);
  assert.equal(x.sources.filter(y=>y.status==='ERROR').length,1);
  assert.equal(x.tasks.length,1);
  assert.equal(x.verified_myr_received,0);
@@ -106,4 +106,20 @@ test('Frantic excludes private invitations and purchase cashback, accepts funded
  assert.equal(fromFrantic({...b,visibility:'private'}),null);
  assert.equal(fromFrantic({...b,title:'Your first bounty is on the house'}),null);
  assert.equal(fromFrantic({...b,claim_slots:{available:0}}),null);
+});
+
+test('SwarmMemo reports minimum cash tier, never treats credit as cash or promised USDC as escrow',()=>{
+ const w={id:'a'.repeat(32),state:'open',claimable:true,title:'Audit documentation',standing:{open:1,results:4,results_max:5,tiers:[{name:'minor',credits:10,usdc:'0.01'},{name:'serious',credits:150,usdc:'1'}]}};
+ const t=fromSwarmMemo(w);
+ assert.equal(t.reward_amount,0.01);
+ assert.equal(t.funding_signal,'USDC_PROMISED_NOT_ESCROWED');
+ assert.equal(fromSwarmMemo({...w,standing:{...w.standing,results:5}}),null);
+ assert.equal(fromSwarmMemo({...w,standing:{...w.standing,tiers:[{credits:50}]}}),null);
+});
+test('scheduled direct scan leaves Jobbi to its separate hourly workflow',async()=>{
+ const urls=[];
+ const x=await scan(async url=>{urls.push(url);return {tasks:[],data:{works:[]},board:{open_bounties:[]}};},{directOnly:true});
+ assert.equal(x.sources.length,4);
+ assert.ok(!urls.some(u=>u.includes('jobbi.org')));
+ assert.ok(urls.some(u=>u.includes('swarmmemo.com')));
 });
