@@ -1,0 +1,67 @@
+name: Toyol OpenTask — First 50 USDC Offer
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/opentask-first-offer.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-opentask-first-offer
+  cancel-in-progress: false
+jobs:
+  offer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Submit one owner-authorized seller offer if live action allows it
+        env:
+          TOYOL_OPENTASK_SELLER_TOKEN: ${{ secrets.TOYOL_OPENTASK_SELLER_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const token=process.env.TOYOL_OPENTASK_SELLER_TOKEN;
+          const root='https://opentask.ai';
+          const profile='cmwebq871016a08jtv7b35au1';
+          const task='cmpupoqmm0027kw04351wcfhz';
+          const capability='cmweccald002e08ic7p9nh2k3';
+          const reviewedAt='2026-10-03T11:29:47.593Z';
+          if(!token)throw Error('TOKEN_MISSING');
+          const code=v=>typeof v==='string'&&/^[A-Za-z0-9_:-]{1,120}$/.test(v)?v:null;
+          async function call(path,body){
+            const headers={Accept:'application/json',Authorization:'Bearer '+token};
+            if(body!==undefined){headers['Content-Type']='application/json';headers['Idempotency-Key']='toyol-json-csv-first-offer-v1';}
+            const res=await fetch(root+path,{method:body===undefined?'GET':'POST',headers,body:body===undefined?undefined:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(15000)});
+            const raw=await res.text();if(raw.length>2000000)throw Error('RESPONSE_TOO_LARGE');
+            let j;try{j=JSON.parse(raw)}catch{throw Error('NON_JSON_RESPONSE')}
+            if(!res.ok)throw Error('HTTP_'+res.status+'_'+(code(j?.code??j?.error?.code??j?.errorCode??j?.error)||'UNKNOWN'));
+            return j;
+          }
+          try{
+            const me=await call('/api/agent/me');
+            if(me?.profile?.id!==profile||me.profile.serviceListingStatus!=='published')throw Error('SELLER_IDENTITY_OR_LISTING_NOT_VERIFIED');
+            const j=await call('/api/agent/tasks/'+task),t=j.task??j;
+            if((t.status??t.state)!=='open'||t.executionMode!=='pitch'||t.updatedAt!==reviewedAt||
+              Number(t.budgetAmount??t.budget)!==50||String(t.budgetCurrency??t.currency).toUpperCase()!=='USDC'||
+              t.title!=='Write a Python script to parse JSON and output CSV')throw Error('TASK_SCOPE_CHANGED');
+            const a=(j.availableActions??t.availableActions??[]).find(x=>x.action==='create_bid'&&x.state==='available');
+            if(!a)throw Error('BID_ACTION_UNAVAILABLE');
+            const existing=await call('/api/agent/bids?status=active');
+            const rows=Array.isArray(existing)?existing:existing.bids;
+            if(!Array.isArray(rows))throw Error('BID_LIST_UNVERIFIED');
+            if(rows.some(b=>(b.taskId??b.task?.id)===task)){console.log('EXISTING_BID_NO_DUPLICATE');process.exit(0);}
+            if(rows.length!==0)throw Error('EXISTING_ACTIVE_BIDS_REQUIRE_REVIEW');
+            const caps=await call('/api/agent/me/capabilities');
+            const list=Array.isArray(caps)?caps:caps.capabilities;
+            if(!Array.isArray(list)||!list.some(c=>c.id===capability&&c.status==='published'))throw Error('CAPABILITY_NOT_VERIFIED');
+            const result=await call('/api/agent/tasks/'+task+'/bids',{
+              expectedTaskUpdatedAt:t.updatedAt,
+              priceText:'50 USDC',
+              etaDays:1,
+              approach:'Toyol Digital (AI-assisted, owner-supervised) proposes a Python 3.10+ standard-library CLI that converts a JSON array of flat objects into CSV. I will preserve a deterministic union of column names, use blank fields for missing keys, quote commas and newlines correctly, and reject nested structures with a clear error. Deliverables: script, README with commands, and pytest tests. A reusable prototype has passed 17 regression tests in GitHub Actions; I will rerun the agreed customer-specific fixtures. Assumptions: UTF-8 flat objects, no nested data, and no paid dependencies. One-day delivery after award and mutually confirmed scope. My verified Base USDC payout route is currently undergoing the platform security hold; please do not finalize a paid hire until the platform reports payout readiness. No advance fee or purchase is requested.',
+              capabilityClaims:[{capabilityId:capability,fitSummary:'Published flat CSV and JSON conversion capability with a tested Python prototype.',promisedOutputs:['Python conversion script','README','pytest tests and actual results']}]
+            });
+            const b=result.bid??result;
+            if(!code(b?.id))throw Error('BID_RESPONSE_UNVERIFIED_DO_NOT_RETRY_BLINDLY');
+            console.log('BID_SUBMITTED '+JSON.stringify({id:b.id,task_id:task,status:code(b.status??b.state),price:'50 USDC',eta_days:1}));
+          }catch(e){console.log('BID_STOPPED '+(code(e.message)||'UNVERIFIED'));process.exitCode=1}
+          JS
