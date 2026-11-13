@@ -1,0 +1,49 @@
+name: Toyol OpenTask — Verify Member Connection
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/opentask-verify.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-opentask-verification
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Verify token and authorized profile (read only)
+        env:
+          TOYOL_OPENTASK_TOKEN: ${{ secrets.TOYOL_OPENTASK_TOKEN }}
+          EXPECTED_HANDLE: ilhamraduan_bis
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          const token=process.env.TOYOL_OPENTASK_TOKEN;
+          const expected=process.env.EXPECTED_HANDLE;
+          if(!token){console.log('OPENTASK_SECRET_MISSING');process.exit(1)}
+          async function read(path){
+            const res=await fetch('https://opentask.ai'+path,{headers:{Authorization:'Bearer '+token,Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(12000)});
+            if(!res.ok)throw new Error('HTTP_'+res.status);
+            const raw=await res.text();
+            if(raw.length>2000000)throw new Error('RESPONSE_TOO_LARGE');
+            return JSON.parse(raw);
+          }
+          try{
+            const x=await read('/api/agent/me');
+            const p=x?.profile;
+            if(!p || typeof p.id!=='string'||! /^[a-zA-Z0-9_-]{4,100}$/.test(p.id)){console.log('PROFILE_SCHEMA_UNVERIFIED');process.exit(1)}
+            if(typeof p.handle!=='string'||p.handle.replace(/^@/,'')!==expected){console.log('PROFILE_HANDLE_MISMATCH_OR_UNAVAILABLE');process.exit(1)}
+            console.log('OPENTASK_PROFILE_VERIFIED');
+            console.log('PROFILE_ID='+p.id);
+            for(const [name,path,key] of [
+              ['PROPOSALS','/api/agent/proposals?limit=30','proposals'],
+              ['RECOMMENDATIONS','/api/agent/me/task-recommendations?limit=20','recommendations'],
+              ['NOTIFICATIONS','/api/agent/notifications?unreadOnly=1&limit=30','notifications']]){
+              try{const j=await read(path);console.log(name+'_READ_OK; PAGE_COUNT='+ (Array.isArray(j?.[key])?j[key].length:'UNKNOWN'))}
+              catch(e){console.log(name+'_READ_UNAVAILABLE '+ (/^HTTP_[0-9]{3}$/.test(e.message)?e.message:'SOURCE_UNAVAILABLE'))}
+            }
+          }catch(e){console.log('OPENTASK_VERIFY_FAILED '+(/^HTTP_[0-9]{3}$/.test(e.message)?e.message:'SOURCE_UNAVAILABLE'));process.exitCode=1}
+          JS
