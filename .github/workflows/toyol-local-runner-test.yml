@@ -17,6 +17,7 @@ jobs:
       - name: Syntax and offline queue validation
         run: |
           node --check scripts/toyol-local-runner.mjs
+          node --check scripts/toyol-runner-upgrade.mjs
           node --test test/local-runner-network.test.mjs
           node --input-type=module <<'JS'
           import {readFileSync} from 'node:fs';
@@ -46,3 +47,5 @@ jobs:
           test "$(git show "$c:src/test.mjs")" = 'test file'
           echo RUNNER_GIT_OBJECT_FLOW_PASS
           rm -rf "$d"
+      - name: Independently check existing queue submissions and award status
+        run: node src/taskmarket-forge-watch.mjs
