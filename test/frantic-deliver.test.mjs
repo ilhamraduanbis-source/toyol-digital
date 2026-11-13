@@ -40,3 +40,12 @@ test('zero cost and immutable artifacts required; hidden eligibility stops deliv
  assert.throws(()=>validateJob({...job,artifact_refs:['report=https://raw.githubusercontent.com/ilhamraduanbis-source/toyol-digital/main/deliverables/report.md']}));
  const {api,calls}=mock({hidden:[{status:'unmet'}]});await assert.rejects(execute(job,api));assert.equal(calls.some(x=>x[0]==='/v1/deliveries'),false);
 });
+
+test('delivery-time repository star is checked against independent evidence',async()=>{
+ const hidden=[{check:'github_star_auscaster_silvertongue',status:'waiting_for_delivery'}];
+ let m=mock({hidden});
+ await assert.rejects(execute(job,m.api,{verifyStar:async()=>false}));
+ assert.equal(m.calls.some(x=>x[0]==='/v1/deliveries'),false);
+ m=mock({hidden});
+ assert.equal((await execute(job,m.api,{verifyStar:async()=>true})).result,'DELIVERY_SUBMITTED');
+});
