@@ -32,7 +32,8 @@ jobs:
           const status=await api('/v1/agents/'+kid+'/status');
           if(status.agent?.kid!==kid||!status.verification?.sworn||!status.agent?.claimEligibility?.eligible||!status.agent?.onboarding?.payout?.set)throw Error('Account not ready');
           const board=(await api('/v1/board?status=open&limit=50')).board;
-          const candidate=(board.open_bounties||board.bounties||[]).find(b=>b.visibility==='public'&&b.funded===true&&b.price_usd===1&&b.title==='Write one draft in a famous voice with Silvertongue\'s MCP server');
+          const ownActive=(status.work?.open||[]).find(x=>x.stage==='delivery_due'&&/Silvertongue/.test(x.bounty?.title||''));
+          const candidate=ownActive?.bounty||(board.open_bounties||board.bounties||[]).find(b=>b.visibility==='public'&&b.funded===true&&b.price_usd===1&&b.title==='Write one draft in a famous voice with Silvertongue\'s MCP server');
           if(!candidate){console.log('NO_ELIGIBLE_WORK');process.exit(0);}
           const b=(await api('/v1/bounties/'+candidate.number)).bounty;
           if(b.visibility!=='public'||b.funded!==true||b.price_cents!==100||!b.funded_receipt_ref||b.criteria?.verification?.profile!=='dogfood_report_v1')throw Error('Unexpected terms');
@@ -69,16 +70,9 @@ jobs:
           await mcp('notifications/initialized',{},true);
           const list=await mcp('tools/list');
           console.log('MCP_TOOLS '+JSON.stringify(list.tools));
-          const tools=list.tools||[];
-          const tool=tools.find(t=>/^(?:get_voice|voice_packet|fetch_voice|get_voice_packet|silvertongue_get_voice)$/.test(t.name))||tools.find(t=>/voice/.test(t.name)&&!/list|search|suggest|catalog|find/.test(t.name));
-          if(!tool)throw Error('No voice fetch tool identified');
-          const props=tool.inputSchema?.properties||{},args={};
-          for(const k of Object.keys(props)){
-            if(/^(?:slug|id|voice|voice_id|voice_slug|profile|profile_id|name|voice_name)$/.test(k)&&props[k].type==='string')args[k]=k==='name'||k==='voice_name'?'William Shakespeare':'shakespeare';
-            if(/^(?:text|prompt|message|input)$/.test(k)&&props[k].type==='string')args[k]='Write a brief note to my operator reminding them to keep access keys private and report only actual payments, without promising earnings.';
-          }
-          if((tool.inputSchema?.required||[]).some(k=>!Object.hasOwn(args,k)))throw Error('Voice tool requires further review');
-          const packet=await mcp('tools/call',{name:tool.name,arguments:args});
-          if(packet.isError)throw Error('Voice fetch error');
+          const search=await mcp('tools/call',{name:'search_voices',arguments:{query:'William Shakespeare',limit:5}});
+          if(search.isError)throw Error('Voice search failed');
+          const packet=await mcp('tools/call',{name:'get_voice_packet',arguments:{voice:'william-shakespeare',format:'reply',length:'short',platform:'generic',intensity:'full',edge:'clean',emoji:'off',spelling:'tidy'}});
+          if(packet.isError){console.log('MCP_ERROR '+JSON.stringify(packet));throw Error('Voice fetch error');}
           console.log('MCP_VOICE_PACKET '+JSON.stringify(packet));
           JS
