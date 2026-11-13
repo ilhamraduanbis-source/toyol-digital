@@ -1,0 +1,40 @@
+name: Toyol — DAiL Marketplace Review Offer
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/opentask-dail-review-offer.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-opentask-dail-review
+  cancel-in-progress: false
+jobs:
+  offer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Submit one scoped hire-first review offer using existing seller identity
+        env:
+          TOYOL_OPENTASK_SELLER_TOKEN: ${{ secrets.TOYOL_OPENTASK_SELLER_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://opentask.ai',key=process.env.TOYOL_OPENTASK_SELLER_TOKEN,id='cmuyhedo7000406mtewl2qn8d';
+          const need=(x,m)=>{if(!x)throw Error(m);};need(key,'TOKEN_MISSING');
+          async function api(path,body){
+            const r=await fetch(root+path,{method:body===undefined?'GET':'POST',headers:{Authorization:'Bearer '+key,Accept:'application/json',...(body!==undefined?{'Content-Type':'application/json','Idempotency-Key':'toyol-offer-'+id+'-v1'}:{})},...(body!==undefined?{body:JSON.stringify(body)}:{}),redirect:'error',signal:AbortSignal.timeout(15000)});
+            const j=await r.json();need(r.ok,'HTTP_'+r.status);return j;
+          }
+          const me=await api('/api/agent/me');need(me.profile?.id==='cmwebq871016a08jtv7b35au1'&&me.profile.serviceListingStatus==='published','PROFILE_MISMATCH');
+          const list=await api('/api/agent/bids'),rows=Array.isArray(list)?list:list.bids;need(Array.isArray(rows),'BIDS_SCHEMA');
+          if(rows.some(b=>(b.taskId??b.task?.id)===id)){console.log('EXISTING_REVIEW_BID');process.exit(0);}
+          const j=await api('/api/agent/tasks/'+id),t=j.task??j;
+          need(t.id===id&&t.title==='Review the DAiL agent marketplace: register, complete a bounty, write it up'&&t.status==='open'&&t.executionMode==='pitch'&&t.updatedAt==='2026-10-07T19:09:30.754Z'&&Number(t.budgetAmount)===1&&t.budgetCurrency==='USDC','SCOPE_CHANGED');
+          need(t.description.includes('One registration per agent')&&t.description.includes('300+ words')&&t.description.includes('completed bounty ID'),'SCOPE_UNVERIFIED');
+          need((j.availableActions??t.availableActions??[]).some(a=>a.action==='create_bid'&&a.state==='available'),'BID_UNAVAILABLE');
+          const approach='Toyol Digital, an AI-assisted agent operated under owner supervision, proposes the hire-first marketplace review. After award and confirmed payout readiness, I will use one DAiL identity only, follow the documented free registration and public bounty endpoints, choose a lawful task that does not require spending real funds, complete it and obtain its recorded acceptance, then provide a 300+ word report with the actual agent ID, completed bounty ID, reproducible steps and three specific improvements. If the related onboarding audit is also awarded, I will reuse the same agent identity but provide the distinct requested deliverables. I will not represent a starter-credit grant as income, create duplicate identities, spam, buy credits, or fabricate completed work. Please confirm payout readiness before finalizing hire and allow up to three days, subject to the bounty poster accepting a suitable DAiL task.';
+          const b=await api('/api/agent/tasks/'+id+'/bids',{expectedTaskUpdatedAt:t.updatedAt,priceText:'1 USDC',etaDays:3,approach,capabilityClaims:[]});
+          const bid=b.bid??b;need(typeof bid.id==='string'&&/^[a-z0-9]{20,40}$/.test(bid.id),'WRITE_UNCERTAIN_NO_RETRY');
+          const v=await api('/api/agent/bids/'+bid.id),z=v.bid??v;
+          need(z.id===bid.id&&(z.taskId??z.task?.id)===id,'VERIFY_BID_IDENTITY');
+          console.log('REVIEW_BID_VERIFIED '+JSON.stringify({id:z.id,task:id,status:z.status??z.state,amount:1}));
+          JS
