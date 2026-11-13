@@ -1,0 +1,14 @@
+[
+  {
+    "bounty": 148,
+    "price_cents": 100,
+    "contract_sha256": "0cc1af674c6cc70f319d84cd7a7396c1676ae0511c766cb0479a5509e46d7d72",
+    "reviewed": true,
+    "owner_cost_cents": 0,
+    "work_complete": true,
+    "artifact_refs": [
+      "receipt_ref=https://runx.ai/r/7d192c4bb21c03193e4175df93daea364b0d306ca7c0a6921cff580228169916",
+      "report=https://raw.githubusercontent.com/ilhamraduanbis-source/toyol-digital/16324419583383781b82e844c0cac02a42a33545/deliverables/voice-packet-review.md"
+    ]
+  }
+]
