@@ -37,7 +37,8 @@ export function validateJob(j){
 export function validateBounty(b,j){
  need(b&&b.number===j.bounty&&b.visibility==='public','NOT_PUBLIC');
  need(b.funded===true&&typeof b.funded_receipt_ref==='string'&&b.funded_receipt_ref.length>0,'NOT_FUNDED');
- need(b.price_cents===j.price_cents&&contractHash(b)===j.contract_sha256,'CONTRACT_CHANGED');
+ need(b.price_cents===j.price_cents,'PRICE_CHANGED');
+ need(contractHash(b)===j.contract_sha256,'CONTRACT_CHANGED '+contractHash(b));
  need(!/cashback|rebate|first bounty is on the house|affiliate|reddit|twitter|social media/i.test(b.title||''),'EXCLUDED_REWARD');
  const names=new Set(j.artifact_refs.map(a=>a.split('=')[0]));
  for(const a of b.delivery_contract?.artifacts||[])if(a.required)need(names.has(a.name),'MISSING_ARTIFACT_'+a.name);
