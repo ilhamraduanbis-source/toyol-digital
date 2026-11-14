@@ -1,0 +1,70 @@
+name: Toyol — WURK CSV service and fulfillment
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-wurk-store-service.yml'
+      - 'src/wurk-store-worker.mjs'
+      - 'src/wurk-flat-json.py'
+  schedule:
+    - cron: '27 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-wurk-store-service
+  cancel-in-progress: false
+jobs:
+  work:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify deterministic CSV conversion and generate representative service thumbnail
+        run: |
+          set -eu
+          python3 src/wurk-flat-json.py --selftest
+          node --check src/wurk-store-worker.mjs
+          mkdir -p out
+          python3 - <<'PY'
+          import struct,zlib
+          W,H=1600,1000
+          buf=bytearray(bytes([19,29,43])*(W*H))
+          def rect(x,y,w,h,c):
+              for j in range(y,y+h):
+                  a=(j*W+x)*3
+                  buf[a:a+w*3]=bytes(c)*w
+          glyphs={'J':['00111','00010','00010','00010','10010','10010','01100'],'S':['01111','10000','10000','01110','00001','00001','11110'],'O':['01110','10001','10001','10001','10001','10001','01110'],'N':['10001','11001','10101','10011','10001','10001','10001'],'C':['01111','10000','10000','10000','10000','10000','01111'],'V':['10001','10001','10001','10001','10001','01010','00100']}
+          def word(t,x,y,scale,c):
+              for n,ch in enumerate(t):
+                  for yy,row in enumerate(glyphs[ch]):
+                      for xx,v in enumerate(row):
+                          if v=='1':rect(x+(n*6+xx)*scale,y+yy*scale,scale,scale,c)
+          rect(100,180,590,640,(35,55,75))
+          rect(910,180,590,640,(35,55,75))
+          rect(100,180,590,14,(72,200,172))
+          rect(910,180,590,14,(72,200,172))
+          word('JSON',206,262,16,(235,246,250))
+          word('CSV',1055,262,16,(235,246,250))
+          for i,(x,w) in enumerate([(175,330),(215,385),(215,310),(175,370),(215,260)]):
+              rect(x,475+i*52,w,20,(80,174,189) if i%2==0 else (148,180,199))
+          for row in range(5):
+              for col in range(3):
+                  rect(965+col*160,460+row*61,144,43,(75,168,154) if row==0 else (66,88,111))
+          rect(730,490,110,24,(246,189,79))
+          for i in range(60):
+              rect(814+i,442+i,1,120-2*i,(246,189,79))
+          raw=b''.join(b'\x00'+buf[y*W*3:(y+1)*W*3] for y in range(H))
+          def chunk(t,d):
+              return struct.pack('>I',len(d))+t+d+struct.pack('>I',zlib.crc32(t+d)&0xffffffff)
+          png=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',W,H,8,2,0,0,0))+chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b'')
+          open('out/wurk-service-cover.png','wb').write(png)
+          print('THUMBNAIL_READY',len(png))
+          PY
+      - name: Publish reviewed offer when eligible and fulfill bounded orders using same verified account
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: node src/wurk-store-worker.mjs
