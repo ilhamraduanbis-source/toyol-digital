@@ -1,0 +1,90 @@
+name: Toyol — Native Currency Bounty Scout
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 */8 * * *'
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-native-currency-scout.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-native-currency-scout
+  cancel-in-progress: false
+jobs:
+  scout:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Review official native currency opportunity pages (read only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out/native-currency
+          python3 - <<'PY'
+          import json, re, datetime as dt, urllib.request, html
+          from html.parser import HTMLParser
+          from concurrent.futures import ThreadPoolExecutor
+          from pathlib import Path
+          NOW=dt.datetime.now(dt.timezone.utc)
+          # Reviewed on 2026-11-15 MYT. Reward figures are published limits or pools, not earned amounts.
+          sources=[
+            dict(id='tari',url='https://community.tari.com/t/november-build-contest-thread-mvp/520',currency='XTM',amount=1000000,kind='FIRST_PRIZE',deadline='2026-12-01T00:00:00Z',decision='OWNER_REVIEW',block='Public social announcement and Tari payout address required; AI authorship eligibility not formally confirmed.',patterns=['minimum viable product','social media']),
+            dict(id='monero',url='https://bounties.monero.social/',currency='XMR',amount=None,kind='BOARD',decision='VERIFY_INDIVIDUAL_BOUNTY',block='Established projects require public pre-approval; exclude started, expired and completed items.',patterns=['bounties','pre-approval']),
+            dict(id='bch',url='https://bchblaze.com/bounties/',currency='BCH',amount=8,kind='TOTAL_POOL',deadline='2026-11-22T14:00:00Z',decision='DO_NOT_ENTER',block='Registration closed November 13; XO feedback must be personally written; no AI-written feedback.',patterns=['BLAZE','BCH']),
+            dict(id='intigriti',url='https://app.intigriti.com/programs/intigriti/intigriti/detail',currency='EUR',amount=13337,kind='MAX_SECURITY_REWARD',decision='POLICY_REVIEW_ONLY',block='Registration, permitted scope, identity/payment requirements; no live testing or submissions by this workflow.',patterns=['intigriti','13,337']),
+            dict(id='intersys',url='https://intersys.co.uk/vulnerability-disclosure-programme/',currency='GBP',amount=2000,kind='MAX_DISCRETIONARY_REWARD',decision='POLICY_REVIEW_ONLY',block='Limited scope, valid first report, bank or PayPal settlement; no live testing.',patterns=['2,000','vulnerability']),
+            dict(id='ethereum',url='https://ethereum.org/bug-bounty/',currency='ETH/DAI',amount=None,kind='SECURITY_PROGRAM',decision='DO_NOT_ENTER_ZERO_COST',block='Identity and reproducible proof required; official reporting form currently requires a $10 ETH burn.',patterns=['bug bounty','ethereum']),
+            dict(id='ethereum-fee',url='https://bbp-form.ethereum.org/',currency='ETH',amount=None,kind='FEE_POLICY',decision='DO_NOT_SPEND',block='Check required burn before any submission.',patterns=['burn','ETH']),
+            dict(id='nlnet',url='https://nlnet.nl/restack/',currency='EUR',amount=50000,kind='GRANT_MAX',deadline='2027-01-03T11:00:00Z',decision='NOT_BOUNTY_POLICY_REVIEW',block='Grant proposal and project obligations; review current generative AI policy before considering.',patterns=['Restack','2027']),
+            dict(id='aibtc',url='https://aibtc.com/bounties',currency='sBTC',amount=None,kind='BOARD',decision='CHECK_NATIVE_REWARDS',block='Only actual open agent bounties; not proof of individual acceptance or payment.',patterns=['bounties','sats']),
+          ]
+          class Page(HTMLParser):
+              def __init__(self): super().__init__(); self.parts=[]; self.skip=0
+              def handle_starttag(self,tag,attrs):
+                  if tag in ('script','style'): self.skip+=1
+              def handle_endtag(self,tag):
+                  if tag in ('script','style') and self.skip: self.skip-=1
+              def handle_data(self,s):
+                  if not self.skip: self.parts.append(s)
+          def inspect(x):
+              out=dict(x)
+              try:
+                  req=urllib.request.Request(x['url'],headers={'User-Agent':'ToyolNativeCurrencyScout/1.0','Accept':'text/html'})
+                  with urllib.request.urlopen(req,timeout=20) as r:
+                      b=r.read(3000001)
+                      if len(b)>3000000: raise ValueError('RESPONSE_LIMIT')
+                  p=Page(); p.feed(b.decode('utf-8','replace'))
+                  text=' '.join(' '.join(p.parts).split()).lower()
+                  missing=[m for m in x['patterns'] if m.lower() not in text]
+                  out['sourceStatus']='CONTENT_REVIEW_REQUIRED' if missing else 'PUBLIC_POLICY_RETRIEVED'
+                  out['missingMarkers']=missing
+                  if x.get('deadline') and dt.datetime.fromisoformat(x['deadline'].replace('Z','+00:00'))<=NOW: out['decision']='DEADLINE_ELAPSED'
+                  if x['id']=='monero':
+                      # No inference from dynamic pages; surface only native amount mentions for manual review.
+                      out['nativeAmountMentions']=re.findall(r'[\d,.]+\s*(?:xmr|ɱ)',text)[:30]
+                  if x['id']=='aibtc':
+                      out['nativeAmountMentions']=re.findall(r'[\d,]+\s*sats',text)[:30]
+              except Exception as e:
+                  out['sourceStatus']='UNAVAILABLE'; out['error']=type(e).__name__
+              return out
+          assert len(set(x['id'] for x in sources))==len(sources)
+          assert all(x['decision'] not in ('AUTO_SUBMIT','EARNED') for x in sources)
+          assert all(x['url'].startswith('https://') for x in sources)
+          with ThreadPoolExecutor(max_workers=6) as pool: result=list(pool.map(inspect,sources))
+          report={'generatedAt':NOW.isoformat(),'sources':result,'verifiedAssignableJobs':0,'newIncome':False,'notes':'Official page monitoring, not live vulnerability scanning. Static reviewed figures require reconfirmation; missing markers and source errors are explicit. No paid API calls, accounts, wallet actions, submissions or spending.'}
+          Path('out/native-currency/report.json').write_text(json.dumps(report,indent=2))
+          for x in result: print('NATIVE_SCOUT',json.dumps(x,ensure_ascii=True))
+          with open(__import__('os').environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write('## Native Currency Bounty Scout\n\n')
+              for x in result: f.write(f"- {x['id']} | {x['currency']} | {x['decision']} | {x['sourceStatus']} — {x['block']}\n")
+          if all(x['sourceStatus']=='UNAVAILABLE' for x in result): raise SystemExit('ALL_SOURCES_UNAVAILABLE')
+          PY
+      - name: Preserve native currency evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-native-currency-scout
+          path: out/native-currency/report.json
+          retention-days: 7
+          if-no-files-found: warn
