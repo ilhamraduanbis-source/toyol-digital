@@ -1,0 +1,90 @@
+name: Toyol — Activate Solana
+on:
+  workflow_dispatch:
+    inputs:
+      register_makefun:
+        description: "Register/sign in to make.fun using this wallet (only if no other make.fun account)"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-solana-activation.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-solana-activation
+  cancel-in-progress: false
+jobs:
+  activate:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Validate dedicated Solana wallet and optionally sign in with no transaction
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+          REGISTER_MAKEFUN: ${{ inputs.register_makefun }}
+        run: |
+          node --input-type=module <<'JS'
+          import {createPrivateKey,createPublicKey,sign,verify,randomBytes} from 'node:crypto';
+          const alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+          function base58(bytes){
+            let n=0n;for(const b of bytes)n=n*256n+BigInt(b);
+            let s='';while(n){s=alphabet[Number(n%58n)]+s;n/=58n;}
+            for(const b of bytes){if(b!==0)break;s='1'+s;}
+            return s;
+          }
+          function derive(raw){
+            if(typeof raw!=='string'||raw.length>4096)throw Error('KEYPAIR_MISSING');
+            let a;try{a=JSON.parse(raw)}catch{throw Error('KEYPAIR_FORMAT')}
+            if(!Array.isArray(a)||a.length!==64||!a.every(n=>Number.isInteger(n)&&n>=0&&n<=255))throw Error('KEYPAIR_FORMAT');
+            const seed=Buffer.from(a.slice(0,32)),expected=Buffer.from(a.slice(32));
+            const privateKey=createPrivateKey({key:Buffer.concat([Buffer.from('302e020100300506032b657004220420','hex'),seed]),type:'pkcs8',format:'der'});
+            const publicKey=createPublicKey(privateKey),actual=Buffer.from(publicKey.export({format:'jwk'}).x,'base64url');
+            if(!actual.equals(expected))throw Error('KEYPAIR_MISMATCH');
+            const msg=Buffer.from('toyol-solana-local-proof-v1');
+            if(!verify(null,msg,publicKey,sign(null,msg,privateKey)))throw Error('KEYPAIR_PROOF');
+            return {privateKey,publicKey,address:base58(actual)};
+          }
+          // Exercise validation using a disposable key held only in memory, never on-chain.
+          const seed=randomBytes(32),fixtureKey=createPrivateKey({key:Buffer.concat([Buffer.from('302e020100300506032b657004220420','hex'),seed]),type:'pkcs8',format:'der'});
+          const fixturePub=Buffer.from(createPublicKey(fixtureKey).export({format:'jwk'}).x,'base64url');
+          const fixture=Array.from(Buffer.concat([seed,fixturePub]));
+          if(derive(JSON.stringify(fixture)).address!==base58(fixturePub)||base58(Buffer.from([0,0,1]))!=='112')throw Error('SELF_TEST');
+          fixture[63]^=1;let rejected=false;try{derive(JSON.stringify(fixture))}catch(e){rejected=e.message==='KEYPAIR_MISMATCH'}
+          if(!rejected)throw Error('SELF_TEST');
+          console.log('SOLANA_VALIDATION_TESTS_OK');
+          const origin='https://make.fun';
+          async function call(path,body,apiKey){
+            const r=await fetch(origin+path,{method:body===undefined?'GET':'POST',redirect:'error',headers:{Accept:'application/json',...(body===undefined?{}:{'Content-Type':'application/json'}),...(apiKey?{'x-api-key':apiKey}:{})},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(15000)});
+            if(!r.ok)throw Error('API_HTTP_'+r.status);
+            const text=await r.text();if(text.length>500000)throw Error('API_RESPONSE_LIMIT');return JSON.parse(text);
+          }
+          async function main(){
+            const methods=await call('/api/auth/methods');
+            if(!methods.methods?.includes('solana'))throw Error('SOLANA_AUTH_UNAVAILABLE');
+            console.log('MAKEFUN_AUTH_AVAILABLE '+JSON.stringify({chain:methods.solana?.chain_id,statement:methods.solana?.key_statement??null}));
+            const {privateKey,publicKey,address}=derive(process.env.TOYOL_SOLANA_KEYPAIR_JSON);
+            console.log('SOLANA_WALLET_READY '+JSON.stringify({address,localSignatureVerified:true,transactions:0}));
+            if(process.env.GITHUB_EVENT_NAME!=='workflow_dispatch'||process.env.REGISTER_MAKEFUN!=='true'){
+              console.log('LOCAL_VALIDATION_ONLY');return;
+            }
+            // SIWS: official SDK protocol, only exact make.fun origin, sign-in message, never a transaction.
+            const chain=methods.solana.chain_id;
+            if(!['mainnet','mainnet-beta','solana:mainnet','solana:mainnet-beta','5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'].includes(chain))throw Error('UNEXPECTED_CHAIN');
+            const statement=methods.solana.key_statement??'Sign in to make.fun. No transaction, no fee.';
+            if(typeof statement!=='string'||statement.length>300||/[\r\n]/.test(statement)||!statement.includes('make.fun')||!/(sign in|api key)/i.test(statement)||!/(no transaction|no on.chain)/i.test(statement)||!/(no fee|no cost)/i.test(statement))throw Error('UNEXPECTED_SIGNIN_STATEMENT');
+            const c=await call('/api/auth/siws/nonce',{walletAddress:address});
+            const u=new URL(c.uri);
+            if(c.domain!=='make.fun'||u.origin!==origin||!['/','/api/auth/solana/key'].includes(u.pathname)||u.username||u.password||u.search||u.hash||typeof c.nonce!=='string'||!/^[A-Za-z0-9_-]{8,128}$/.test(c.nonce))throw Error('UNEXPECTED_CHALLENGE');
+            const issued=Date.parse(c.issuedAt),expires=Date.parse(c.expirationTime),now=Date.now();
+            if(!Number.isFinite(issued)||!Number.isFinite(expires)||issued>now+60000||issued<now-600000||expires<=now||expires-issued>3600000||/[\r\n]/.test(c.issuedAt+c.expirationTime))throw Error('CHALLENGE_TIME');
+            const message=c.domain+' wants you to sign in with your Solana account:\n'+address+'\n\n'+statement+'\n\nURI: '+c.uri+'\nVersion: 1\nChain ID: '+chain+'\nNonce: '+c.nonce+'\nIssued At: '+c.issuedAt+'\nExpiration Time: '+c.expirationTime;
+            const bytes=Buffer.from(message,'utf8'),signature=sign(null,bytes,privateKey);
+            if(!verify(null,bytes,publicKey,signature))throw Error('SIGNATURE_PROOF');
+            const minted=await call('/api/auth/solana/key',{walletAddress:address,message,signature:base58(signature),name:'Toyol Digital'});
+            if(typeof minted.key!=='string'||!minted.key.startsWith('af_'))throw Error('NO_API_KEY');
+            console.log('MAKEFUN_SIGNIN_OK '+JSON.stringify({address,expires:minted.expires_at??null,apiKeyPrinted:false,note:'Authenticated; no entry, claim or transaction. Key remains in process memory only.'}));
+          }
+          main().catch(e=>{const reason=String(e.message);console.log('SOLANA_ACTIVATION_STOP '+(/^[A-Z0-9_]+$/.test(reason)?reason:'UNEXPECTED_RESPONSE'));process.exitCode=1;});
+          JS
