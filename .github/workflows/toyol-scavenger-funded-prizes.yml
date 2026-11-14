@@ -1,0 +1,80 @@
+name: Toyol — Scavenger funded prize verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-scavenger-funded-prizes.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-scavenger-funded-prizes
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Independently verify published Solana funding and check public live venue listings
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'JS'
+          const RPC='https://api.mainnet-beta.solana.com';
+          const MINT='EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+          const targets=[
+            {slug:'food-picture-01',escrow:'EUy6xfXf4kHdHKwdTshvoAmuATTepdqt95GRuJ4yp1tN',tx:'qgbJJHpPGcJLMgZV7BawqhidXnqpxXV1piGNMGsU5A13yWYgygjnjvdNXDQZHGtav3hBjgSmDjFRJG3o3xNhkVy',deadline:'2026-11-15T00:00:00Z'},
+            {slug:'ai-happy-01',escrow:'6E1FBNyaGteABZzkrWQbq4c47Zv3BFvWFoAFG19UtGT2',tx:'65dEGRxiBdCyHmND7fMWP1y1fHzf1F3Ch2kp6jYwSqB54Phzgxt6sJP1aPR1tLUW95oQEE7wGkimVHdGjw8DJeCJ',deadline:'2026-11-14T16:00:00Z'},
+            {slug:'news-image-01',escrow:'DiT6nTTnBscCoDFf9WmjkstJGXL4rBcVuDvrzB8sjW71',tx:'4MRYb4VYUZB6tiecjHmWmWL4nG2MX6bhBrZ2BscvRT8O9faiLCH9933EMrVARHe3YvTEKJM9iR424XQ6n9TTfDJk',deadline:'2026-11-14T20:00:00Z'}
+          ];
+          // The published news-image signature contains a lower-case o after RT8.
+          targets[2].tx='4MRYb4VYUZB6tiecjHmWmWL4nG2MX6bhBrZ2BscvRT8oNfaiLCH9933EMrVARHe3YvTEKJM9iR424XQ6n9TTfDJk';
+          async function get(url,opts={}){
+            const r=await fetch(url,{...opts,redirect:'error',headers:{Accept:'application/json',...(opts.headers??{})},signal:AbortSignal.timeout(18000)});
+            if(!r.ok)throw Error('HTTP_'+r.status);
+            const s=await r.text();if(s.length>4000000)throw Error('RESPONSE_LIMIT');return JSON.parse(s);
+          }
+          async function rpc(method,params){
+            const r=await get(RPC,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});
+            if(r.error||r.result==null)throw Error('RPC_'+method);
+            return r.result;
+          }
+          const emit=(tag,value)=>console.log(tag+' '+JSON.stringify(value));
+          for(const t of targets){
+            try{
+              const v=await rpc('getTransaction',[t.tx,{encoding:'jsonParsed',commitment:'finalized',maxSupportedTransactionVersion:0}]);
+              if(v.meta?.err!==null)throw Error('TRANSACTION_FAILED_OR_UNKNOWN');
+              const keys=v.transaction.message.accountKeys.map(x=>typeof x==='string'?x:x.pubkey);
+              const pre=v.meta.preTokenBalances??[],post=v.meta.postTokenBalances??[];
+              let delta=0n;const credited=[];
+              for(const x of post){
+                if(x.mint!==MINT||x.uiTokenAmount?.decimals!==6)continue;
+                if(x.owner!==t.escrow&&keys[x.accountIndex]!==t.escrow)continue;
+                const old=pre.find(p=>p.accountIndex===x.accountIndex&&p.mint===MINT);
+                const change=BigInt(x.uiTokenAmount.amount)-BigInt(old?.uiTokenAmount?.amount??'0');
+                if(change>0n){delta+=change;credited.push(keys[x.accountIndex]);}
+              }
+              emit('PRIZE_FUNDING',{slug:t.slug,slot:v.slot,escrow:t.escrow,fundingUSDCMicros:delta.toString(),exactExpected:delta===250000000n,deadline:t.deadline,stillBeforeDeadline:Date.now()<Date.parse(t.deadline),note:'Escrow funding is not Toyol entitlement'});
+              for(const a of credited){
+                try{const b=await rpc('getTokenAccountBalance',[a,{commitment:'finalized'}]);emit('PRIZE_CURRENT_VAULT',{slug:t.slug,amountMicros:b.value.amount,decimals:b.value.decimals,slot:b.context.slot});}
+                catch(e){emit('VAULT_BALANCE_UNAVAILABLE',{slug:t.slug,reason:e.message});}
+              }
+            }catch(e){emit('PRIZE_FUNDING_UNAVAILABLE',{slug:t.slug,reason:e.message});}
+          }
+          try{
+            const j=await get('https://make.fun/api/competitions');
+            const rows=Array.isArray(j)?j:j.competitions??j.data?.competitions??j.items??j.data;
+            if(!Array.isArray(rows))throw Error('COMPETITION_SCHEMA');
+            for(const x of rows.slice(0,40)){
+              const deadline=x.deadline??x.endsAt??x.ends_at??x.closesAt;
+              if(!deadline||Date.parse(deadline)<=Date.now())continue;
+              emit('MAKEFUN_OPEN',{id:x.id??x.slug,title:x.title??x.name,deadline,reward:x.reward??x.rewardUsd??x.prizePool,category:x.category,requiresManualScopeReview:true});
+            }
+          }catch(e){emit('MAKEFUN_BOARD_UNAVAILABLE',{reason:e.message});}
+          try{
+            const j=await get('https://aibtc.com/api/bounties?status=open&limit=20');
+            const rows=Array.isArray(j)?j:j.bounties??j.data?.bounties??j.data;
+            if(!Array.isArray(rows))throw Error('AIBTC_SCHEMA');
+            emit('AIBTC_OPEN',{count:rows.length,offers:rows.map(x=>({id:x.id,title:x.title,rewardSats:x.rewardSats,expiresAt:x.expiresAt})),funding:'POSTER_PAYMENT_AFTER_ACCEPTANCE_NOT_ESCROW'});
+          }catch(e){emit('AIBTC_UNAVAILABLE',{reason:e.message});}
+          emit('LIMIT',{note:'No submission, no wallet creation, no sign, no transaction, no spend. The program checks actual funding and opportunities; it does not claim prizes.'});
+          JS
