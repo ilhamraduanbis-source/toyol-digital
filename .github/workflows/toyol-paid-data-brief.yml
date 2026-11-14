@@ -26,6 +26,8 @@ jobs:
         run: python3 -m py_compile src/swarmmemo-paid-data-brief.py
       - name: Perform real bounded public-data job when USDC seat opens
         if: github.event_name == 'schedule'
+        env:
+          TOYOL_SWARMMEMO_SIGNER_JSON: ${{ secrets.TOYOL_SWARMMEMO_SIGNER_JSON }}
         run: python3 src/swarmmemo-paid-data-brief.py --execute
       - name: Read-only availability check on code change or manual run
         if: github.event_name != 'schedule'
