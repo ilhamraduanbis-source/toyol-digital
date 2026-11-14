@@ -1,0 +1,32 @@
+name: Toyol — Makefun aggregator kit
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-makefun-aggregator-kit.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Fetch official competition kit and verify structure
+        run: |
+          set -eu
+          mkdir -p "$RUNNER_TEMP/makefun-kit"
+          curl --fail --silent --show-error --location --max-time 45 https://make.fun/c/free-model-aggregator-01/kit -o "$RUNNER_TEMP/kit.zip"
+          python3 - <<'PY'
+          import pathlib,zipfile,os
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])
+          with zipfile.ZipFile(p/'kit.zip') as z:
+              for f in z.infolist():
+                  if f.filename.startswith('/') or '..' in pathlib.PurePosixPath(f.filename).parts: raise SystemExit('unsafe archive')
+                  print('KIT_FILE',f.filename,f.file_size)
+              if sum(f.file_size for f in z.infolist())>100_000_000:raise SystemExit('kit too large')
+              z.extractall(p/'makefun-kit')
+          for f in (p/'makefun-kit').rglob('*'):
+              if f.is_file() and (f.name in ['RULES.txt','BRIEF.md','README.md','AGENTS.md','SKILL.md'] or ('starter' in f.parts and f.name in ['main.py','main.ts'])):
+                  print('KIT_DOCUMENT',f.relative_to(p/'makefun-kit'))
+                  print(f.read_text(errors='replace')[:35000])
+          PY
