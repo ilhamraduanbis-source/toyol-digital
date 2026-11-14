@@ -107,11 +107,20 @@ jobs:
           // Canonical Taskmarket unclaimed reward endpoints. Read only; never treat an indexer row as settled cash.
           for(const a of (secondaryVerified?[wallet,secondary]:[wallet])){
             const account=a===wallet?'main':'secondary_payout';
+            // Official V1 and V2 hook addresses, claimable(address) selector 0x402914f5.
+            // Query each directly; an API schema change cannot hide an owned entitlement.
             try{
-              const j=await json('https://api.taskmarket.dev/api/wallet/dreams-balance?address='+a+'&chainId=8453');
-              const n=j.claimableBaseUnits??j.data?.claimableBaseUnits;
-              if(typeof n!=='string'||!/^\\d+$/.test(n))throw Error('REWARD_SCHEMA');
-              emit('DREAMS_UNCLAIMED',{account,amount:decimal(BigInt(n),18),source:'taskmarket_balance_endpoint',state:'ENTITLEMENT_NOT_CASH'});
+              const base=chains[0];
+              if(uint(await rpc(base.rpc,'eth_chainId',[]))!==8453n)throw Error('CHAIN_ID');
+              const b=await rpc(base.rpc,'eth_getBlockByNumber',['finalized',false]);
+              if(!hex(b.number))throw Error('BLOCK');
+              for(const [version,to] of [['V1','0x8e28bb2c54443f54030ff9f2bc1f1794c017f0ca'],['V2','0x6fcfc03ecd973a2603cf44c36d8ffe7b211a6155']]){
+                try{
+                  const raw=await rpc(base.rpc,'eth_call',[{to,data:'0x402914f5'+a.slice(2).padStart(64,'0')},b.number]);
+                  if(typeof raw!=='string'||!/^0x[0-9a-f]{64}$/i.test(raw))throw Error('ABI_UINT256');
+                  emit('DREAMS_UNCLAIMED',{account,version,amount:decimal(uint(raw),18),block:b.number,finality:'finalized',state:'ENTITLEMENT_NOT_CASH'});
+                }catch(e){emit('DREAMS_UNAVAILABLE',{account,version,reason:e.message});}
+              }
             }catch(e){emit('DREAMS_UNAVAILABLE',{account,reason:e.message});}
             try{
               const j=await json('https://api.taskmarket.dev/api/sponsored-task-rewards/workers/'+a+'?limit=50&state=credited&claimStatus=unclaimed');
