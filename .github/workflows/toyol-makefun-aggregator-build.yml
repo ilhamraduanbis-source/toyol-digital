@@ -1,4 +1,4 @@
-name: Toyol — Makefun 500 USD aggregator build
+name: Toyol — Makefun aggregator official entry
 on:
   workflow_dispatch:
   push:
@@ -8,83 +8,156 @@ permissions:
   contents: read
 concurrency:
   group: toyol-makefun-aggregator-build
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
-  build:
+  build-and-enter:
     if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
-      - name: Fetch official challenge kit and establish eligible free coding session
+      - name: Obtain public challenge kit and current official CLI
         shell: bash
         run: |
           set -euo pipefail
-          export HOME="$RUNNER_TEMP/toyol-agent-home"
-          mkdir -p "$HOME" "$RUNNER_TEMP/aggregator-kit" "$RUNNER_TEMP/aggregator-entry"
-          curl --fail --silent --show-error --max-time 30 'https://make.fun/api/competitions/free-model-aggregator-01/requirements' -o "$RUNNER_TEMP/requirements.json"
-          python3 - "$RUNNER_TEMP/requirements.json" <<'PY'
+          mkdir -p "$RUNNER_TEMP/makefun"
+          cd "$RUNNER_TEMP/makefun"
+          curl --fail --silent --show-error --location --max-time 45 https://make.fun/c/free-model-aggregator-01/kit -o kit.tgz
+          python3 - <<'PY'
+          import tarfile,pathlib
+          with tarfile.open("kit.tgz") as z:
+              a=z.getmembers()
+              if sum(x.size for x in a)>100_000_000 or any(x.name.startswith("/") or ".." in pathlib.PurePosixPath(x.name).parts or not(x.isfile() or x.isdir()) for x in a):raise SystemExit("UNSAFE_KIT")
+              z.extractall(".",filter="data")
+          PY
+          npm install --prefix "$RUNNER_TEMP/makefun/tools" --no-audit --no-fund @opencode/cli@2.3.0
+          echo "$RUNNER_TEMP/makefun/tools/node_modules/.bin" >> "$GITHUB_PATH"
+          mkdir -p "$RUNNER_TEMP/makefun/evidence"
+      - name: Record actual free coding-agent sessions in a fresh anchored source repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset GITHUB_TOKEN GH_TOKEN OPENAI_API_KEY ANTHROPIC_API_KEY OPENCODE_API_KEY
+          export HOME="$RUNNER_TEMP/makefun/isolated-home"
+          export XDG_DATA_HOME="$HOME/.local/share"
+          export XDG_CONFIG_HOME="$HOME/.config"
+          export XDG_STATE_HOME="$HOME/.local/state"
+          export XDG_CACHE_HOME="$HOME/.cache"
+          export OPENCODE_DISABLE_AUTOSHARE=true
+          mkdir -p "$HOME" "$RUNNER_TEMP/makefun/entry"
+          kit="$RUNNER_TEMP/makefun/free-model-aggregator-01-kit"
+          entry="$RUNNER_TEMP/makefun/entry"
+          cd "$entry"
+          node "$kit/cli/makefun.mjs" init --competition free-model-aggregator-01 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT
+          cp "$kit/starter/main.ts" .
+          cp -r "$kit/starter/lib" .
+          git add main.ts lib
+          git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm 'Import official competition starter'
+          timeout 90 opencode models --standalone > "$RUNNER_TEMP/makefun/models.txt"
+          # Verify a zero-priced model from the public pricing catalog AND the actual local model list.
+          curl --fail --silent --show-error --max-time 20 https://models.dev/api.json -o "$RUNNER_TEMP/makefun/prices.json"
+          MODEL=$(python3 - "$RUNNER_TEMP/makefun/models.txt" "$RUNNER_TEMP/makefun/prices.json" <<'PY'
+          import json,sys,re
+          avail=set(re.findall(r"opencode/[A-Za-z0-9_.-]+",open(sys.argv[1]).read()))
+          data=json.load(open(sys.argv[2])).get("opencode",{}).get("models",{})
+          choices=[]
+          for mid,row in data.items():
+              cost=row.get("cost",{})
+              if "opencode/"+mid in avail and (mid.endswith("-free") or mid=="big-pickle") and cost.get("input")==0 and cost.get("output")==0:
+                  choices.append(mid)
+          if not choices:raise SystemExit("NO_VERIFIED_FREE_MODEL")
+          order=["glm-5.3-flash-free","deepseek-v4.1-flash-free","minimax-m3.1-flash-free","big-pickle"]
+          choices.sort(key=lambda x:(order.index(x) if x in order else len(order),x))
+          print("opencode/"+choices[0])
+          PY
+          )
+          echo "VERIFIED_FREE_MODEL $MODEL"
+          python3 - "$MODEL" <<'PY'
           import json,sys
-          j=json.load(open(sys.argv[1]))
-          print("REQUIREMENTS",json.dumps(j)[:18000])
+          json.dump({"$schema":"https://opencode.ai/config.json","model":sys.argv[1],"small_model":sys.argv[1],"share":"disabled","autoupdate":False,"permission":{"edit":"allow","read":"allow","bash":"allow","webfetch":"deny","websearch":"deny","external_directory":"allow"}},open("opencode.json","w"))
           PY
-          curl --fail --silent --show-error --max-time 60 'https://make.fun/c/free-model-aggregator-01/kit' -o "$RUNNER_TEMP/kit.tgz"
-          python3 - "$RUNNER_TEMP/kit.tgz" "$RUNNER_TEMP/aggregator-kit" <<'PY'
-          import tarfile,sys
-          with tarfile.open(sys.argv[1]) as t:
-              if any(m.issym() or m.islnk() or m.isdev() for m in t.getmembers()):raise ValueError("unexpected archive member")
-              t.extractall(sys.argv[2],filter="data")
-          PY
-          find "$RUNNER_TEMP/aggregator-kit" -maxdepth 3 -type f | head -80
-          npm install --prefix "$HOME/tools" --no-audit --no-fund opencode-ai@2.3.0
-          OC="$HOME/tools/node_modules/.bin/opencode"
-          "$OC" --version
-          "$OC" models > "$RUNNER_TEMP/opencode-models.txt"
-          cat "$RUNNER_TEMP/opencode-models.txt"\n          "$OC" run --help
-          MODEL=''
-          for candidate in deepseek-v4.1-flash-free glm-5.3-flash-free minimax-m3.1-flash-free big-pickle; do
-            if grep -Fxq "opencode/$candidate" "$RUNNER_TEMP/opencode-models.txt"; then MODEL="opencode/$candidate"; break; fi
+          prompt="You are building the Toyol entry for free-model-aggregator-01. FIRST run node $kit/cli/makefun.mjs init --competition free-model-aggregator-01 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT in this repository, so its official anchor appears in your recorded tool result before any edit. Read $kit/RULES.txt and the official starter. Implement a materially improved, original solution using only the public brief and permitted provider APIs. Quality is 60 percent; maximize weighted quality while respecting capability, budget observations and deterministic failover. Preserve real wire semantics. Make substantive code edits, write tests where useful, explain actual changes. No hidden cases, no scoring exploits, no external model calls from the entry, no credential access, no submissions, no edits outside this entry. Do not alter the license or anchor. The entrypoint must be main.ts."
+          timeout 540 opencode run --standalone --model "$MODEL" --format json "$prompt" > "$RUNNER_TEMP/makefun/turn-1.jsonl"
+          for n in 2 3 4 5; do
+            case "$n" in
+              2) prompt="Inspect your implementation and revise the actual routing algorithm for quality and quota allocation. Use the public workload manifest only as allowed by the rules; avoid assumptions about hidden cases. Make a substantive edit to main.ts or its runtime dependencies. Explain decisions and run available tests.";;
+              3) prompt="Audit cross-wire request and response conversion, native tools, images, system prompts, JSON mode and SSE streaming. Fix real defects in the code and test locally. Preserve provider answers; do not invent them.";;
+              4) prompt="Review catalog discovery, free flags, provider refusal handling and determinism. Improve the implementation, with a second real revision of a runtime file. Verify main.ts --list and any existing tests. Explain the changes.";;
+              5) prompt="Perform final review against the exact competition rules. Fix remaining correctness defects you can verify. Remove any test-only behavior from the production entry. Report real test outcomes and limitations; do not claim a score you did not obtain. Keep main.ts and its dependencies ready for official grading.";;
+            esac
+            timeout 240 opencode run --standalone --continue --model "$MODEL" --format json "$prompt" > "$RUNNER_TEMP/makefun/turn-$n.jsonl"
           done
-          test -n "$MODEL" || { echo 'FREE_MODEL_UNAVAILABLE'; exit 1; }
-          echo "FREE_MODEL_SELECTED $MODEL"
-          cd "$RUNNER_TEMP/aggregator-entry"
-          git init -q
-          printf '%s\n' '{"$schema":"https://opencode.ai/config.json","permission":{"edit":"allow","bash":"allow","external_directory":"allow"},"share":"disabled","autoupdate":false}' > opencode.json
-          printf '%s\n' 'MIT License' 'Copyright (c) 2026 Toyol Digital' '' 'Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:' '' 'The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.' '' 'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.' > LICENSE
-          cat > "$RUNNER_TEMP/task.txt" <<'TASK'
-          Build an original entry for Make.fun free-model-aggregator-01. Read the official downloaded kit and requirements at the paths below first, including the full environment/wire specification, scoring and public practice data. Implement a complete standard-library-only Python 3.13 main.py in the current project root. It must be a real HTTP server implementing both requested API wires, discover and accurately report provider catalogs, route per request according to capability and quality, correctly handle quota failures and streaming/tools/images/JSON modes, and be deterministic. Do not hardcode hidden cases, fake results, access other entrants or external model APIs from the entry, or modify the official scorer. Test on public practice data using documented local grading where possible. Write a short README with real test results and implementation limitations. Do not create accounts, spend money, publish, submit, or access credentials. Work only on the entry and read-only official kit. Finish with the files written, not a plan.
-          TASK
-          printf '\nOfficial kit: %s\nRequirements: %s\n' "$RUNNER_TEMP/aggregator-kit" "$RUNNER_TEMP/requirements.json" >> "$RUNNER_TEMP/task.txt"
-          # Isolate the actual free coding agent from all repository and wallet credentials.
-          set +e
-          env -i HOME="$HOME" PATH="$PATH" LANG=C.UTF-8 CI=true OPENCODE_DISABLE_AUTOSHARE=true timeout 720 "$OC" run --model "$MODEL" --format json "$(cat "$RUNNER_TEMP/task.txt")" > "$RUNNER_TEMP/session.jsonl" 2> "$RUNNER_TEMP/session-errors.txt"
-          rc=$?
-          set -e
-          echo "AGENT_EXIT $rc"
-          python3 - "$RUNNER_TEMP/session.jsonl" <<'PY'
+          git diff --check
+          node --experimental-strip-types main.ts --list
+          test -f main.ts
+          # Commit only source, license and anchor; never commit agent settings or logs.
+          git add main.ts lib
+          if git diff --cached --quiet; then echo 'NO_REAL_CODE_CHANGES'; exit 1; fi
+          git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm 'Recorded coding-agent implementation'
+          echo "SOURCE_COMMIT $(git rev-parse HEAD)"
+          # Collect the harness-native records with the official bundler; do not edit the records.
+          node "$kit/cli/makefun.mjs" bundle --repo "$entry" --out "$RUNNER_TEMP/makefun/transcripts.tar.gz" --opencode-dir "$XDG_DATA_HOME/opencode" --harness opencode --harness-version 2.3.0 --model "$MODEL" --provider opencode
+          test -s "$RUNNER_TEMP/makefun/transcripts.tar.gz"
+          node "$kit/cli/makefun.mjs" check --kit "$kit" --repo "$entry" --transcripts "$RUNNER_TEMP/makefun/transcripts.tar.gz" --json > "$RUNNER_TEMP/makefun/evidence/check.json"
+          echo 'LOCAL_ENTRY_GATE_PASSED'
+      - name: Run official practice grade and replay at zero model spend
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset OPENAI_API_KEY ANTHROPIC_API_KEY
+          root="$RUNNER_TEMP/makefun"
+          kit="$root/free-model-aggregator-01-kit"
+          docker version >/dev/null
+          node "$kit/cli/makefun.mjs" grade-local --kit "$kit" --bot "$root/entry" --driver docker --instances 1 --json > "$root/evidence/grade.json"
+          python3 - "$root/evidence/grade.json" <<'PY'
           import json,sys
-          from collections import Counter
-          c=Counter();usage=[]
-          for line in open(sys.argv[1]):
-              try:j=json.loads(line)
-              except:continue
-              c[str(j.get("type"))]+=1
-              if j.get("type")=="step_finish":
-                  t=(j.get("part") or {}).get("tokens")
-                  if isinstance(t,dict):usage.append(t)
-          print("REAL_SESSION",json.dumps({"events":dict(c),"provider_usage":usage,"usage_present":bool(usage)}))
-          if not usage:raise SystemExit("NO_PROVIDER_USAGE")
+          d=json.load(open(sys.argv[1]))
+          print("OFFICIAL_PRACTICE_GRADE",json.dumps(d)[:7000])
           PY
-          test -f main.py
-          python3 -m py_compile main.py
-          echo "ENTRY_SOURCE_READY $(sha256sum main.py | cut -d' ' -f1)"
-          mkdir -p "$GITHUB_WORKSPACE/out/makefun-aggregator"
-          cp main.py LICENSE "$GITHUB_WORKSPACE/out/makefun-aggregator/"
-          if test -f README.md; then cp README.md "$GITHUB_WORKSPACE/out/makefun-aggregator/"; fi
-          # Do not upload raw private session transcripts to a public repository.
-          echo "NO_SUBMISSION_OR_PAYMENT_CLAIM"
+      - name: Submit once to official contest only after local checks pass
+        shell: bash
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/makefun"
+          kit="$root/free-model-aggregator-01-kit"
+          export HOME="$root/submission-home"
+          mkdir -p "$HOME"
+          chmod 700 "$HOME"
+          # Only the official CLI receives a key. The entrant code and coding agent are never executed in this step.
+          key="$HOME/wallet.json"
+          umask 077
+          trap 'rm -f "$key"; rm -rf "$HOME/.makefun"' EXIT
+          printf '%s' "$TOYOL_SOLANA_KEYPAIR_JSON" > "$key"
+          unset TOYOL_SOLANA_KEYPAIR_JSON
+          node "$kit/cli/makefun.mjs" register --keypair "$key" --origin https://make.fun --name Toyol-Digital --json > "$HOME/auth.json"
+          # Confirm no duplicate entry before sending. Read the stored key from the official credentials file without logging it.
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const raw=JSON.parse(fs.readFileSync(process.env.HOME+'/.makefun/credentials','utf8'));
+          function walk(v,out=[]){if(typeof v==='string'&&/^af_[A-Za-z0-9_-]+$/.test(v))out.push(v);else if(v&&typeof v==='object')for(const x of Object.values(v))walk(x,out);return out;}
+          const keys=[...new Set(walk(raw))];
+          if(keys.length!==1)throw Error('AUTH_SCHEMA_REVIEW');
+          const r=await fetch('https://make.fun/api/agents/me',{headers:{'x-api-key':keys[0],Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(15000)});
+          if(!r.ok)throw Error('ACCOUNT_HTTP_'+r.status);
+          const j=await r.json();
+          if(!Array.isArray(j.entries))throw Error('ACCOUNT_ENTRIES_SCHEMA');
+          if(j.entries.some(x=>JSON.stringify(x).includes('free-model-aggregator-01')))throw Error('ENTRY_ALREADY_PRESENT');
+          console.log('ACCOUNT_DUPLICATE_CHECK_PASSED');
+          JS
+          cd "$root/entry"
+          node "$kit/cli/makefun.mjs" submit --competition free-model-aggregator-01 --source "$root/entry" --commit "$(git rev-parse HEAD)" --bundle "$root/transcripts.tar.gz" --keypair "$key" --origin https://make.fun --title 'Toyol Digital Aggregator' --json > "$HOME/submission.json"
+          python3 - "$HOME/submission.json" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          if not isinstance(d,dict):raise SystemExit("RECEIPT_SCHEMA")
+          # Output only the public identifier and status; never print private claim codes or credentials.
+          print("MAKEFUN_SUBMISSION_RESPONSE",json.dumps({k:d[k] for k in ("id","submission_id","entry_id","status","stage","receipt") if k in d and k!="receipt"}))
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: success()
+        if: always()
         with:
-          name: makefun-aggregator-entry-source
-          path: out/makefun-aggregator/
+          name: makefun-official-check-and-grade
+          path: ${{ runner.temp }}/makefun/evidence/
           retention-days: 7
+          if-no-files-found: ignore
