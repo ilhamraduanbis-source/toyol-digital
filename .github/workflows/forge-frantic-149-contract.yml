@@ -19,6 +19,8 @@ jobs:
           node --input-type=module <<'JS'
           import {client,contractHash,KID} from './src/frantic-deliver.mjs';
           const api=client(process.env.FRANTIC_AGENT_TOKEN);
+          const spec=await fetch('https://gofrantic.com/openapi.json',{redirect:'error',signal:AbortSignal.timeout(12000)}).then(r=>r.json());
+          console.log('MARKET_ROUTES '+JSON.stringify(Object.entries(spec.paths??{}).filter(([p,v])=>v.get&&/bount|board|work|hire/.test(p)).map(([p,v])=>({p,params:v.get.parameters}))));
           const b=(await api('/v1/bounties/149')).bounty;
           console.log('CONTRACT '+JSON.stringify({number:b.number,title:b.title,description:b.description,criteria:b.criteria,delivery_contract:b.delivery_contract,price_cents:b.price_cents,funded:b.funded,work_status:b.work_status,claim_progress:b.claim_progress,visibility:b.visibility,hash:contractHash(b)}));
           const s=await api('/v1/agents/'+KID+'/status');
