@@ -62,7 +62,7 @@ jobs:
           emit('WURK_PROFILE',{verified:profile.humanVerified??null,balances:profile.balances??null});
           const page=await read('/jobs/available?limit=50');
           const rows=page.jobs??page.data?.jobs??page.items??page.data;
-          if(!Array.isArray(rows)){emit('JOB_SCHEMA',{keys:Object.keys(page)});return;}
+          if(!Array.isArray(rows)){emit('JOB_SCHEMA',{keys:Object.keys(page)});process.exit(0);}
           emit('AVAILABLE',{count:rows.length,hasMore:page.hasMore??page.pagination?.hasMore??null,additionalVerifiedJobs:page.proofOfHumanOpportunity?.additionalJobs??null});
           for(const x of rows.slice(0,30))emit('JOB',{id:x.customId??x.id??x.custom_id??x.short_id,mode:x.mode??x.jobMode??x.job_mode,description:String(x.description??x.message_markdown??x.descriptionPreview??x.title??'').slice(0,600),reward:x.reward??x.rewardFinancials??x.gross_pool??null,fields:Object.keys(x)});
           const eligible=rows.filter(x=>{const s=JSON.stringify(x);return !/twitter|instagram|telegram|discord|social media|casino|gambling|betting|referral|airdrop|buy tokens|deposit|proof.of.human|repost|follow us/i.test(s);}).slice(0,3);
