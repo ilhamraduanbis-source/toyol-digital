@@ -1,0 +1,95 @@
+name: Toyol — Free recorded Makefun build
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-makefun-build.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-makefun-recorded-build
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Download public kit and install official free coding CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/contest"
+          curl --fail --silent --show-error --location --max-time 45 https://make.fun/c/free-model-aggregator-01/kit -o "$RUNNER_TEMP/contest/kit.tar.gz"
+          python3 - <<'PY'
+          import os,pathlib,tarfile
+          p=pathlib.Path(os.environ["RUNNER_TEMP"])/"contest"
+          with tarfile.open(p/"kit.tar.gz") as z:
+              a=z.getmembers()
+              if sum(x.size for x in a)>100_000_000 or any(x.name.startswith("/") or ".." in pathlib.PurePosixPath(x.name).parts or not(x.isfile() or x.isdir()) for x in a):raise SystemExit("unsafe archive")
+              z.extractall(p,filter="data")
+          PY
+          cd "$RUNNER_TEMP/contest/free-model-aggregator-01-kit"
+          node cli/makefun.mjs init --help
+          node cli/makefun.mjs bundle --help
+          node cli/makefun.mjs check --help
+          version=$(npm view @opencode/cli version)
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][a-zA-Z0-9.-]+)?$ ]]
+          npm install --prefix "$RUNNER_TEMP/contest/tools" --no-audit --no-fund "@opencode/cli@$version"
+          echo "OPENCODE_VERSION=$version"
+          echo "$RUNNER_TEMP/contest/tools/node_modules/.bin" >> "$GITHUB_PATH"
+      - name: Build real entry using only explicitly free OpenCode model and record original session
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset GITHUB_TOKEN GH_TOKEN OPENAI_API_KEY ANTHROPIC_API_KEY OPENCODE_API_KEY
+          export HOME="$RUNNER_TEMP/contest/isolated-home"
+          mkdir -p "$HOME" "$RUNNER_TEMP/contest/entry" "$RUNNER_TEMP/contest/results"
+          kit="$RUNNER_TEMP/contest/free-model-aggregator-01-kit"
+          cd "$RUNNER_TEMP/contest/entry"
+          cp -r "$kit/starter/." .
+          cp "$kit/RULES.txt" "$RUNNER_TEMP/contest/results/RULES.txt"
+          git init -q
+          git config user.name "Toyol Digital"
+          git config user.email "toyol@users.noreply.github.com"
+          mkdir -p .makefun
+          printf '%s\n' '{"wallet":"At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ"}' > .makefun/owner.json
+          git add . && git commit -qm "Import official MIT starter"
+          cat > opencode.json <<'JSON'
+          {"$schema":"https://opencode.ai/config.json","model":"opencode/big-pickle","permission":{"external_directory":"deny","webfetch":"deny","websearch":"deny","bash":"allow","edit":"allow","read":"allow"}}
+          JSON
+          opencode models opencode | tee "$RUNNER_TEMP/contest/results/models.txt"
+          grep -Fx 'opencode/big-pickle' "$RUNNER_TEMP/contest/results/models.txt"
+          # Real agent turns, no reconstructed or invented transcript. No wallet or API secrets in this job.
+          prompt="Read main.ts, lib/providers.ts, lib/wire.ts and the contest specification at $kit/RULES.txt if accessible. Build a genuine improved deterministic entry for the free model aggregator competition. First inspect baseline; then implement robust retry across eligible free providers on 402/429/5xx, preserve requirements and streaming, and explain your changes. Never use paid models or call external model services from the ENTRY. Only edit files in this entry directory. Do not submit anything or contact external services. Do not change the license or owner file."
+          opencode run --model opencode/big-pickle --format json "$prompt" > "$RUNNER_TEMP/contest/results/turn-1.jsonl"
+          for n in 2 3 4 5; do
+            case "$n" in
+              2) prompt="Implement or improve deterministic routing and failure bookkeeping. Review exact provider capability requirements, free flags, and retry safety. Make real edits to the entrypoint or its dependencies and test.";;
+              3) prompt="Improve native Anthropic and Gemini upstream wire support where feasible. Preserve request semantics, tool calls, system messages, token limits, images, JSON mode and valid streaming. Run local tests; do not invent passing results.";;
+              4) prompt="Review code for failure and replay determinism. Add or revise tests covering failover and catalog fidelity. Fix actual defects and run tests. Avoid external network calls from the entry.";;
+              5) prompt="Final review against competition requirements. Make meaningful corrections if necessary, run available local checks, report exactly what passes and what remains unsupported. Do not submit or fabricate evidence.";;
+            esac
+            opencode run --continue --model opencode/big-pickle --format json "$prompt" > "$RUNNER_TEMP/contest/results/turn-$n.jsonl"
+          done
+          opencode session list --format json > "$RUNNER_TEMP/contest/results/session-list.json"
+          sid=$(python3 -c 'import json,sys; a=json.load(open(sys.argv[1])); a=a if isinstance(a,list) else a.get("sessions",[]); print(a[0]["id"])' "$RUNNER_TEMP/contest/results/session-list.json")
+          opencode session export "$sid" > "$RUNNER_TEMP/contest/results/recorded-session.json"
+          git diff --stat
+          git diff --check
+          node --experimental-strip-types main.ts --list
+          git add main.ts lib
+          git commit -qm "Recorded free coding-agent implementation" || true
+          git bundle create "$RUNNER_TEMP/contest/results/source.bundle" HEAD
+          echo "ENTRY_COMMIT $(git rev-parse HEAD)"
+          echo "SESSION_EXPORT_BYTES $(wc -c < "$RUNNER_TEMP/contest/results/recorded-session.json")"
+          # Gate eligibility is separate from a successful build; no entry submission in this job.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: makefun-build-evidence
+          path: |
+            ${{ runner.temp }}/contest/results/
+            ${{ runner.temp }}/contest/entry/main.ts
+            ${{ runner.temp }}/contest/entry/lib/
+          retention-days: 7
+          if-no-files-found: warn
