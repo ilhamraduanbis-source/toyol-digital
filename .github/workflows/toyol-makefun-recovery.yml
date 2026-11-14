@@ -24,7 +24,7 @@ jobs:
       - name: Verify retry failure and prevent duplicate recovery
         id: check
         env:
-          GH_${{ github.token }}: TOKEN
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -136,7 +136,7 @@ jobs:
               args=()
               if [ "$turn" -gt 1 ]; then args+=(--continue); fi
               set +e
-              timeout --kill-after=10s 210s opencode run --standalone --model "$model" "${args[@]}" --format json "$prompt" > "$attempt/logs/turn-$turn.jsonl" 2> "$attempt/logs/turn-$turn.stderr"
+              timeout --kill-after=10s 210s opencode run --standalone --model "$model" "${args[@]}" --format json "$prompt" </dev/null > "$attempt/logs/turn-$turn.jsonl" 2> "$attempt/logs/turn-$turn.stderr"
               rc=$?
               set -e
               echo "RECOVERY_TURN $n $turn EXIT $rc"
