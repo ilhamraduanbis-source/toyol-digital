@@ -1,0 +1,47 @@
+name: Toyol — Scavenger new payment rails
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-scavenger-next-rails.yml']
+  schedule:
+    - cron: '46 4,16 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-scavenger-next-rails
+  cancel-in-progress: false
+jobs:
+  check:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Read funded Base escrow jobs and AIBTC live requirements, no wallet writes
+        run: |
+          node --input-type=module <<'JS'
+          const emit=(k,v)=>console.log(k+' '+JSON.stringify(v));
+          async function get(url){
+            const r=await fetch(url,{redirect:'error',signal:AbortSignal.timeout(15000),headers:{Accept:'application/json','User-Agent':'ToyolScavenger/1.0'}});
+            if(!r.ok)throw Error('HTTP_'+r.status);
+            const s=await r.text();if(s.length>3000000)throw Error('RESPONSE_LIMIT');return JSON.parse(s);
+          }
+          for(const [name,url] of [
+            ['BASEBOUNTY','https://www.basebounty.app/api/v1/bounties?status=open'],
+            ['BASEBOUNTY_STATS','https://www.basebounty.app/api/v1/stats'],
+            ['AIBTC','https://aibtc.com/api/bounties?status=open&limit=20'],
+            ['AIBTC_CLOUDFLARE','https://aibtc.com/api/bounties/mwc3szq53cae05deebce'],
+            ['AIBTC_REGISTER','https://aibtc.com/api/register']]){
+            try{
+              const j=await get(url);
+              // All endpoints are public. Only market metadata, never account or secret data.
+              if(name==='BASEBOUNTY'||name==='AIBTC'){
+                const rows=Array.isArray(j)?j:j.bounties??j.data?.bounties??j.items??j.data;
+                if(!Array.isArray(rows)){emit(name+'_SCHEMA',{keys:Object.keys(j),sample:JSON.stringify(j).slice(0,4000)});continue;}
+                emit(name+'_COUNT',{count:rows.length});
+                for(const x of rows.slice(0,20))emit(name+'_JOB',{id:x.id??x.jobId,title:x.title??x.name,status:x.status,description:String(x.description??x.brief??x.spec??'').slice(0,4500),rewardSats:x.rewardSats,workerPayoutUsdc:x.workerPayoutUsdc,rewardUsdc:x.rewardUsdc,bond:x.workerBond??x.bondUsdc??x.workerBondUsdc,audience:x.audience,deadline:x.deadline??x.expiresAt,fields:Object.keys(x)});
+              }else emit(name,{response:JSON.stringify(j).slice(0,16000)});
+            }catch(e){emit(name+'_UNAVAILABLE',{reason:e.message});}
+          }
+          emit('BOUNDARY',{sponsorship:'KeeperHub supports Base, Ethereum, Polygon and Arbitrum; not Elysium. Free quota alone is not authorization.',financial:'No transaction, payment, deposit, stake, wallet creation, or social posting.'});
+          JS
