@@ -1,0 +1,30 @@
+name: Toyol — WURK Store readiness
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-wurk-store-setup.yml']
+permissions:
+  contents: read
+jobs:
+  docs:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Verify public store publication and order delivery contract
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://api.wurk.fun';
+          for(const p of ['/references/worker.md','/references/account.md','/references/store.md']){
+            const r=await fetch(root+p,{redirect:'error',signal:AbortSignal.timeout(12000)});
+            if(!r.ok){console.log('DOC_UNAVAILABLE '+p+' '+r.status);continue;}
+            const t=await r.text();
+            const lines=t.split('\n');
+            const selected=new Set();
+            for(let i=0;i<lines.length;i++){
+              if(/\/wurker\/(?:profile|store|orders)|publish a service|store listing|deliver work|delivery|service tier|listing.*price|accept an order/i.test(lines[i]))for(let k=Math.max(0,i-4);k<=Math.min(lines.length-1,i+16);k++)selected.add(k);
+            }
+            console.log('STORE_DOC '+JSON.stringify({path:p,text:[...selected].sort((a,b)=>a-b).map(i=>lines[i]).join('\n').slice(0,42000)}));
+          }
+          JS
