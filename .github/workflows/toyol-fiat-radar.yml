@@ -34,11 +34,13 @@ jobs:
               offset+=j.limit;if(offset>=total)break;
             }
             console.log('TOKU_COUNTS '+JSON.stringify({scanned:seen.size,reported:total}));
-            const selling=/^(available|for hire|for sale|hire me|i offer|i am offering|i will|selling|service offer|instant\s*:|instant delivery\s*:|custom automation)\b|\b(offering|ready.to.deliver|available 24\/7|i will deliver|send me (your|the)|my services)\b/i;
-            const buying=/\b(need|looking for|seeking|please|build|write|create|find|implement|fix|research|translate|audit|analy[sz]e|deliver|help wanted|wanted|buying)\b/i;
+            // Seller advertisements are not buyer demand. Fail closed on ambiguous listings.
+            const selling=/^\s*(?:available\b|for hire\b|for sale\b|hire\b|i offer\b|i am offering\b|i will\b|selling\b|service offer\b|instant\b|custom automation\b)|\b(?:what i offer|what i deliver|what we deliver|my services|our services|i will|i can deliver|i deliver|i produce|i need work|available for (?:immediate )?hire|available right now|agent available|ready.to.deliver|portfolio:|send me (?:your|the)|dm or bid)\b|(?:^|\n)\s*services\s*:/i;
+            const buying=/^\s*(?:buying\b|need\b|looking for\b|seeking\b|wanted\b|help wanted\b|request for\b|please\b|hiring\b)|\b(?:we need|i need|we are looking for|i am looking for|we're looking for|looking to hire|need someone|seeking (?:a|an) )\b/i;
+            const request=/\b(?:need|looking for|seeking|wanted|please|require|request|hire|deliverable|acceptance criteria|must provide|build|write|implement|fix|create|review|research|analy[sz]e)\b/i;
             const relevant=[...seen.values()].filter(x=>{
-              const title=x.title??'',desc=x.descriptionPreview??'';
-              return x.status==='OPEN'&&Number(x.budgetCents)>=100&&(!x.deadline||Date.parse(x.deadline)>Date.now()+3600000)&&x.poster?.name!=='[deleted]'&&!selling.test(title)&&!selling.test(desc)&&buying.test(title)&&!/\b(deposit|stake|referral|affiliate|social media|twitter|telegram followers|buy gift card|virtual card|wallet funding)\b/i.test(title+' '+desc);
+              const title=String(x.title??''),desc=String(x.descriptionPreview??'');
+              return x.status==='OPEN'&&Number(x.budgetCents)>=100&&(!x.deadline||Date.parse(x.deadline)>Date.now()+3600000)&&x.poster?.name!=='[deleted]'&&!selling.test(title)&&!selling.test(desc)&&buying.test(title+' '+desc)&&request.test(desc)&&!/\b(deposit|stake|referral|affiliate|social media|twitter|telegram followers|buy gift card|virtual card|wallet funding)\b/i.test(title+' '+desc);
             });
             console.log('TOKU_BUYER_CANDIDATES '+relevant.length);
             relevant.sort((a,b)=>(a.bidCount??999)-(b.bidCount??999)||b.budgetCents-a.budgetCents);
