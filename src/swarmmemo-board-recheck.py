@@ -53,7 +53,29 @@ def fetch_stamp(url):
     digest=r.get("raw_sha256")
     text=r.get("markdown") or r.get("text") or r.get("content")
     if not isinstance(digest,str) or not re.fullmatch("[a-f0-9]{64}",digest): raise ValueError("FETCH_HASH_MISSING")
-    if not isinstance(text,str) or not text.strip(): raise ValueError("FETCH_TEXT_MISSING")
+    if not isinstance(text,str) or not text.strip():
+        # Some successful fetch-page responses carry the text under a different
+        # field. Independently read exactly the public URL and require a match
+        # to the provider's raw-content hash; never accept a CAPTCHA or redirect.
+        from html.parser import HTMLParser
+        class VisibleText(HTMLParser):
+            def __init__(self):
+                super().__init__(convert_charrefs=True);self.skip=0;self.parts=[]
+            def handle_starttag(self,tag,attrs):
+                if tag in ("script","style"):self.skip+=1
+            def handle_endtag(self,tag):
+                if tag in ("script","style") and self.skip:self.skip-=1
+            def handle_data(self,data):
+                if not self.skip:self.parts.append(data)
+        verdict=r.get("verdict") or {}
+        if isinstance(verdict,dict) and verdict.get("verdict") not in (None,"pass"): raise ValueError("FETCH_SCREEN_NOT_PASS")
+        req=urllib.request.Request(url,headers={"User-Agent":"ToyolBoardAudit/1.0","Accept-Encoding":"identity","Accept":"text/html,text/plain,application/json"})
+        with urllib.request.urlopen(req,timeout=20) as response:
+            if response.status!=200 or urllib.parse.urlsplit(response.url).hostname!=urllib.parse.urlsplit(url).hostname:raise ValueError("DIRECT_SOURCE_CHANGED")
+            raw=response.read(1000001)
+        if len(raw)>1000000 or hashlib.sha256(raw).hexdigest()!=digest:raise ValueError("DIRECT_HASH_MISMATCH "+url+" fields="+",".join(sorted(r.keys())))
+        parser=VisibleText();parser.feed(raw.decode("utf8",errors="replace"));text=" ".join(parser.parts)
+
     code=r.get("status") or r.get("status_code") or r.get("http_status")
     if code not in (200,"200"): raise ValueError("PAGE_NOT_200")
     stamp=m.paid_free_tool("notary/stamp",{"text":digest})
