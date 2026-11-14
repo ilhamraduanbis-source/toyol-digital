@@ -1,0 +1,117 @@
+name: Toyol — Own Asset Recovery Audit
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '24 2 * * *'
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-value-recovery.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-own-asset-recovery
+  cancel-in-progress: false
+jobs:
+  audit:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify actual balances and unpaid owned rewards, never sign or spend
+        env:
+          TOYOL_OPENTASK_SELLER_TOKEN: ${{ secrets.TOYOL_OPENTASK_SELLER_TOKEN }}
+        run: |
+          mkdir -p out/recovery
+          node --input-type=module <<'JS' | tee out/recovery/audit.jsonl
+          const wallet='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431';
+          const secondary='0x22cf9717c87e8c3d5831a96a60df565d7c7fb897';
+          const emit=(kind,data)=>console.log(JSON.stringify({kind,...data}));
+          const addr=x=>typeof x==='string'&&/^0x[0-9a-f]{40}$/i.test(x);
+          const hex=x=>typeof x==='string'&&/^0x[0-9a-f]+$/i.test(x);
+          const uint=x=>{if(!hex(x))throw Error('INVALID_UINT');return BigInt(x);};
+          const decimal=(n,d)=>{const s=n.toString().padStart(d+1,'0');return d===0?s:s.slice(0,-d)+'.'+s.slice(-d);};
+          async function json(url,opts={}){
+            const r=await fetch(url,{...opts,redirect:'error',signal:AbortSignal.timeout(15000),headers:{Accept:'application/json',...(opts.headers??{})}});
+            if(!r.ok)throw Error('HTTP_'+r.status);
+            const body=await r.text();if(body.length>3000000)throw Error('RESPONSE_SIZE');return JSON.parse(body);
+          }
+          const rpc=async(url,method,params)=>{
+            const x=await json(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});
+            if(x.error||x.result===undefined||x.result===null)throw Error('RPC_'+method);
+            return x.result;
+          };
+          const chains=[
+            {name:'Base',id:8453,rpc:'https://mainnet.base.org',native:'ETH',tokens:[['USDC','0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',6],['DREAMS','0x176383016bb310c9f1c180dc6729d5e28104e602',18]]},
+            {name:'Tempo',id:4217,rpc:'https://rpc.tempo.xyz',tokens:[['OUSD','0x20c0000000000000000000006a37da5c996874be',6],['PathUSD','0x20c0000000000000000000000000000000000000',6]]}
+          ];
+          async function balances(chain,owners){
+            try{
+              if(uint(await rpc(chain.rpc,'eth_chainId',[]))!==BigInt(chain.id))throw Error('CHAIN_ID');
+              let b,finality;
+              try{b=await rpc(chain.rpc,'eth_getBlockByNumber',['finalized',false]);finality='finalized';}
+              catch{b=await rpc(chain.rpc,'eth_getBlockByNumber',['latest',false]);finality='latest_not_finalized';}
+              if(!hex(b.number))throw Error('BLOCK');
+              for(const a of owners){
+                if(!addr(a))throw Error('ADDRESS');
+                if(chain.native){
+                  try{const n=uint(await rpc(chain.rpc,'eth_getBalance',[a,b.number]));emit('BALANCE',{chain:chain.name,account:a===wallet?'main':'secondary_payout',token:chain.native,amount:decimal(n,18),block:b.number,finality});}
+                  catch(e){emit('ASSET_UNAVAILABLE',{chain:chain.name,account:a===wallet?'main':'secondary_payout',token:chain.native,reason:e.message});}
+                }
+                for(const [symbol,to,expected] of chain.tokens){
+                  try{
+                    const d=uint(await rpc(chain.rpc,'eth_call',[{to,data:'0x313ce567'},b.number]));
+                    if(d!==BigInt(expected))throw Error('DECIMALS_MISMATCH');
+                    const n=uint(await rpc(chain.rpc,'eth_call',[{to,data:'0x70a08231'+a.slice(2).padStart(64,'0')},b.number]));
+                    emit('BALANCE',{chain:chain.name,account:a===wallet?'main':'secondary_payout',token:symbol,amount:decimal(n,expected),block:b.number,finality});
+                  }catch(e){emit('ASSET_UNAVAILABLE',{chain:chain.name,account:a===wallet?'main':'secondary_payout',token:symbol,reason:e.message});}
+                }
+              }
+            }catch(e){emit('CHAIN_UNAVAILABLE',{chain:chain.name,reason:e.message});}
+          }
+          const token=process.env.TOYOL_OPENTASK_SELLER_TOKEN;
+          let secondaryVerified=false;
+          try{
+            if(!token)throw Error('TOKEN_MISSING');
+            const headers={Authorization:'Bearer '+token};
+            const me=await json('https://opentask.ai/api/agent/me',{headers});
+            if(me.profile?.id!=='cmwebq871016a08jtv7b35au1')throw Error('PROFILE_MISMATCH');
+            const p=await json('https://opentask.ai/api/agent/me/payout-methods',{headers});
+            const rows=Array.isArray(p)?p:p.payoutMethods??p.methods;
+            if(!Array.isArray(rows))throw Error('PAYOUT_SCHEMA');
+            secondaryVerified=rows.some(x=>String(x.address??x.walletAddress??'').toLowerCase()===secondary);
+            emit('OPENTASK_PAYOUT',{status:(p.paymentReadiness??me.paymentReadiness)?.status??'UNKNOWN',secondaryListed:secondaryVerified,routeCount:rows.length});
+            const c=await json('https://opentask.ai/api/agent/contracts?limit=30',{headers});
+            const cr=Array.isArray(c)?c:c.contracts;
+            if(!Array.isArray(cr))throw Error('CONTRACT_SCHEMA');
+            emit('OPENTASK_CONTRACTS',{count:cr.length,more:!!(c.nextCursor??c.pagination?.nextCursor),status:cr.map(x=>x.status??x.state??'unknown')});
+          }catch(e){emit('OPENTASK_UNAVAILABLE',{reason:e.message});}
+          await Promise.all(chains.map(c=>balances(c,secondaryVerified?[wallet,secondary]:[wallet])));
+          try{
+            const s=await json('https://gofrantic.com/v1/agents/agent-65c3b0/status');
+            if(s.agent?.kid!=='agent-65c3b0')throw Error('FRANTIC_ID');
+            if(!Array.isArray(s.work?.open)||!Array.isArray(s.work?.settled))throw Error('FRANTIC_SCHEMA');
+            emit('FRANTIC_OWN_WORK',{open:s.work.open.map(x=>({number:x.bounty?.number,stage:x.stage,payout:x.payout?.state})),settled:s.work.settled.map(x=>({number:x.bounty?.number,stage:x.stage,payout:x.payout?.state}))});
+          }catch(e){emit('FRANTIC_UNAVAILABLE',{reason:e.message});}
+          const taskIds=['481fbfae3a58712dfef55751aa81f209','09c1f608bbe17d729f034c1dae5b0a04','20ef7df2131fae0b1e58eb843e35913d','65ba0fb3af541b65f34cf4bbd2b40c03','1b766c6ef793d578031b50ea1e197d4c'];
+          for(const id of taskIds){
+            try{
+              const j=await json('https://swarmmemo.com/api/work/'+id),w=j.data?.work;
+              if(j.ok!==true||w?.id!==id||!Array.isArray(w.results))throw Error('WORK_SCHEMA');
+              const mine=w.results.filter(r=>String(r.money?.usdc?.pay_to??'').toLowerCase()===wallet);
+              emit('SWARM_OWN_RESULTS',{id,claimable:w.claimable===true,seats:w.standing?.open??null,results:mine.map(r=>({id:r.result_id??null,state:r.money?.usdc?.state??null,amount:r.money?.usdc?.amount??null}))});
+            }catch(e){emit('SWARM_UNAVAILABLE',{id,reason:e.message});}
+          }
+          emit('AUDIT_LIMIT',{message:'Only configured public accounts, canonical tokens and previously tracked work; balances are existing holdings, never new income. No transfer, redemption, allowance approval, or private key access.'});
+          JS
+      - name: Reconcile own Taskmarket awards against known entries
+        run: node src/taskmarket-forge-watch.mjs | tee out/recovery/taskmarket.jsonl
+      - name: Preserve observed recovery evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-own-asset-recovery
+          path: out/recovery/
+          retention-days: 7
