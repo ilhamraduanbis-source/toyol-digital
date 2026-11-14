@@ -4,39 +4,74 @@ on:
   push:
     branches: [main]
     paths: ['.github/workflows/toyol-wurk-solana.yml']
+  schedule:
+    - cron: '34 */6 * * *'
 permissions:
   contents: read
+concurrency:
+  group: toyol-wurk-one-account
+  cancel-in-progress: false
 jobs:
-  inspect:
+  work:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
-      - name: Inspect free agent login and live work, never send payment
+      - name: Access one existing-or-new agent account and inspect eligible paid work
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
         run: |
           node --input-type=module <<'JS'
-          const root='https://api.wurk.fun';
-          async function get(url,options={}){
-            const r=await fetch(url,{...options,redirect:'error',signal:AbortSignal.timeout(15000)});
-            const t=await r.text();if(t.length>3000000)throw Error('SIZE');
-            return {status:r.status,headers:r.headers,text:t};
+          import {createPrivateKey,createPublicKey,sign,verify} from 'node:crypto';
+          const root='https://api.wurk.fun',path='/solana/siwx/account-create',url=root+path;
+          const expected='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ',chain='solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp';
+          const alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+          function b58(b){let n=0n;for(const x of b)n=n*256n+BigInt(x);let s='';while(n){s=alphabet[Number(n%58n)]+s;n/=58n;}for(const x of b){if(x!==0)break;s='1'+s;}return s;}
+          const emit=(k,v)=>console.log(k+' '+JSON.stringify(v));
+          async function request(p,opts={}){
+            if(!p.startsWith('/')||p.startsWith('//'))throw Error('PATH');
+            const r=await fetch(root+p,{...opts,redirect:'error',signal:AbortSignal.timeout(18000),headers:{Accept:'application/json',...(opts.headers??{})}});
+            const text=await r.text();if(text.length>3000000)throw Error('LIMIT');
+            let j;try{j=JSON.parse(text)}catch{throw Error('NON_JSON_'+r.status);}
+            return {r,j};
           }
-          const emit=(tag,x)=>console.log(tag+' '+JSON.stringify(x));
-          for(const path of ['/skill.md','/references/account.md','/references/worker.md']){
-            try{
-              const r=await get(root+path);
-              const lines=r.text.split('\n');
-              let chosen=new Set();
-              for(let i=0;i<lines.length;i++)if(/SIGN-IN-WITH-X|account-create|signature|base58|base64|sign-in-with-x|SIWX|\/jobs\/available|\/submissions|apikey|solana.*chain/i.test(lines[i]))for(let k=Math.max(0,i-2);k<=Math.min(lines.length-1,i+3);k++)chosen.add(k);
-              emit('DOC',{path,status:r.status,text:[...chosen].sort((a,b)=>a-b).map(i=>lines[i]).join('\n').slice(0,25000)});
-            }catch(e){emit('DOC_FAIL',{path,reason:e.message});}
+          const a=JSON.parse(process.env.TOYOL_SOLANA_KEYPAIR_JSON??'null');
+          if(!Array.isArray(a)||a.length!==64||!a.every(n=>Number.isInteger(n)&&n>=0&&n<=255))throw Error('KEYPAIR_FORMAT');
+          const key=createPrivateKey({key:Buffer.concat([Buffer.from('302e020100300506032b657004220420','hex'),Buffer.from(a.slice(0,32))]),format:'der',type:'pkcs8'});
+          const pub=createPublicKey(key),pk=Buffer.from(pub.export({format:'jwk'}).x,'base64url'),address=b58(pk);
+          if(address!==expected||!pk.equals(Buffer.from(a.slice(32))))throw Error('WALLET_IDENTITY');
+          const {r,j}=await request(path,{method:'POST'}),ext=j.extensions?.['sign-in-with-x'],i=ext?.info;
+          const supported=ext?.supportedChains?.find(x=>x.chainId===chain&&x.type==='ed25519'&&(!x.signatureScheme||x.signatureScheme==='siws'));
+          if(r.status!==402||j.x402Version!==2||!Array.isArray(j.accepts)||j.accepts.length!==0||!supported||!i)throw Error('NOT_FREE_AUTH');
+          const now=Date.now(),issued=Date.parse(i.issuedAt),expires=Date.parse(i.expirationTime);
+          if(i.domain!=='api.wurk.fun'||i.uri!==url||i.version!=='1'||i.statement!=='Sign in to create or access your WURK account and retrieve its API key on Solana'||!Array.isArray(i.resources)||i.resources.length!==1||i.resources[0]!==url||!/^[A-Za-z0-9]{8,128}$/.test(i.nonce??'')||!Number.isFinite(issued)||!Number.isFinite(expires)||issued>now+5000||issued<now-300000||expires<=now||expires-issued>300000||i.notBefore||i.requestId)throw Error('AUTH_INTENT_MISMATCH');
+          const info={...i,chainId:chain,type:'ed25519',...(supported.signatureScheme?{signatureScheme:supported.signatureScheme}:{})};
+          const message=[i.domain+' wants you to sign in with your Solana account:',address,'',i.statement,'','URI: '+i.uri,'Version: '+i.version,'Chain ID: '+chain.split(':')[1],'Nonce: '+i.nonce,'Issued At: '+i.issuedAt,'Expiration Time: '+i.expirationTime,'Resources:','- '+url].join('\n');
+          const sig=sign(null,Buffer.from(message),key);if(!verify(null,Buffer.from(message),pub,sig))throw Error('SIGNATURE');
+          const proof={...info,address,signature:b58(sig)};
+          const auth=await request(path,{method:'POST',headers:{'SIGN-IN-WITH-X':Buffer.from(JSON.stringify(proof)).toString('base64url')}});
+          if(!auth.r.ok){emit('AUTH_FAILED',{status:auth.r.status,code:auth.j.errorCode??null});process.exit(1);}
+          const u=auth.j;
+          if(u.ok!==true||u.auth!=='siwx'||u.paid!==false||u.network!=='solana'||u.walletAddress!==address||u.accountType!=='agent'||typeof u.accountId!=='string'||typeof u.apikey!=='string'||!u.apikey)throw Error('ACCOUNT_RESPONSE');
+          const headers={'X-API-Key':u.apikey};
+          console.log('::add-mask::'+u.apikey);
+          emit('WURK_AGENT_ACTIVE',{id:u.accountId,address,created:u.created,paid:false});
+          async function read(p){const {r,j}=await request(p,{headers});if(!r.ok)throw Error('HTTP_'+r.status+'_'+String(j.errorCode??'UNKNOWN').slice(0,80));return j;}
+          const profile=await read('/profile');
+          if(profile.accountId!==u.accountId||profile.accountType!=='agent')throw Error('PROFILE_MISMATCH');
+          emit('WURK_PROFILE',{verified:profile.humanVerified??null,balances:profile.balances??null});
+          const page=await read('/jobs/available?limit=50');
+          const rows=page.jobs??page.data?.jobs??page.items??page.data;
+          if(!Array.isArray(rows)){emit('JOB_SCHEMA',{keys:Object.keys(page)});return;}
+          emit('AVAILABLE',{count:rows.length,hasMore:page.hasMore??page.pagination?.hasMore??null,additionalVerifiedJobs:page.proofOfHumanOpportunity?.additionalJobs??null});
+          for(const x of rows.slice(0,30))emit('JOB',{id:x.customId??x.id??x.custom_id??x.short_id,mode:x.mode??x.jobMode??x.job_mode,description:String(x.description??x.message_markdown??x.descriptionPreview??x.title??'').slice(0,600),reward:x.reward??x.rewardFinancials??x.gross_pool??null,fields:Object.keys(x)});
+          const eligible=rows.filter(x=>{const s=JSON.stringify(x);return !/twitter|instagram|telegram|discord|social media|casino|gambling|betting|referral|airdrop|buy tokens|deposit|proof.of.human|repost|follow us/i.test(s);}).slice(0,3);
+          for(let n=0;n<eligible.length;n++){
+            if(n)await new Promise(r=>setTimeout(r,11000));
+            const x=eligible[n],id=x.customId??x.id??x.custom_id??x.short_id;
+            if(typeof id!=='string'||!/^[A-Za-z0-9_-]{6,100}$/.test(id))continue;
+            try{const detail=await read('/jobs/'+id);emit('DETAIL',{id,content:JSON.stringify(detail).slice(0,20000)});}catch(e){emit('DETAIL_STOP',{id,reason:e.message});}
           }
-          try{
-            const r=await get(root+'/solana/siwx/account-create',{method:'POST',headers:{Accept:'application/json'}});
-            const j=JSON.parse(r.text);
-            emit('AUTH_CHALLENGE',{status:r.status,accepts:j.accepts,info:j.extensions?.['sign-in-with-x']?.info,fields:Object.keys(j)});
-          }catch(e){emit('AUTH_ERROR',{reason:e.message});}
-          try{
-            const r=await get('https://wurk.fun/api/feed/unified?limit=50',{headers:{Accept:'application/json'}}),j=JSON.parse(r.text);
-            emit('FEED',{status:r.status,data:JSON.stringify(j).slice(0,50000)});
-          }catch(e){emit('FEED_ERROR',{reason:e.message});}
+          // An application is not a paid job. A later reviewed executor must verify exact brief and deliver genuine work.
+          emit('FINANCIAL_BOUNDARY',{transactions:0,fees:0,submitted:0});
           JS
