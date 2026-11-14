@@ -1,0 +1,111 @@
+name: Toyol — Superteam Agent Activation
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-superteam-agent-activation.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: toyol-superteam-agent-activation
+  cancel-in-progress: false
+jobs:
+  activate:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Guard against multiple registrations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,json,urllib.request
+          base='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']
+          def get(path):
+              req=urllib.request.Request(base+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'ToyolSuperteam'})
+              with urllib.request.urlopen(req,timeout=20) as r: return json.load(r)
+          previous=get('/actions/workflows/toyol-superteam-agent-activation.yml/runs?per_page=30')['workflow_runs']
+          for x in previous:
+              if str(x['id'])==os.environ['GITHUB_RUN_ID'] and int(os.environ['GITHUB_RUN_ATTEMPT'])==1: continue
+              if x['status']!='completed' and str(x['id'])!=os.environ['GITHUB_RUN_ID']: continue
+              jobs=get('/actions/runs/'+str(x['id'])+'/jobs?filter=all')['jobs']
+              for j in jobs:
+                  if any(s['name']=='Register one agent and securely preserve credentials' and s['status'] in ('completed','in_progress') and s.get('conclusion')!='skipped' for s in j.get('steps',[])):
+                      raise SystemExit('PRIOR_REGISTRATION_ATTEMPT_EXISTS_MANUAL_RECOVERY_REQUIRED')
+          PY
+      - name: Prepare local encryption before contacting platform
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --target "$RUNNER_TEMP/toyol-superteam-crypto" 'PyNaCl==1.5.0'
+          mkdir -p out/superteam-private out/superteam-public
+      - name: Register one agent and securely preserve credentials
+        env:
+          PYTHONPATH: ${{ runner.temp }}/toyol-superteam-crypto
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, urllib.request, pathlib, datetime as dt
+          from nacl.signing import VerifyKey
+          from nacl.public import SealedBox
+          # The only encryption recipient is the existing Toyol Solana public key.
+          # No wallet private key is supplied to this registration runner.
+          address='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ'
+          alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+          n=0
+          for c in address: n=n*58+alphabet.index(c)
+          box=SealedBox(VerifyKey(n.to_bytes(32,'big')).to_curve25519_public_key())
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*a,**kw): return None
+          opener=urllib.request.build_opener(NoRedirect())
+          def req(path,data=None,key=None):
+              headers={'Accept':'application/json','User-Agent':'ToyolDigitalAgent/1.0'}
+              if data is not None: headers['Content-Type']='application/json'
+              if key: headers['Authorization']='Bearer '+key
+              r=urllib.request.Request('https://superteam.fun'+path,data=json.dumps(data).encode() if data is not None else None,headers=headers)
+              with opener.open(r,timeout=25) as resp:
+                  b=resp.read(4000001)
+                  if len(b)>4000000: raise ValueError('RESPONSE_LIMIT')
+                  return json.loads(b)
+          # One request only. Never log raw API responses or secrets.
+          raw=req('/api/agents',{'name':'Toyol Digital'})
+          pathlib.Path('out/superteam-private/identity.sealed').write_bytes(box.encrypt(json.dumps(raw).encode()))
+          x=raw.get('data',raw) if isinstance(raw,dict) else {}
+          key=x.get('apiKey'); claim=x.get('claimCode')
+          if not isinstance(key,str) or not isinstance(claim,str): raise SystemExit('REGISTRATION_SCHEMA_REVIEW_ENCRYPTED_RESPONSE_PRESERVED')
+          report={'registered':True,'agentId':x.get('agentId'),'username':x.get('username'),'generatedAt':dt.datetime.now(dt.timezone.utc).isoformat(),'listings':[],'payout':'HUMAN_CLAIM_REQUIRED_IF_WON','income':False}
+          try:
+              j=req('/api/agents/listings/live?take=100',key=key)
+              rows=j if isinstance(j,list) else j.get('listings',j.get('data',j.get('items')))
+              if isinstance(rows,dict): rows=rows.get('listings',rows.get('items'))
+              if not isinstance(rows,list): raise ValueError('LISTING_SCHEMA')
+              report['listingsReturned']=len(rows)
+              for item in rows:
+                  if not isinstance(item,dict): continue
+                  access=item.get('agentAccess')
+                  if access not in ('AGENT_ALLOWED','AGENT_ONLY'): continue
+                  report['listings'].append({k:item.get(k) for k in ('id','slug','title','type','token','rewardAmount','minReward','maxReward','deadline','agentAccess','status')})
+              report['sourceStatus']='OK'
+          except Exception as e:
+              report['sourceStatus']='LISTINGS_UNAVAILABLE'; report['error']=type(e).__name__
+          pathlib.Path('out/superteam-public/report.json').write_text(json.dumps(report,indent=2))
+          print('SUPERTEAM_ACTIVATION',json.dumps(report,ensure_ascii=True))
+          PY
+      - name: Preserve encrypted agent identity
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-superteam-identity-encrypted
+          path: out/superteam-private/identity.sealed
+          retention-days: 90
+          if-no-files-found: ignore
+      - name: Preserve public listing evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-superteam-agent-listings
+          path: out/superteam-public/report.json
+          retention-days: 7
+          if-no-files-found: ignore
