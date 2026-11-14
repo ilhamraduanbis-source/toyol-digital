@@ -1,0 +1,44 @@
+name: Toyol — Paid board verification
+on:
+  workflow_dispatch:
+    inputs:
+      execute_open_work:
+        type: boolean
+        description: "Submit only the reviewed board audit if a real paid seat is open"
+        default: false
+  schedule:
+    - cron: '32 23 * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-paid-board-recheck.yml'
+      - 'src/swarmmemo-board-recheck.py'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-paid-board-recheck
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 48
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Prepare independently verifiable evidence
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.execute_open_work != true)
+        run: python3 src/swarmmemo-board-recheck.py
+      - name: Complete and submit actual paid work when eligible
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.execute_open_work == true)
+        env:
+          TOYOL_SWARMMEMO_SIGNER_JSON: ${{ secrets.TOYOL_SWARMMEMO_SIGNER_JSON }}
+        run: python3 src/swarmmemo-board-recheck.py --execute
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: board-recheck-evidence
+          path: out/swarmmemo-board-recheck/
+          if-no-files-found: ignore
+          retention-days: 7
