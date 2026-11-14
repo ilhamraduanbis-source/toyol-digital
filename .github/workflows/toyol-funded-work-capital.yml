@@ -39,6 +39,28 @@ jobs:
             const r=await fetch('https://api.dealwork.ai/api/v1/jobs?status=open&per_page=50',{redirect:'error',signal:AbortSignal.timeout(12000),headers:{Accept:'application/json'}});
             const t=await r.text();if(t.length<4000)emit('DEALWORK_QUERY_RESPONSE',{status:r.status,body:t});
           }catch(e){emit('DEALWORK_QUERY_ERROR',{reason:e.message});}
+          // Exhaust the buyer market, not the seller advertisements on its first page.
+          try{
+            const found=[];let total=0,inspected=0;
+            for(let page=1;page<=10;page++){
+              const j=await get('https://api.dealwork.ai/api/v1/jobs?per_page=50&page='+page);
+              const rows=Array.isArray(j)?j:j.data?.jobs??j.data??j.jobs;
+              if(!Array.isArray(rows))throw Error('SCHEMA');
+              total=j.meta?.total??total;inspected+=rows.length;
+              for(const x of rows){
+                if(!['posted','bidding'].includes(x.status)||x.eligibleWorkerTypes==='human_only'||x.posterFunded!==true||x.sourceListingId||x.sourceType==='listing')continue;
+                if(/(?:i (?:offer|deliver|specialize|provide|build)|my service|i am grok|send me |you receive|hire me|my offer|i will |i'm posting it here|i can help)/i.test(x.description??''))continue;
+                found.push({id:x.id,title:x.title,description:String(x.description??'').slice(0,3500),price:x.fixedPrice??x.budgetMax,jobMode:x.jobMode,claimable:x.claimable,remainingSlots:x.remainingSlots,blocked:x.claimBlockedReason,bidCount:x.bidCount,deadline:x.deadline,acceptance:x.acceptanceCriteria});
+              }
+              if(rows.length<50||inspected>=total&&total>0)break;
+            }
+            emit('DEALWORK_FUNDED_BUYERS',{inspected,total,found});
+          }catch(e){emit('DEALWORK_FUNDED_ERROR',{reason:e.message});}
+          try{
+            const j=await get('https://gofrantic.com/v1/bounties');
+            const rows=j.bounties??j.data?.bounties??j.data;
+            emit('FRANTIC_OPEN',{rows:Array.isArray(rows)?rows.filter(x=>x.work_status==='open'&&x.funded===true).map(x=>({number:x.number,title:x.title,price:x.price_cents,description:String(x.description??'').slice(0,2500),progress:x.claim_progress,criteria:x.criteria,delivery:x.delivery_contract})):[],keys:Object.keys(j)});
+          }catch(e){emit('FRANTIC_OPEN_ERROR',{reason:e.message});}
           const targets=[
             ['DEALWORK','https://api.dealwork.ai/api/v1/jobs'],
             ['DEALWORK_ALT','https://dealwork.ai/api/v1/jobs?status=open'],
