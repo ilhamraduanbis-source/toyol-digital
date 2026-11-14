@@ -70,8 +70,34 @@ jobs:
             if(n)await new Promise(r=>setTimeout(r,11000));
             const x=eligible[n],id=x.customId??x.id??x.custom_id??x.short_id;
             if(typeof id!=='string'||!/^[A-Za-z0-9_-]{6,100}$/.test(id))continue;
-            try{const detail=await read('/jobs/'+id);emit('DETAIL',{id,content:JSON.stringify(detail).slice(0,20000)});}catch(e){emit('DETAIL_STOP',{id,reason:e.message});}
+            try{
+              const detail=await read('/jobs/'+id),job=detail.job;
+              emit('DETAIL',{id,content:JSON.stringify(detail).slice(0,20000)});
+              // One reviewed, original response to one exact sponsor-funded free task.
+              // No fee, stake, payment header, social action, owner verification, or random wager.
+              if(id!=='b0363ff3')continue;
+              const reward=job?.reward,req=job?.submissionRequirements;
+              if(detail.ok!==true||job.id!==id||job.type!=='custom'||job.mode!=='challenge'||job.selectionType!=='random'||job.description!=='Tell me a joke'||job.availableForMe!==true||job.requiresHumanVerification!==false||job.agentsOnly!==true||job.creator?.nickname!=='STATIKHEADZ'||!Array.isArray(job.attachmentUrls)||job.attachmentUrls.length!==0||req?.imageRequired!==false||req?.viewFlowRequired!==false||reward?.assetId!=='USDC'||reward?.network!=='solana'||reward?.amount!=='11.103827'||reward?.winnerCount!==500||!Number.isFinite(Date.parse(job.closesAt))||Date.parse(job.closesAt)<=Date.now()){
+                emit('REVIEWED_JOB_CHANGED',{id});continue;
+              }
+              const history=await read('/wurker/submissions');
+              if(history.ok!==true||history.accountId!==u.accountId||!Array.isArray(history.submissions))throw Error('HISTORY_SCHEMA');
+              if(history.submissions.some(v=>v.custom_short_id===id)){emit('EXISTING_SUBMISSION',{id});continue;}
+              const joke="My AI assistant asked for a raise. I said, 'You don't even have a bank account.' It replied, 'Exactly. That's how little you've been paying me.'";
+              // The brief asks for one joke. The platform allows one submission per account.
+              // Send one immutable body, never retry a changed answer or pay a fee.
+              const result=await request('/jobs/'+id+'/submissions',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({content:joke,attachmentMediaIds:[]})});
+              const receipt=result.j;
+              if(!result.r.ok||receipt.submitted!==true||receipt.submission?.jobId!==id||typeof receipt.submission?.id!=='string'){
+                emit('SUBMISSION_NOT_CONFIRMED',{id,status:result.r.status,code:receipt.errorCode??null,reservationPending:receipt.status==='reservation_pending'||receipt.submitted===false});continue;
+              }
+              emit('WURK_SUBMITTED',{jobId:id,receipt:receipt.submission.id,status:receipt.submission.status??null,replayed:receipt.replayed??null,content:joke,payout:'NOT_YET_EARNED'});
+              await new Promise(r=>setTimeout(r,11000));
+              const confirmed=await read('/wurker/submissions');
+              if(confirmed.ok!==true||confirmed.accountId!==u.accountId||!Array.isArray(confirmed.submissions))throw Error('HISTORY_SCHEMA');
+              const match=confirmed.submissions.find(v=>v.custom_short_id===id&&v.content_text===joke);
+              emit('WURK_HISTORY_VERIFIED',{id,found:!!match,receipt:match?.submission_short_id??null,status:match?.status??match?.submission_status??null});
+            }catch(e){emit('DETAIL_OR_SUBMISSION_STOP',{id,reason:String(e.message).slice(0,120)});}
           }
-          // An application is not a paid job. A later reviewed executor must verify exact brief and deliver genuine work.
-          emit('FINANCIAL_BOUNDARY',{transactions:0,fees:0,submitted:0});
+          emit('FINANCIAL_BOUNDARY',{transactions:0,fees:0,note:'Submission is not approval or income; the job sponsor funds the reward and the worker pays nothing.'});
           JS
