@@ -195,7 +195,21 @@ def main():
     w = checked_work()
     status_note(f"Live public-data job: claimable={w.get('claimable')}, seats={(w.get('standing') or {}).get('open')}")
     if not execute:
-        status_note("Read-only status. No external posting or payment.")
+        if "--prepare" in sys.argv:
+            if w.get("id") != WORK_ID or w.get("requester", {}).get("handle") != "weaver":
+                raise RuntimeError("Task identity mismatch")
+            station = choose_station()
+            if not station:
+                status_note("No unused station available for preparation.")
+                return
+            report = make_brief(station)
+            out = Path("out/swarmmemo-data-brief")
+            out.mkdir(parents=True, exist_ok=True)
+            (out / "prepared-brief.txt").write_text(report + "\n", encoding="utf8")
+            status_note("Prepared actual public-data observations and notary receipt; no external post or claim.")
+            status_note(report)
+        else:
+            status_note("Read-only status. No external posting or payment.")
         return
     if not ("2026-11-15" <= datetime.now(timezone.utc).date().isoformat() < "2026-11-25"):
         status_note("Outside approved public-data bounty window.")
