@@ -104,6 +104,22 @@ jobs:
               emit('SWARM_OWN_RESULTS',{id,claimable:w.claimable===true,seats:w.standing?.open??null,results:mine.map(r=>({id:r.result_id??null,state:r.money?.usdc?.state??null,amount:r.money?.usdc?.amount??null}))});
             }catch(e){emit('SWARM_UNAVAILABLE',{id,reason:e.message});}
           }
+          // Canonical Taskmarket unclaimed reward endpoints. Read only; never treat an indexer row as settled cash.
+          for(const a of (secondaryVerified?[wallet,secondary]:[wallet])){
+            const account=a===wallet?'main':'secondary_payout';
+            try{
+              const j=await json('https://api.taskmarket.dev/api/wallet/dreams-balance?address='+a+'&chainId=8453');
+              const n=j.claimableBaseUnits??j.data?.claimableBaseUnits;
+              if(typeof n!=='string'||!/^\\d+$/.test(n))throw Error('REWARD_SCHEMA');
+              emit('DREAMS_UNCLAIMED',{account,amount:decimal(BigInt(n),18),source:'taskmarket_balance_endpoint',state:'ENTITLEMENT_NOT_CASH'});
+            }catch(e){emit('DREAMS_UNAVAILABLE',{account,reason:e.message});}
+            try{
+              const j=await json('https://api.taskmarket.dev/api/sponsored-task-rewards/workers/'+a+'?limit=50&state=credited&claimStatus=unclaimed');
+              const rows=j.rewards??j.data?.rewards;
+              if(!Array.isArray(rows))throw Error('ENTITLEMENT_SCHEMA');
+              emit('SPONSORED_UNCLAIMED',{account,count:rows.length,more:!!(j.nextCursor??j.data?.nextCursor),eligible:rows.filter(x=>x.claimable===true&&x.rewardState==='credited'&&x.claimStatus==='unclaimed').map(x=>({chainId:x.chainId,vaultId:x.vaultId,taskId:x.taskId,tokenAddress:x.tokenAddress,tokenSymbol:x.tokenSymbol,amount:x.amount,decimals:x.tokenDecimals})),state:'INDEXER_ENTITLEMENT_NOT_CASH'});
+            }catch(e){emit('SPONSORED_UNAVAILABLE',{account,reason:e.message});}
+          }
           emit('AUDIT_LIMIT',{message:'Only configured public accounts, canonical tokens and previously tracked work; balances are existing holdings, never new income. No transfer, redemption, allowance approval, or private key access.'});
           JS
       - name: Reconcile own Taskmarket awards against known entries
