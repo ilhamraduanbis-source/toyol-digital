@@ -1,0 +1,106 @@
+name: Toyol — Superteam Agent Opportunity Watch
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '11 */8 * * *'
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-superteam-agent-watch.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: toyol-superteam-agent-watch
+  cancel-in-progress: false
+jobs:
+  watch:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Prepare encryption library
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --target "$RUNNER_TEMP/toyol-superteam-crypto" 'PyNaCl==1.5.0'
+      - name: Retrieve existing encrypted identity (never register again)
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: toyol-superteam-identity-encrypted
+          run-id: '43622404923'
+          github-token: ${{ github.token }}
+          path: encrypted
+      - name: Recover only the agent API key for read-only discovery
+        env:
+          PYTHONPATH: ${{ runner.temp }}/toyol-superteam-crypto
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          set -euo pipefail
+          umask 077
+          python3 - <<'PY'
+          import os,json,pathlib
+          from nacl.signing import SigningKey
+          from nacl.public import SealedBox
+          key=bytes(json.loads(os.environ['TOYOL_SOLANA_KEYPAIR_JSON']))
+          if len(key)!=64: raise SystemExit('INVALID_WALLET_KEY')
+          s=SigningKey(key[:32])
+          if bytes(s.verify_key)!=key[32:]: raise SystemExit('WALLET_MISMATCH')
+          raw=json.loads(SealedBox(s.to_curve25519_private_key()).decrypt(pathlib.Path('encrypted/identity.sealed').read_bytes()))
+          x=raw.get('data',raw)
+          if x.get('agentId')!='b2f66de9-6e7a-423c-bc03-ebbdeece775a' or not isinstance(x.get('apiKey'),str): raise SystemExit('IDENTITY_MISMATCH')
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'superteam-read-key'
+          p.write_text(x['apiKey'])
+          p.chmod(0o600)
+          PY
+      - name: Discover actual agent-only listings and inspect official details
+        run: |
+          set -euo pipefail
+          mkdir -p out/superteam-watch
+          python3 - <<'PY'
+          import json,urllib.request,os,datetime as dt,re
+          from pathlib import Path
+          p=Path(os.environ['RUNNER_TEMP'])/'superteam-read-key'
+          key=p.read_text(); p.unlink()
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*a,**kw): return None
+          opener=urllib.request.build_opener(NoRedirect())
+          def get(path):
+              req=urllib.request.Request('https://superteam.fun'+path,headers={'Authorization':'Bearer '+key,'Accept':'application/json','User-Agent':'ToyolAgentWatch/1.0'})
+              with opener.open(req,timeout=15) as r:
+                  b=r.read(4000001)
+                  if len(b)>4000000: raise ValueError('RESPONSE_LIMIT')
+                  return json.loads(b)
+          j=get('/api/agents/listings/live?take=100')
+          a=j if isinstance(j,list) else j.get('listings',j.get('data',j.get('items')))
+          if isinstance(a,dict): a=a.get('listings',a.get('items'))
+          if not isinstance(a,list): raise SystemExit('LISTING_SCHEMA')
+          results=[]
+          for x in a[:20]:
+              if not isinstance(x,dict) or x.get('agentAccess') not in ('AGENT_ALLOWED','AGENT_ONLY'): continue
+              slug=x.get('slug')
+              if not isinstance(slug,str) or not re.fullmatch(r'[\w-]+',slug): continue
+              row={k:x.get(k) for k in ('id','slug','title','type','token','rewardAmount','minReward','maxReward','deadline','agentAccess','status')}
+              row['decision']='REVIEW_REQUIRED'
+              try:
+                  detail=get('/api/agents/listings/details/'+slug)
+                  d=detail.get('listing',detail.get('data',detail)) if isinstance(detail,dict) else {}
+                  if isinstance(d,dict) and isinstance(d.get('listing'),dict): d=d['listing']
+                  if not isinstance(d,dict): raise ValueError('DETAIL_SCHEMA')
+                  row['detail']={k:d.get(k) for k in ('id','title','type','token','rewardAmount','rewards','description','eligibility','eligibilityQuestions','deadline','agentAccess','status','skills')}
+                  row['officialDetail']='RETRIEVED'
+              except Exception as e: row['officialDetail']='UNAVAILABLE'; row['error']=type(e).__name__
+              results.append(row)
+          report={'generatedAt':dt.datetime.now(dt.timezone.utc).isoformat(),'agentId':'b2f66de9-6e7a-423c-bc03-ebbdeece775a','listingsReturned':len(a),'eligibleCandidates':len(results),'results':results,'income':False,'note':'Read-only discovery. Eligibility and payment terms require review before submission; human claims payout. No repeat registration, no bids, no transfers, no paid API calls.'}
+          Path('out/superteam-watch/report.json').write_text(json.dumps(report,indent=2))
+          print('SUPERTEAM_WATCH',json.dumps({'listingsReturned':len(a),'eligibleCandidates':len(results),'titles':[x['title'] for x in results]},ensure_ascii=True))
+          PY
+      - name: Remove temporary agent credential
+        if: always()
+        run: rm -f "$RUNNER_TEMP/superteam-read-key"
+      - name: Preserve agent opportunity evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-superteam-agent-watch
+          path: out/superteam-watch/report.json
+          retention-days: 7
+          if-no-files-found: warn
