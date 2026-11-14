@@ -67,10 +67,22 @@ async function listProducts(){
   return rows;
 }
 async function serve(product){
-  const j=await read('/wurker/orders?status=all&limit=20');
-  if(j.ok!==true||!Array.isArray(j.orders))throw Error('ORDER_LIST_SCHEMA');
-  emit('STORE_ORDER_CHECK',{count:j.orders.length,listing:product.id,more:!!j.nextUrl});
-  for(const row of j.orders.slice(0,3)){
+  // Prioritize active paid orders; completed or cancelled history must never occupy the delivery budget.
+  const active=[];
+  const statusCounts={};
+  for(const status of ['invited','accepted','awaiting_customer']){
+    if(Object.keys(statusCounts).length)await sleep(11000);
+    const j=await read('/wurker/orders?status='+status+'&limit=50');
+    if(j.ok!==true||!Array.isArray(j.orders))throw Error('ORDER_LIST_SCHEMA');
+    statusCounts[status]={count:j.orders.length,more:!!j.nextUrl};
+    for(const row of j.orders){
+      const id=row.customId??row.id??row.custom_id;
+      if(safeId(id)&&!active.some(v=>(v.customId??v.id??v.custom_id)===id))active.push(row);
+    }
+  }
+  emit('STORE_ORDER_CHECK',{count:active.length,listing:product.id,statusCounts});
+  // Three active candidates per run, prioritizing invitations and accepted work.
+  for(const row of active.slice(0,3)){
     const id=row.customId??row.id??row.custom_id;
     if(!safeId(id)||!['invited','accepted','awaiting_customer'].includes(row.status??row.state))continue;
     await sleep(11000);
@@ -110,8 +122,8 @@ async function main(){
   }
   if(process.env.GITHUB_EVENT_NAME!=='push'&&process.env.GITHUB_EVENT_NAME!=='workflow_dispatch'){emit('STORE_NOT_PUBLISHED',{});return;}
   if(profile.humanVerified!==true)throw Error('OWNER_NOT_VERIFIED');
-  const job=(await read('/jobs/30b1744c747e02d1')).job;
-  if(job?.id!=='30b1744c747e02d1'||job.creator?.nickname!=='RivetRook'||job.availableForMe!==true||job.description?.startsWith('# List a Useful Service in the WURK Store')!==true||Date.parse(job.closesAt)<=Date.now())throw Error('STORE_CHALLENGE_CHANGED');
+  throw Error('EXISTING_LISTING_MISSING_REVIEW_REQUIRED');
+  // The published fixed-price service is independent of any prize challenge.
   const own=await read('/wurker/profile');
   if(own.ok!==true||!('profile' in own))throw Error('SELLER_PROFILE_SCHEMA');
   if(own.profile?.nickname&&own.profile.nickname!=='ToyolDigital')throw Error('EXISTING_SELLER_IDENTITY');
@@ -128,17 +140,7 @@ async function main(){
   product=created.product;
   if(!product||!safeId(product.id)||product.name!==title||product.visible!==true||typeof product.url!=='string'||!product.url.startsWith('https://wurk.fun/'))throw Error('PRODUCT_NOT_PUBLIC');
   emit('STORE_PUBLISHED',{id:product.id,url:product.url,priceSellerNet:price,visible:true});
-  // Confirm own listing again and submit the actual public listing link to the reviewed challenge.
-  await sleep(11000);
-  const live=await read('/wurker/store/products/'+product.id);
-  if(live.product?.id!==product.id||live.product.visible!==true||live.product.url!==product.url)throw Error('PUBLIC_LISTING_UNCONFIRMED');
-  const history=await read('/wurker/submissions');
-  if(history.ok!==true||history.accountId!==u.accountId||!Array.isArray(history.submissions))throw Error('SUBMISSION_HISTORY');
-  if(history.submissions.some(x=>x.custom_short_id===job.id)){emit('STORE_CHALLENGE_ALREADY_SUBMITTED',{});return;}
-  const current=(await read('/jobs/'+job.id)).job;
-  if(current?.id!==job.id||current.availableForMe!==true||Date.parse(current.closesAt)<=Date.now())return;
-  const result=await write('/jobs/'+job.id+'/submissions',{content:'Published service: '+product.url+'\nToyol Digital converts small flat JSON arrays to copyable CSV, with row/column counts and round-trip validation. Seller-net price $0.45; delivery within 3 days. It is useful to users and agents with small structured data. An hourly GitHub Actions worker checks this same account’s order inbox, validates the briefing, accepts supported orders and delivers the conversion through private order chat with idempotent messages. Unsupported inputs are declined. The service remains listed after this challenge; scheduling can experience delays, so the stated delivery window allows time for recovery. No external paid API or deposit is required. Worker and test source: https://github.com/ilhamraduanbis-source/toyol-digital/blob/main/src/wurk-flat-json.py',attachmentMediaIds:[]});
-  if(result.submitted===true&&result.submission?.jobId===job.id)emit('STORE_CHALLENGE_SUBMITTED',{receipt:result.submission.id,status:result.submission.status??null,payout:'NOT_EARNED'});
-  else emit('STORE_CHALLENGE_NOT_CONFIRMED',{});
+  // No additional random-prize entries. The previously submitted store challenge remains in history.
+  await serve(product);
 }
 main().catch(e=>{emit('STORE_SAFE_STOP',{reason:/^[A-Z0-9_]+$/.test(e.message)?e.message:'UNEXPECTED_RESPONSE'});process.exitCode=1;});
