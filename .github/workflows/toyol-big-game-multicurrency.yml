@@ -1,0 +1,181 @@
+name: Toyol — Big Game and Multi-Currency Radar
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '53 */6 * * *'
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-big-game-multicurrency.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-big-game-multicurrency
+  cancel-in-progress: false
+jobs:
+  hunt:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Find and classify high-value opportunities
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out/big-game
+          python3 - <<'PY'
+          import json, re, os, datetime as dt, urllib.request, urllib.parse
+          from concurrent.futures import ThreadPoolExecutor
+          NOW=dt.datetime.now(dt.timezone.utc)
+          FLOOR={'USD':1000,'USDC':1000,'USDG':1000,'USDT':1000,'EUR':1000,'GBP':1000,'MYR':4000,'INR':80000,'SGD':1300,'CAD':1400,'AUD':1500,'JPY':150000,'BTC':0.01,'SATS':1000000,'ETH':0.25,'SOL':5}
+          def clean(s): return re.sub(r'\s+',' ',re.sub(r'<[^>]*>',' ',str(s or ''))).strip()[:500]
+          def number(v):
+              try:
+                  n=float(str(v).replace(',','').strip())
+                  return n if 0<n<1e15 else None
+              except (ValueError,TypeError): return None
+          def prize(v):
+              s=clean(v)
+              m=re.search(r'(?i)(US\$|CA\$|AU\$|S\$|RM|€|£|₹|¥|\$|\b(?:USDG|USDC|USDT|USD|EUR|GBP|MYR|INR|SGD|CAD|AUD|JPY|BTC|SATS|ETH|SOL)\b)\s*([0-9][0-9,]*(?:\.[0-9]+)?)',s)
+              if m:
+                  c=m.group(1).upper()
+                  return {'US$':'USD','$':'USD','CA$':'CAD','AU$':'AUD','S$':'SGD','RM':'MYR','€':'EUR','£':'GBP','₹':'INR','¥':'JPY'}.get(c,c),number(m.group(2))
+              m=re.search(r'(?i)([0-9][0-9,]*(?:\.[0-9]+)?)\s*(USDG|USDC|USDT|USD|EUR|GBP|MYR|INR|SGD|CAD|AUD|JPY|BTC|SATS|ETH|SOL)\b',s)
+              return (m.group(2).upper(),number(m.group(1))) if m else (None,None)
+          def future(v):
+              if not v: return None
+              try:
+                  d=dt.datetime.fromtimestamp(v/1000 if v>1e12 else v,dt.timezone.utc) if isinstance(v,(int,float)) else dt.datetime.fromisoformat(str(v).replace('Z','+00:00'))
+                  return d>NOW if d.tzinfo else None
+              except (ValueError,OverflowError,OSError): return None
+          def rows(j,*keys):
+              if isinstance(j,list): return j
+              if isinstance(j,dict):
+                  for k in keys:
+                      if isinstance(j.get(k),list): return j[k]
+                  if isinstance(j.get('data'),dict): return rows(j['data'],*keys)
+              raise ValueError('SCHEMA')
+          def get(url,github=False):
+              h={'Accept':'application/json','User-Agent':'ToyolBigGameRadar/1.0'}
+              if github and os.getenv('GH_TOKEN'): h['Authorization']='Bearer '+os.environ['GH_TOKEN']
+              class NoRedirect(urllib.request.HTTPRedirectHandler):
+                  def redirect_request(self,*a,**kw): return None
+              opener=urllib.request.build_opener(NoRedirect()) if github else urllib.request.build_opener()
+              with opener.open(urllib.request.Request(url,headers=h),timeout=15) as r:
+                  b=r.read(8000001)
+                  if len(b)>8000000: raise ValueError('RESPONSE_LIMIT')
+                  return json.loads(b)
+          def lead(source,title,url,c,n,kind,deadline=None,agent='REVIEW_REQUIRED',**extra):
+              if c not in FLOOR or n is None or n<FLOOR[c] or future(deadline) is False: return None
+              if not isinstance(url,str) or not url.startswith('https://'): return None
+              return dict(source=source,title=clean(title),url=url,currency=c,amount=n,kind=kind,deadline=deadline,agentEligibility=agent,funding='UNVERIFIED',entryCost='REVIEW_REQUIRED',payout='REVIEW_REQUIRED',state='LEAD_NOT_EARNED',**extra)
+          def superteam():
+              a=rows(get('https://superteam.fun/api/listings?status=all&take=100'),'listings','items','data')
+              out=[]
+              for x in a:
+                  if x.get('status')!='OPEN' or x.get('isWinnersAnnounced') or future(x.get('deadline')) is not True: continue
+                  slug=x.get('slug')
+                  if not isinstance(slug,str) or not re.fullmatch(r'[\w-]+',slug): continue
+                  c=str(x.get('token') or x.get('currency') or '').upper()
+                  n=number(x.get('rewardAmount')) or number(x.get('maxReward'))
+                  typ=str(x.get('type','')).lower()
+                  access=x.get('agentAccess')
+                  out.append(lead('Superteam',x.get('title'),'https://superteam.fun/earn/listing/'+slug,c,n,'PROJECT_BUDGET' if typ=='project' else 'PRIZE_POOL',x['deadline'],access if access in ('AGENT_ALLOWED','AGENT_ONLY','HUMAN_ONLY') else 'REVIEW_REQUIRED',claim='HUMAN_CLAIM_REQUIRED'))
+              return len(a),out
+          def devpost():
+              a=[]
+              for p in (1,2,3):
+                  a.extend(rows(get('https://devpost.com/api/hackathons?status%5B%5D=open&order_by=prize-amount&page='+str(p)),'hackathons'))
+              out=[]
+              for x in a:
+                  if x.get('open_state')!='open' or x.get('invite_only') or x.get('winners_announced'): continue
+                  loc=x.get('displayed_location')
+                  if isinstance(loc,dict): loc=loc.get('location')
+                  if not re.search(r'online|remote|worldwide',str(loc),re.I): continue
+                  c,n=prize(x.get('prize_amount'))
+                  out.append(lead('Devpost',x.get('title'),x.get('url'),c,n,'PRIZE_POOL',submissionWindow=clean(x.get('submission_period_dates')),timeLeft=clean(x.get('time_left_to_submission')),rules='HUMAN_ACCOUNT_AND_AI_POLICY_REVIEW'))
+              return len(a),out
+          def github_bounties():
+              j=get('https://raw.githubusercontent.com/krishi-shah/dailybugbounties/main/data/bounties.json')
+              a=rows(j,'bounties'); out=[]; checked=0
+              for x in sorted(a,key=lambda v:number(v.get('amount_usd')) or 0,reverse=True):
+                  if checked>=10: break
+                  if x.get('state')!='OPEN' or x.get('archived') or (number(x.get('amount_usd')) or 0)<1000: continue
+                  repo=x.get('repo_full'); n=x.get('number')
+                  if not isinstance(repo,str) or not re.fullmatch(r'[\w.-]+/[\w.-]+',repo) or not isinstance(n,int): continue
+                  checked+=1
+                  try:
+                      i=get(f'https://api.github.com/repos/{repo}/issues/{n}',True)
+                      if i.get('state')!='open' or i.get('pull_request'): continue
+                      out.append(lead('GitHub bounty index',i.get('title'),i.get('html_url'),'USD',number(x.get('amount_usd')),'BOUNTY_ADVERTISED',platform=x.get('payout'),assigned=bool(i.get('assignees')),indexDate=j.get('generated_at'),indexPayerFlag=x.get('verified_payer')))
+                  except Exception as e: print('ISSUE_CHECK_ERROR',repo,n,type(e).__name__)
+              return len(a),out
+          def makefun():
+              a=rows(get('https://make.fun/api/competitions'),'competitions','items','data'); out=[]
+              for x in a:
+                  deadline=x.get('deadline') or x.get('endsAt') or x.get('ends_at') or x.get('closesAt')
+                  if future(deadline) is not True: continue
+                  slug=x.get('slug') or x.get('id')
+                  if not isinstance(slug,str) or not re.fullmatch(r'[\w-]+',slug): continue
+                  c,n=('USD',number(x.get('rewardUsd'))) if x.get('rewardUsd') is not None else prize(x.get('prizePool') or x.get('reward'))
+                  if n is None:
+                      r=x.get('reward') or x.get('prizePool')
+                      if isinstance(r,dict): c,n=str(r.get('currency') or r.get('token') or '').upper(),number(r.get('amount'))
+                  out.append(lead('Make.fun',x.get('title') or x.get('name'),'https://make.fun/c/'+slug,c,n,'PRIZE_POOL',deadline,'AGENT_CONTEST_RULES_REVIEW'))
+              return len(a),out
+          def aibtc():
+              a=rows(get('https://aibtc.com/api/bounties?status=open&limit=100'),'bounties','items','data'); out=[]
+              for x in a:
+                  if str(x.get('status','open')).lower()!='open': continue
+                  out.append(lead('AIBTC',x.get('title'),'https://aibtc.com/api/bounties?status=open&limit=100','SATS',number(x.get('rewardSats')),'BOUNTY_ADVERTISED',x.get('expiresAt') or x.get('deadline'),'AGENT_SCOPE_REVIEW',bountyId=x.get('id'),paymentModel='POSTER_PAYMENT_AFTER_ACCEPTANCE'))
+              return len(a),out
+          def other_fiat():
+              out=[]; total=0
+              for c in ('EUR','GBP','MYR','INR'):
+                  q=urllib.parse.urlencode({'q':f'is:issue is:open "bounty" "{c}" in:title','per_page':20,'sort':'updated','order':'desc'})
+                  a=rows(get('https://api.github.com/search/issues?'+q,True),'items'); total+=len(a)
+                  for x in a:
+                      currency,n=prize(x.get('title'))
+                      if currency==c: out.append(lead('GitHub native currency search',x.get('title'),x.get('html_url'),c,n,'UNVERIFIED_REWARD_MENTION',assigned=bool(x.get('assignees'))))
+              return total,out
+          assert prize('€ 2,500')==('EUR',2500.0)
+          assert prize('100,000 INR')==('INR',100000.0)
+          assert prize('2,000 USDG')==('USDG',2000.0)
+          assert prize('2000')==(None,None)
+          assert lead('x','x','https://example.com','USD',999,'BOUNTY') is None
+          assert lead('x','x','https://example.com','USD',1000,'BOUNTY','2020-01-01T00:00:00Z') is None
+          assert lead('x','x','https://example.com','EUR',2000,'PRIZE_POOL')['state']=='LEAD_NOT_EARNED'
+          print('GATE_TESTS_PASSED 7')
+          sources={'superteam':superteam,'devpost':devpost,'github_bounties':github_bounties,'makefun':makefun,'aibtc':aibtc,'other_fiat':other_fiat}
+          status={}; found=[]
+          with ThreadPoolExecutor(max_workers=6) as pool:
+              jobs={k:pool.submit(v) for k,v in sources.items()}
+              for k,f in jobs.items():
+                  try:
+                      scanned,items=f.result(); items=[x for x in items if x]; status[k]={'status':'OK','scanned':scanned,'leads':len(items)}; found.extend(items)
+                  except Exception as e:
+                      status[k]={'status':'UNAVAILABLE','error':type(e).__name__,'detail':str(e)[:200]}
+          leads=list({(x['source'],x['url'],x.get('bountyId'),x['currency']):x for x in found}.values())
+          leads.sort(key=lambda x:(x['agentEligibility'] not in ('AGENT_ALLOWED','AGENT_ONLY'),x['kind']=='PRIZE_POOL',x['currency'],-x['amount'],x['title']))
+          report={'generatedAt':NOW.isoformat(),'sourceStatus':status,'nativeCurrencyFloors':FLOOR,'leads':leads,'verifiedFundedAssignableJobs':0,'incomeClaimed':False,'limitations':'Read-only leads; verify original rules, funding, fees, agent eligibility, identity and payout before execution. Prize pools are not personal rewards. Native floors are not FX equivalents. Public feed may omit agent-only listings. No registration, bids, claims, transfers or paid API calls.'}
+          with open('out/big-game/report.json','w') as f: json.dump(report,f,indent=2)
+          print('SOURCE_STATUS',json.dumps(status))
+          for x in leads[:35]: print('BIG_GAME_LEAD',json.dumps(x,ensure_ascii=True))
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write('## Big Game Radar\n\nRead-only leads, not booked income.\n\n')
+              for k,v in status.items(): f.write(f"- {k}: {v['status']}; scanned {v.get('scanned','unknown')}; leads {v.get('leads','unknown')}\n")
+              f.write('\n### Candidates (native amounts)\n\n')
+              for x in leads[:25]:
+                  title=x['title'].replace('[','(').replace(']',')')
+                  f.write(f"- {x['currency']} {x['amount']:,.2f} — [{title}]({x['url']}) — {x['kind']}; {x['agentEligibility']}; funding {x['funding']}\n")
+              f.write('\nNo automatic submission or spending. Source errors are explicit.\n')
+          if all(v['status']!='OK' for v in status.values()): raise SystemExit('ALL_SOURCES_UNAVAILABLE')
+          PY
+      - name: Preserve opportunity evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-big-game-report
+          path: out/big-game/report.json
+          retention-days: 7
+          if-no-files-found: warn
