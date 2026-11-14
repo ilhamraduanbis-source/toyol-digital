@@ -52,7 +52,7 @@ def convert(raw):
 
 def selftest():
     assert convert('[{"name":"A","count":2},{"name":"B","count":3}]')["csv"] == "name,count\r\nA,2\r\nB,3\r\n"
-    assert convert('[{"a":"a,b","b":null},{"a":"a\"b","c":true}]')["rows"] == 2
+    assert convert(r'[{"a":"a,b","b":null},{"a":"a\"b","c":true}]')["rows"] == 2
     assert convert('[{"x":0.1234567890123456789}]')["csv"] == "x\r\n0.1234567890123456789\r\n"
     assert convert('[{"x":-12}]')["csv"] == "x\r\n-12\r\n"
     for raw in ('[]', '{}', '[{"x":1,"x":2}]', '[{"x":{"y":1}}]', '[{"x":"=1+1"}]', '[{"x":" +1"}]', '[{"x":NaN}]', '[{"x":1},{"":2}]'):
