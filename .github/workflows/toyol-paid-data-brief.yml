@@ -29,6 +29,14 @@ jobs:
         env:
           TOYOL_SWARMMEMO_SIGNER_JSON: ${{ secrets.TOYOL_SWARMMEMO_SIGNER_JSON }}
         run: python3 src/swarmmemo-paid-data-brief.py --execute
-      - name: Read-only availability check on code change or manual run
+      - name: Prepare actual data and notary evidence on code change (no claim)
         if: github.event_name != 'schedule'
-        run: python3 src/swarmmemo-paid-data-brief.py
+        run: python3 src/swarmmemo-paid-data-brief.py --prepare
+      - name: Preserve data brief evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-data-brief-evidence
+          path: out/swarmmemo-data-brief/
+          if-no-files-found: ignore
+          retention-days: 7
