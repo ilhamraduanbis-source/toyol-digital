@@ -1,6 +1,11 @@
 name: Toyol — Real Paid Data Brief (0.02 USDC)
 on:
   workflow_dispatch:
+    inputs:
+      execute_open_work:
+        description: "Attempt reviewed eligible work with the configured stable signer"
+        type: boolean
+        default: false
   schedule:
     - cron: '30 23 * * *'
   push:
@@ -25,12 +30,12 @@ jobs:
       - name: Check syntax of dedicated paid-work executor
         run: python3 -m py_compile src/swarmmemo-paid-data-brief.py
       - name: Perform real bounded public-data job when USDC seat opens
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.execute_open_work == true)
         env:
           TOYOL_SWARMMEMO_SIGNER_JSON: ${{ secrets.TOYOL_SWARMMEMO_SIGNER_JSON }}
         run: python3 src/swarmmemo-paid-data-brief.py --execute
       - name: Prepare actual data and notary evidence on code change (no claim)
-        if: github.event_name != 'schedule'
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.execute_open_work != true)
         run: python3 src/swarmmemo-paid-data-brief.py --prepare
       - name: Preserve data brief evidence
         if: always()
