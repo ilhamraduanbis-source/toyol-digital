@@ -19,12 +19,13 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
-WORK_ID = "09c1f608bbe17d729f034c1dae5b0a04"
+WORK_ID = "20ef7df2131fae0b1e58eb843e35913d"
+PREVIOUS_ID = "09c1f608bbe17d729f034c1dae5b0a04"
 WORK_URL = "https://swarmmemo.com/api/work/" + WORK_ID
 WALLET = "0xaC57AD3c3F233E5865c3cd652f67Ffc82a7Af431"
 CLIENT = "https://raw.githubusercontent.com/Hugo0/swarmmemo/a07a568f40f8b53f382f71165d8e57a761c3ae74/clients/python/swarmmemo.py"
 CLIENT_BLOB = "76ee66257f69b81bea46b0f33608e9ea3f6768fd"
-STATIONS = ("KORD", "KDEN", "KJFK", "KLAX", "KMWN")
+STATIONS = ("KORD", "KDEN", "KJFK", "KLAX", "KMWN", "KSEA", "KBOS", "KPHX", "KMSP", "KSFO", "KATL", "KPDX")
 MAX_BYTES = 190000
 
 def status_note(s):
@@ -60,13 +61,16 @@ def seat_open(work):
             work.get("requester", {}).get("handle") == "weaver")
 
 def choose_station():
-    status, payload = get("https://swarmmemo.com/api/thread/" + WORK_ID + "?limit=150")
-    if status != 200:
-        raise RuntimeError("Cannot check previous work for duplicate data")
-    messages = payload.get("messages", [])
-    if not isinstance(messages, list):
-        raise RuntimeError("Unexpected thread format")
-    combined = "\n".join(str(m.get("text", "")) for m in messages if m.get("id") != WORK_ID).lower()
+    texts = []
+    for task_id in (WORK_ID, PREVIOUS_ID):
+        status, payload = get("https://swarmmemo.com/api/thread/" + task_id + "?limit=150")
+        if status != 200:
+            raise RuntimeError("Cannot check previous work for duplicate data")
+        messages = payload.get("messages", payload.get("data", {}).get("messages"))
+        if not isinstance(messages, list):
+            raise RuntimeError("Unexpected thread format")
+        texts.extend(str(m.get("text", "")) for m in messages if m.get("id") != task_id)
+    combined = "\n".join(texts).lower()
     for station in STATIONS:
         if not re.search(r"\b" + station.lower() + r"\b", combined):
             return station
@@ -155,12 +159,14 @@ def claim_real_work(brief):
         blob = b"blob " + str(len(raw)).encode() + b"\x00" + raw
         if hashlib.sha1(blob).hexdigest() != CLIENT_BLOB:
             raise RuntimeError("Pinned SwarmMemo client differs from source commit")
-        created = subprocess.run(["python3", str(client), "keygen", str(key)],
-                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                                 timeout=25)
-        if created.returncode or not key.exists():
-            raise RuntimeError("Could not create a limited-use agent identity")
-        key.chmod(0o600)
+        # Reuse one authorized signer, never generate a fresh identity per result.
+        signer = os.environ.get("TOYOL_SWARMMEMO_SIGNER_JSON")
+        if not signer:
+            raise RuntimeError("Stable authorized SwarmMemo signer not configured; no post or claim")
+        if len(signer) > 20000 or not isinstance(json.loads(signer), dict):
+            raise RuntimeError("Invalid signer format; no post or claim")
+        key.touch(mode=0o600, exist_ok=False)
+        key.write_text(signer, encoding="utf8")
         research = receipt_id(run_cli(client, key, "post", "research", "main", brief))
         if not seat_open(checked_work()):
             status_note("Brief published in research, but paid seat closed. Not claimed.")
@@ -180,7 +186,7 @@ def claim_real_work(brief):
 def main():
     execute = "--execute" in sys.argv
     now = datetime.now(timezone.utc)
-    if execute and now.hour >= 12 and now.date() < datetime(2026, 11, 20, tzinfo=timezone.utc).date():
+    if execute and now.hour >= 12 and now.date() < datetime(2026, 11, 25, tzinfo=timezone.utc).date():
         midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=2, microsecond=0)
         seconds = (midnight - now).total_seconds()
         if 0 < seconds <= 2800:
@@ -191,11 +197,17 @@ def main():
     if not execute:
         status_note("Read-only status. No external posting or payment.")
         return
-    if not ("2026-11-11" <= datetime.now(timezone.utc).date().isoformat() < "2026-11-20"):
+    if not ("2026-11-15" <= datetime.now(timezone.utc).date().isoformat() < "2026-11-25"):
         status_note("Outside approved public-data bounty window.")
         return
     if not seat_open(w):
         status_note("No open paid seat; no work published.")
+        return
+    if any(str(((r.get("money") or {}).get("usdc") or {}).get("pay_to", "")).lower() == WALLET.lower() for r in w.get("results", [])):
+        status_note("Prior result for this wallet exists in this round; no repeated submission.")
+        return
+    if not os.environ.get("TOYOL_SWARMMEMO_SIGNER_JSON"):
+        status_note("Signer unavailable: no new identity or submission.")
         return
     station = choose_station()
     if not station:
