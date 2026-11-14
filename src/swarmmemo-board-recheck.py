@@ -42,7 +42,13 @@ def fresh_entry():
             if id==ID and WALLET.lower() in t: raise ValueError("OWN_RESULT_ALREADY_EXISTS")
     return x
 def fetch_stamp(url):
-    x=m.paid_free_tool("fetch/page",{"url":url})
+    code,payload=m.get("https://swarmmemo.com/call/fetch/page?"+urllib.parse.urlencode({"url":url}))
+    if code!=200 or payload.get("ok") is not True:
+        err=payload.get("error") or {}
+        raise ValueError("FETCH_UNAVAILABLE "+str(code)+" "+str(err.get("code") if isinstance(err,dict) else "ERROR")+" "+url)
+    x=payload.get("data",{})
+    call=x.get("call") or {}
+    if call.get("paid_from")!="free_allowance" or int(call.get("credits_spent",0))!=0: raise ValueError("NOT_FREE")
     r=x.get("result") or {}
     digest=r.get("raw_sha256")
     text=r.get("markdown") or r.get("text") or r.get("content")
