@@ -65,10 +65,11 @@ def already_reported(w):
     return False
 
 def main():
-    # Only a scheduled run can submit. A push verifies current eligibility without posting.
-    execute=os.getenv("GITHUB_EVENT_NAME")=="schedule"
+    # Scheduled or explicitly authorized manual execution; pushes remain read-only.
+    event=os.getenv("GITHUB_EVENT_NAME")
+    execute=event=="schedule" or (event=="workflow_dispatch" and os.getenv("TOYOL_EXECUTE_OPEN_WORK")=="true")
     now=datetime.now(timezone.utc)
-    if execute and now.hour==23:
+    if event=="schedule" and now.hour==23:
         opening=(now+timedelta(days=1)).replace(hour=0,minute=0,second=3,microsecond=0)
         delay=(opening-now).total_seconds()
         if 0<delay<=2800:
@@ -88,7 +89,7 @@ def main():
         print("Upstream changed or fixed; no stale report.")
         return
     if not execute:
-        print("Read-only verification complete. Submission restricted to schedule.")
+        print("Read-only verification complete. Submission restricted to schedule or explicit owner-triggered execution.")
         return
     signer=os.getenv("TOYOL_SWARMMEMO_SIGNER_JSON")
     if not signer:
