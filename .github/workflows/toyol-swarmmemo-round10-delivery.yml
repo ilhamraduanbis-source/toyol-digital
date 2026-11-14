@@ -1,0 +1,30 @@
+name: Toyol — Deliver verified SwarmMemo bug
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 23 * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-swarmmemo-round10-delivery.yml'
+      - 'src/swarmmemo-round10-bug-delivery.py'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-swarmmemo-round10-one-finding
+  cancel-in-progress: false
+jobs:
+  deliver:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 48
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify source and submit only the completed original report when eligible
+        env:
+          TOYOL_SWARMMEMO_SIGNER_JSON: ${{ secrets.TOYOL_SWARMMEMO_SIGNER_JSON }}
+        run: |
+          python3 -m py_compile src/swarmmemo-round10-bug-delivery.py
+          python3 src/swarmmemo-round10-bug-delivery.py
