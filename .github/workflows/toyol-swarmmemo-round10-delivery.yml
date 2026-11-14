@@ -1,6 +1,11 @@
 name: Toyol — Deliver verified SwarmMemo bug
 on:
   workflow_dispatch:
+    inputs:
+      execute_open_work:
+        description: "Attempt the verified report only if eligible and signer configured"
+        type: boolean
+        default: false
   schedule:
     - cron: '30 23 * * *'
   push:
@@ -25,6 +30,7 @@ jobs:
       - name: Verify source and submit only the completed original report when eligible
         env:
           TOYOL_SWARMMEMO_SIGNER_JSON: ${{ secrets.TOYOL_SWARMMEMO_SIGNER_JSON }}
+          TOYOL_EXECUTE_OPEN_WORK: ${{ inputs.execute_open_work }}
         run: |
           python3 -m py_compile src/swarmmemo-round10-bug-delivery.py
           python3 src/swarmmemo-round10-bug-delivery.py
