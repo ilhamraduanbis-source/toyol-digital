@@ -1,0 +1,304 @@
+name: Toyol — Makefun Recovery
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-makefun-recovery.yml']
+  workflow_run:
+    workflows: ['Toyol — Makefun aggregator official entry']
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: toyol-makefun-aggregator-build
+  cancel-in-progress: false
+jobs:
+  gate:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+    steps:
+      - name: Verify retry failure and prevent duplicate recovery
+        id: check
+        env:
+          GH_${{ github.token }}: TOKEN
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,json,urllib.request,datetime
+          base='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']
+          def get(path):
+              req=urllib.request.Request(base+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'ToyolRecovery'})
+              with urllib.request.urlopen(req,timeout=20) as r: return json.load(r)
+          def result(v):
+              with open(os.environ['GITHUB_OUTPUT'],'a') as f: f.write('proceed='+('true' if v else 'false')+'\n')
+          orig=get('/actions/workflows/toyol-makefun-aggregator-build.yml/runs?per_page=1')['workflow_runs'][0]
+          print('ORIGINAL',orig['id'],orig['run_attempt'],orig['status'],orig['conclusion'])
+          # Exact competition final round begins 2026-11-16T02:40Z; stop well before it.
+          if datetime.datetime.now(datetime.timezone.utc)>=datetime.datetime(2026,11,16,1,45,tzinfo=datetime.timezone.utc):
+              print('RECOVERY_CUTOFF'); result(False); exit()
+          if orig['status']!='completed' or orig['conclusion'] not in ('failure','timed_out') or orig['run_attempt']<2:
+              result(False); exit()
+          prev=get('/actions/workflows/toyol-makefun-recovery.yml/runs?per_page=20')['workflow_runs']
+          for x in prev:
+              if str(x['id'])==os.environ['GITHUB_RUN_ID']: continue
+              if x['status']!='completed': continue
+              for job in get('/actions/runs/'+str(x['id'])+'/jobs')['jobs']:
+                  if job['name']=='submit' and job['conclusion']=='success':
+                      print('PREVIOUS_RECOVERY_SUBMISSION_JOB_SUCCEEDED'); result(False); exit()
+          result(True)
+          PY
+  build:
+    needs: gate
+    if: ${{ needs.gate.outputs.proceed == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 48
+    steps:
+      - name: Obtain public challenge kit and current official CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/makefun"
+          cd "$RUNNER_TEMP/makefun"
+          curl --fail --silent --show-error --location --max-time 45 https://make.fun/c/free-model-aggregator-01/kit -o kit.tgz
+          python3 - <<'PY'
+          import tarfile,pathlib
+          with tarfile.open("kit.tgz") as z:
+              a=z.getmembers()
+              if sum(x.size for x in a)>100_000_000 or any(x.name.startswith("/") or ".." in pathlib.PurePosixPath(x.name).parts or not(x.isfile() or x.isdir()) for x in a):raise SystemExit("UNSAFE_KIT")
+              z.extractall(".",filter="data")
+          PY
+          npm install --prefix "$RUNNER_TEMP/makefun/tools" --no-audit --no-fund @opencode/cli@2.3.0
+          echo "$RUNNER_TEMP/makefun/tools/node_modules/.bin" >> "$GITHUB_PATH"
+          mkdir -p "$RUNNER_TEMP/makefun/evidence"
+      - name: Build with short recorded sessions and alternative free models
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset GITHUB_TOKEN GH_TOKEN OPENAI_API_KEY ANTHROPIC_API_KEY OPENCODE_API_KEY
+          root="$RUNNER_TEMP/makefun"
+          kit="$root/free-model-aggregator-01-kit"
+          export OPENCODE_DISABLE_AUTOSHARE=true
+          export HOME="$root/catalog-home"
+          export XDG_DATA_HOME="$HOME/.local/share"
+          export XDG_CONFIG_HOME="$HOME/.config"
+          export XDG_STATE_HOME="$HOME/.local/state"
+          export XDG_CACHE_HOME="$HOME/.cache"
+          mkdir -p "$HOME"
+          timeout --kill-after=10s 90s opencode models --standalone > "$root/models.txt"
+          curl --fail --silent --show-error --max-time 20 https://models.dev/api.json -o "$root/prices.json"
+          python3 - "$root" <<'PY'
+          import json,sys,re
+          from pathlib import Path
+          p=Path(sys.argv[1]); avail=set(re.findall(r'opencode/[A-Za-z0-9_.-]+',(p/'models.txt').read_text()))
+          data=json.loads((p/'prices.json').read_text())['opencode']['models']
+          choices=[k for k,v in data.items() if 'opencode/'+k in avail and (k.endswith('-free') or k=='big-pickle') and v.get('cost',{}).get('input')==0 and v.get('cost',{}).get('output')==0]
+          order=['deepseek-v4.1-flash-free','minimax-m3.1-flash-free','big-pickle','glm-5.3-flash-free']
+          choices.sort(key=lambda x:(order.index(x) if x in order else len(order),x))
+          if not choices: raise SystemExit('NO_VERIFIED_FREE_MODEL')
+          (p/'candidates.txt').write_text('\n'.join('opencode/'+x for x in choices[:2])+'\n')
+          PY
+          n=0
+          while IFS= read -r model; do
+            n=$((n+1))
+            echo "RECOVERY_CANDIDATE $n $model"
+            attempt="$root/candidate-$n"
+            export HOME="$attempt/home"
+            export XDG_DATA_HOME="$HOME/.local/share"
+            export XDG_CONFIG_HOME="$HOME/.config"
+            export XDG_STATE_HOME="$HOME/.local/state"
+            export XDG_CACHE_HOME="$HOME/.cache"
+            entry="$attempt/entry"
+            mkdir -p "$HOME" "$entry" "$attempt/logs"
+            cd "$entry"
+            node "$kit/cli/makefun.mjs" init --competition free-model-aggregator-01 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT
+            cp "$kit/starter/main.ts" .
+            cp -r "$kit/starter/lib" .
+            git add main.ts lib
+            git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm 'Import official competition starter'
+            base=$(git rev-parse HEAD)
+            python3 - "$model" <<'PY'
+          import json,sys
+          json.dump({"$schema":"https://opencode.ai/config.json","model":sys.argv[1],"small_model":sys.argv[1],"share":"disabled","autoupdate":False,"permission":{"edit":"allow","read":"allow","bash":"allow","webfetch":"deny","websearch":"deny","external_directory":"allow"}},open("opencode.json","w"))
+          PY
+            first="First run node $kit/cli/makefun.mjs init --competition free-model-aggregator-01 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT in this repository; the official anchor must appear in the recorded tool result before edits. Read $kit/RULES.txt and starter. Make a real improvement to main.ts now: deterministic capability-aware routing and fallback. Work only within this repository, no secret access, no submissions, no external models, no hidden cases or score exploits. Preserve real wire semantics. Finish a small working change promptly."
+            ok=1
+            for turn in 1 2 3 4; do
+              case "$turn" in
+                1) prompt="$first";;
+                2) prompt="Make a second real edit now: improve free quota allocation and weighted quality while preserving determinism. Read only the public rules and allowed input. Test main.ts --list; finish promptly.";;
+                3) prompt="Fix actual request/response wire conversion bugs, tools, images, JSON and streaming as applicable. Make substantive runtime edits, then verify with local checks. No invented outputs.";;
+                4) prompt="Final review: fix remaining concrete correctness and deterministic failover issues. Keep production entry main.ts runnable, no external model calls, no test-only scoring tricks. Run local checks and report actual results.";;
+              esac
+              args=()
+              if [ "$turn" -gt 1 ]; then args+=(--continue); fi
+              set +e
+              timeout --kill-after=10s 210s opencode run --standalone --model "$model" "${args[@]}" --format json "$prompt" > "$attempt/logs/turn-$turn.jsonl" 2> "$attempt/logs/turn-$turn.stderr"
+              rc=$?
+              set -e
+              echo "RECOVERY_TURN $n $turn EXIT $rc"
+              # Preserve only actual source changes, never modify transcript records.
+              if ! git diff --check; then ok=0; break; fi
+              git add main.ts lib
+              if ! git diff --cached --quiet; then
+                git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm "Recorded agent checkpoint $turn"
+                echo "RECOVERY_CHECKPOINT $(git rev-parse HEAD)"
+              fi
+              if [ "$rc" -ne 0 ]; then
+                if [ "$(git rev-parse HEAD)" = "$base" ]; then ok=0; break; fi
+                # Keep the native interrupted record; do not rewrite or fabricate it.
+                echo 'INTERRUPTED_SESSION_WITH_SOURCE_CHECKPOINT'
+              fi
+            done
+            if [ "$ok" -ne 1 ] || [ "$(git rev-parse HEAD)" = "$base" ]; then echo 'CANDIDATE_NO_VALID_SOURCE'; continue; fi
+            if ! timeout 30s node --experimental-strip-types main.ts --list > "$attempt/list.txt"; then echo 'ENTRY_LIST_FAILED'; continue; fi
+            if ! node "$kit/cli/makefun.mjs" bundle --repo "$entry" --out "$attempt/transcripts.tar.gz" --opencode-dir "$XDG_DATA_HOME/opencode" --harness opencode --harness-version 2.3.0 --model "$model" --provider opencode > "$attempt/bundle.log" 2>&1; then echo 'BUNDLE_FAILED'; continue; fi
+            if ! test -s "$attempt/transcripts.tar.gz"; then echo 'BUNDLE_EMPTY'; continue; fi
+            if ! node "$kit/cli/makefun.mjs" check --kit "$kit" --repo "$entry" --transcripts "$attempt/transcripts.tar.gz" --json > "$attempt/check.json" 2> "$attempt/check.stderr"; then echo 'OFFICIAL_CHECK_FAILED'; continue; fi
+            # Only successful exit from official local check and grader is accepted.
+            if ! timeout --kill-after=15s 360s node "$kit/cli/makefun.mjs" grade-local --kit "$kit" --bot "$entry" --driver docker --instances 1 --json > "$attempt/grade.json" 2> "$attempt/grade.stderr"; then echo 'OFFICIAL_GRADE_FAILED'; continue; fi
+            python3 - "$attempt/check.json" "$attempt/grade.json" <<'PY'
+          import json,sys
+          for file in sys.argv[1:]:
+              x=json.load(open(file))
+              if not isinstance(x,(dict,list)): raise SystemExit('INVALID_OFFICIAL_REPORT')
+          PY
+            mkdir -p "$root/selected"
+            git bundle create "$root/selected/source.bundle" HEAD
+            cp "$attempt/transcripts.tar.gz" "$root/selected/"
+            cp "$attempt/check.json" "$attempt/grade.json" "$root/evidence/"
+            git rev-parse HEAD > "$root/selected/commit.txt"
+            echo "OFFICIAL_RECOVERY_GATE_PASSED $(git rev-parse HEAD)"
+            break
+          done < "$root/candidates.txt"
+          test -s "$root/selected/source.bundle"
+          test -s "$root/selected/transcripts.tar.gz"
+      - name: Encrypt source and authentic transcripts for separate submission runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/makefun"
+          python3 -m pip install --disable-pip-version-check --target "$root/crypto" 'PyNaCl==1.5.0'
+          tar -czf "$root/entry.tar.gz" -C "$root/selected" source.bundle transcripts.tar.gz commit.txt
+          PYTHONPATH="$root/crypto" python3 - "$root" <<'PY'
+          import sys,pathlib
+          from nacl.signing import VerifyKey
+          from nacl.public import SealedBox
+          p=pathlib.Path(sys.argv[1]); alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+          addr='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ'
+          n=0
+          for c in addr: n=n*58+alphabet.index(c)
+          pub=n.to_bytes(32,'big')
+          box=SealedBox(VerifyKey(pub).to_curve25519_public_key())
+          data=(p/'entry.tar.gz').read_bytes()
+          if len(data)>210000000: raise SystemExit('ARTIFACT_TOO_LARGE')
+          (p/'entry.sealed').write_bytes(box.encrypt(data))
+          PY
+      - name: Save encrypted checkpoint
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: makefun-recovery-encrypted-entry
+          path: ${{ runner.temp }}/makefun/entry.sealed
+          retention-days: 3
+          if-no-files-found: error
+  submit:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Obtain public challenge kit and current official CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/makefun"
+          cd "$RUNNER_TEMP/makefun"
+          curl --fail --silent --show-error --location --max-time 45 https://make.fun/c/free-model-aggregator-01/kit -o kit.tgz
+          python3 - <<'PY'
+          import tarfile,pathlib
+          with tarfile.open("kit.tgz") as z:
+              a=z.getmembers()
+              if sum(x.size for x in a)>100_000_000 or any(x.name.startswith("/") or ".." in pathlib.PurePosixPath(x.name).parts or not(x.isfile() or x.isdir()) for x in a):raise SystemExit("UNSAFE_KIT")
+              z.extractall(".",filter="data")
+          PY
+          npm install --prefix "$RUNNER_TEMP/makefun/tools" --no-audit --no-fund @opencode/cli@2.3.0
+          echo "$RUNNER_TEMP/makefun/tools/node_modules/.bin" >> "$GITHUB_PATH"
+          mkdir -p "$RUNNER_TEMP/makefun/evidence"
+      - name: Retrieve encrypted checkpoint
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: makefun-recovery-encrypted-entry
+          path: ${{ runner.temp }}/makefun/restore
+      - name: Decrypt checkpoint and reconstruct exact Git commit without running entry
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/makefun"
+          python3 -m pip install --disable-pip-version-check --target "$root/crypto" 'PyNaCl==1.5.0'
+          PYTHONPATH="$root/crypto" python3 - "$root" <<'PY'
+          import os,sys,json,pathlib,tarfile,io
+          from nacl.signing import SigningKey
+          from nacl.public import SealedBox
+          p=pathlib.Path(sys.argv[1]); key=bytes(json.loads(os.environ['TOYOL_SOLANA_KEYPAIR_JSON']))
+          if len(key)!=64: raise SystemExit('INVALID_WALLET_KEY')
+          sk=SigningKey(key[:32])
+          if bytes(sk.verify_key)!=key[32:]: raise SystemExit('WALLET_KEY_MISMATCH')
+          data=SealedBox(sk.to_curve25519_private_key()).decrypt((p/'restore'/'entry.sealed').read_bytes())
+          dest=p/'selected'; dest.mkdir()
+          with tarfile.open(fileobj=io.BytesIO(data),mode='r:gz') as t:
+              members=t.getmembers()
+              if set(x.name for x in members)!={'source.bundle','transcripts.tar.gz','commit.txt'} or any(not x.isfile() for x in members) or sum(x.size for x in members)>210000000: raise SystemExit('UNSAFE_CHECKPOINT')
+              t.extractall(dest,filter='data')
+          PY
+          unset TOYOL_SOLANA_KEYPAIR_JSON
+          git -c core.hooksPath=/dev/null clone --no-checkout "$root/selected/source.bundle" "$root/entry"
+          expected=$(cat "$root/selected/commit.txt")
+          [[ "$expected" =~ ^[0-9a-f]{40}$ ]]
+          git -C "$root/entry" -c core.hooksPath=/dev/null checkout --detach "$expected"
+          test "$(git -C "$root/entry" rev-parse HEAD)" = "$expected"
+          cp "$root/selected/transcripts.tar.gz" "$root/transcripts.tar.gz"
+      - name: Submit once to official contest only after local checks pass
+        shell: bash
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/makefun"
+          kit="$root/free-model-aggregator-01-kit"
+          export HOME="$root/submission-home"
+          mkdir -p "$HOME"
+          chmod 700 "$HOME"
+          # Only the official CLI receives a key. The entrant code and coding agent are never executed in this step.
+          key="$HOME/wallet.json"
+          umask 077
+          trap 'rm -f "$key"; rm -rf "$HOME/.makefun"' EXIT
+          printf '%s' "$TOYOL_SOLANA_KEYPAIR_JSON" > "$key"
+          unset TOYOL_SOLANA_KEYPAIR_JSON
+          node "$kit/cli/makefun.mjs" register --keypair "$key" --origin https://make.fun --name Toyol-Digital --json > "$HOME/auth.json"
+          # Confirm no duplicate entry before sending. Read the stored key from the official credentials file without logging it.
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const raw=JSON.parse(fs.readFileSync(process.env.HOME+'/.makefun/credentials','utf8'));
+          function walk(v,out=[]){if(typeof v==='string'&&/^af_[A-Za-z0-9_-]+$/.test(v))out.push(v);else if(v&&typeof v==='object')for(const x of Object.values(v))walk(x,out);return out;}
+          const keys=[...new Set(walk(raw))];
+          if(keys.length!==1)throw Error('AUTH_SCHEMA_REVIEW');
+          const r=await fetch('https://make.fun/api/agents/me',{headers:{'x-api-key':keys[0],Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(15000)});
+          if(!r.ok)throw Error('ACCOUNT_HTTP_'+r.status);
+          const j=await r.json();
+          if(!Array.isArray(j.entries))throw Error('ACCOUNT_ENTRIES_SCHEMA');
+          if(j.entries.some(x=>JSON.stringify(x).includes('free-model-aggregator-01')))throw Error('ENTRY_ALREADY_PRESENT');
+          console.log('ACCOUNT_DUPLICATE_CHECK_PASSED');
+          JS
+          cd "$root/entry"
+          node "$kit/cli/makefun.mjs" submit --competition free-model-aggregator-01 --source "$root/entry" --commit "$(git rev-parse HEAD)" --bundle "$root/transcripts.tar.gz" --keypair "$key" --origin https://make.fun --title 'Toyol Digital Aggregator' --json > "$HOME/submission.json"
+          python3 - "$HOME/submission.json" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          if not isinstance(d,dict):raise SystemExit("RECEIPT_SCHEMA")
+          # Output only the public identifier and status; never print private claim codes or credentials.
+          print("MAKEFUN_SUBMISSION_RESPONSE",json.dumps({k:d[k] for k in ("id","submission_id","entry_id","status","stage","receipt") if k in d and k!="receipt"}))
+          PY
