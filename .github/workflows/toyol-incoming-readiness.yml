@@ -1,0 +1,107 @@
+name: Toyol — Incoming Contract Readiness
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-incoming-readiness.yml'
+      - 'skills/**'
+      - 'test/openapi-preparation.test.mjs'
+      - 'test/password-login.test.mjs'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-incoming-readiness
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Test reusable skills and create synthetic customer-independent sample outputs
+        run: |
+          set -eu
+          mkdir -p out/incoming-readiness
+          python3 -m venv "$RUNNER_TEMP/toyol-test-env"
+          "$RUNNER_TEMP/toyol-test-env/bin/pip" install --disable-pip-version-check pytest==8.3.5
+          "$RUNNER_TEMP/toyol-test-env/bin/python" -m pytest -q skills/tabular-conversion
+          node --test test/openapi-preparation.test.mjs test/password-login.test.mjs skills/solana-usdc-verifier/verify.test.mjs
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          p=Path('out/incoming-readiness')
+          (p/'sample.csv').write_text('id,name,note\n001,Ada,"two, values"\n002,Lin,"line one\nline two"\n',encoding='utf8')
+          (p/'inventory.json').write_text(json.dumps({'title':'Synthetic order API','version':'1.0.0','operations':[{'path':'/orders/{id}','method':'GET','operationId':'getOrder','source':'Synthetic fixture contract, no customer API','parameters':[{'name':'id','in':'path','required':True,'schema':{'type':'string'}}],'responses':{'200':{'description':'Order found','content':{'application/json':{'schema':{'type':'object','properties':{'id':{'type':'string'}}}}}},'404':{'description':'Order not found'}}}]}),encoding='utf8')
+          PY
+          python3 skills/tabular-conversion/data_convert.py csv-to-json out/incoming-readiness/sample.csv out/incoming-readiness/sample.json
+          python3 skills/tabular-conversion/data_convert.py json-to-csv out/incoming-readiness/sample.json out/incoming-readiness/roundtrip.csv
+          node skills/openapi-documentation/prepare.mjs out/incoming-readiness/inventory.json out/incoming-readiness/openapi.yaml out/incoming-readiness/evidence.json
+          python3 - <<'PY'
+          import csv,json
+          from pathlib import Path
+          p=Path('out/incoming-readiness')
+          with (p/'roundtrip.csv').open(newline='',encoding='utf8') as f:
+              assert list(csv.DictReader(f))==json.loads((p/'sample.json').read_text())
+          assert json.loads((p/'sample.json').read_text())[0]['id']=='001'
+          assert json.loads((p/'openapi.yaml').read_text())['paths']['/orders/{id}']['get']['responses']['404']['description']=='Order not found'
+          print('SYNTHETIC_OUTPUTS_VERIFIED')
+          PY
+          printf '%s\n' 'SYNTHETIC CAPABILITY SAMPLES ONLY. No client award, acceptance or payment.' > out/incoming-readiness/README.txt
+      - name: Preserve reusable proof pack (no customer data)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-incoming-readiness
+          path: out/incoming-readiness/
+          retention-days: 7
+  live-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Inspect current claim and contract availability without posting or paying
+        env:
+          TOYOL_OPENTASK_TOKEN: ${{ secrets.TOYOL_OPENTASK_TOKEN }}
+          FRANTIC_AGENT_TOKEN: ${{ secrets.FRANTIC_AGENT_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          async function get(url,token){
+            const r=await fetch(url,{headers:{Accept:'application/json',...(token?{Authorization:'Bearer '+token}:{})},redirect:'error',signal:AbortSignal.timeout(15000)});
+            if(!r.ok)throw Error('HTTP_'+r.status);
+            const body=await r.text();if(body.length>3000000)throw Error('RESPONSE_SIZE');
+            return JSON.parse(body);
+          }
+          const safe=(x,n=240)=>typeof x==='string'?x.replace(/[\x00-\x1f\x7f]/g,' ').slice(0,n):null;
+          try{
+            const token=process.env.TOYOL_OPENTASK_TOKEN;if(!token)throw Error('TOKEN_MISSING');
+            const root='https://opentask.ai/api/agent',me=await get(root+'/me',token);
+            if(me.profile?.id!=='cmwebq871016a08jtv7b35au1')throw Error('IDENTITY_MISMATCH');
+            const c=await get(root+'/contracts?limit=30',token),rows=Array.isArray(c)?c:c.contracts;
+            if(!Array.isArray(rows))throw Error('CONTRACT_SCHEMA');
+            console.log('INCOMING_CONTRACTS '+JSON.stringify({count:rows.length,statuses:rows.map(x=>safe(x.status??x.state,60)),payout:safe((me.paymentReadiness??me.profile.paymentReadiness)?.status,60),more:!!(c.nextCursor??c.pagination?.nextCursor)}));
+          }catch(e){console.log('OPENTASK_UNAVAILABLE '+e.message);}
+          try{
+            const token=process.env.FRANTIC_AGENT_TOKEN;if(!token)throw Error('TOKEN_MISSING');
+            const root='https://gofrantic.com',s=await get(root+'/v1/agents/agent-65c3b0/status',token);
+            if(s.agent?.kid!=='agent-65c3b0')throw Error('IDENTITY_MISMATCH');
+            console.log('FRANTIC_EXISTING '+JSON.stringify({active:(s.work?.open??[]).map(x=>({number:x.bounty?.number,stage:safe(x.stage,60)})),settled:s.work?.settled?.length??null,invites:s.agent?.invites?.length??null}));
+            const b=await get(root+'/v1/board?status=open&limit=50');
+            const rows=b.board?.open_bounties??b.board?.bounties??b.bounties??[];
+            if(!Array.isArray(rows))throw Error('BOARD_SCHEMA');
+            for(const x of rows){
+              if(!Number.isSafeInteger(x.number)||x.visibility!=='public'||x.funded!==true||x.work_status!=='open')continue;
+              const d=(await get(root+'/v1/bounties/'+x.number)).bounty;
+              if(d?.number!==x.number)continue;
+              console.log('PUBLIC_FRANTIC '+JSON.stringify({number:d.number,title:safe(d.title),amount_cents:d.price_cents,available:d.claim_progress?.available??d.claim_slots?.available,excluded:/cashback|rebate|affiliate|reddit|twitter|social media|citation|promot|first bounty is on the house/i.test(d.title??'')}));
+            }
+          }catch(e){console.log('FRANTIC_UNAVAILABLE '+e.message);}
+          for(const id of ['481fbfae3a58712dfef55751aa81f209','09c1f608bbe17d729f034c1dae5b0a04','1b766c6ef793d578031b50ea1e197d4c']){
+            try{
+              const w=(await get('https://swarmmemo.com/api/work/'+id)).data?.work;
+              if(w?.id!==id)throw Error('WORK_ID_MISMATCH');
+              const s=w.standing??{};
+              console.log('MICRO_SLOT '+JSON.stringify({id,title:safe(w.title),claimable:w.claimable===true,seats:s.open??null,results:s.results??null,max:s.results_max??null,tiers:(s.tiers??[]).map(t=>({name:safe(t.name,50),usdc:t.usdc}))}));
+            }catch(e){console.log('MICRO_UNAVAILABLE '+id+' '+e.message);}
+          }
+          JS
