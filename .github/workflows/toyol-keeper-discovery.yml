@@ -1,0 +1,82 @@
+name: Toyol — Permissionless Keeper Discovery
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-keeper-discovery.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-keeper-discovery
+  cancel-in-progress: false
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Inspect live Montra reward pools and native gas balance, read only
+        run: |
+          set -eu
+          mkdir -p out/keeper
+          node --input-type=module <<'JS' | tee out/keeper/montra.jsonl
+          const API='https://api.montraxyz.com',RPC='https://rpc.montraxyz.com',WALLET='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431';
+          const emit=(kind,data)=>console.log(JSON.stringify({kind,...data}));
+          async function get(url,opts={}){
+            const r=await fetch(url,{...opts,headers:{Accept:'application/json',...(opts.headers??{})},redirect:'error',signal:AbortSignal.timeout(15000)});
+            if(!r.ok)throw Error('HTTP_'+r.status);
+            const s=await r.text();if(s.length>3000000)throw Error('SIZE');return JSON.parse(s);
+          }
+          const rpc=async(method,params)=>{const j=await get(RPC,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});if(j.error||j.result==null)throw Error('RPC_'+method);return j.result};
+          const address=x=>typeof x==='string'&&/^0x[0-9a-f]{40}$/i.test(x);
+          const units=x=>typeof x==='string'&&/^\d{1,100}$/.test(x)?BigInt(x):null;
+          const fmt=n=>{const s=n.toString().padStart(19,'0');return s.slice(0,-18)+'.'+s.slice(-18)};
+          let gas=null,balance=null;
+          try{
+            if(BigInt(await rpc('eth_chainId',[]))!==99901n)throw Error('CHAIN_ID');
+            const b=await rpc('eth_getBlockByNumber',['latest',false]);gas=BigInt(await rpc('eth_gasPrice',[]));
+            balance=BigInt(await rpc('eth_getBalance',[WALLET,b.number]));
+            emit('KEEPER_GAS',{chainId:99901,block:b.number,HYPE:fmt(balance),gasPriceWei:gas.toString(),canFundNonzeroGas:balance>0n});
+          }catch(e){emit('RPC_UNAVAILABLE',{reason:e.message});}
+          try{
+            const stats=await get(API+'/api/stats'),s=stats.data??stats;
+            const pick=Object.fromEntries(['launches','holders','volumeUsd','volume24hUsd','feesUsd','fees24hUsd','swaps'].filter(k=>['number','string'].includes(typeof s[k])).map(k=>[k,s[k]]));
+            emit('PROTOCOL_ACTIVITY',{fields:Object.keys(s),...pick});
+          }catch(e){emit('STATS_UNAVAILABLE',{reason:e.message});}
+          try{
+            const j=await get(API+'/api/tokens?route=holders&sort=volume&limit=5');
+            const rows=Array.isArray(j)?j:j.tokens??j.items??j.data?.tokens??j.data?.items??j.data;
+            if(!Array.isArray(rows))throw Error('TOKEN_SCHEMA:'+Object.keys(j).join(','));
+            emit('POOL_COUNT',{sample:rows.length,fields:Object.keys(rows[0]??{})});
+            for(const t of rows.slice(0,5)){
+              const token=t.address??t.token;if(!address(token))continue;
+              try{
+                const h=await get(API+'/api/tokens/'+token+'/holders?limit=10');
+                const list=Array.isArray(h)?h:h.holders??h.data?.holders??h.items??h.data;
+                if(!Array.isArray(list))throw Error('HOLDERS_SCHEMA:'+Object.keys(h).join(','));
+                let known=0,positive=0,total=0n;let fields=[];
+                for(const holder of list.slice(0,10)){
+                  const a=holder.address??holder.wallet??holder.holder;
+                  if(!address(a)||a.toLowerCase()===token.toLowerCase())continue;
+                  try{
+                    const q=await get(API+'/api/tokens/'+token+'/rewards/'+a),v=q.data??q;
+                    fields=Object.keys(v);
+                    const n=units(v.earned??v.earnedNow??v.claimable);
+                    if(n===null)continue;
+                    known++;if(n>0n){positive++;total+=n;}
+                  }catch(e){if(e.message==='HTTP_429')throw e;}
+                }
+                const estimatedFee=total*25n/10000n;
+                const quote=t.quoteSymbol??t.quote?.symbol??null;
+                emit('POOL_SAMPLE',{token,symbol:typeof t.symbol==='string'?t.symbol.slice(0,24):null,quote,holdersSampled:Math.min(list.length,10),known,positive,earnedBaseUnits:total.toString(),grossFeeBaseUnitsAt25Bps:estimatedFee.toString(),rewardFields:fields,gasFunded:balance!==null&&balance>0n,execution:'READ_ONLY_NOT_EARNED'});
+              }catch(e){emit('POOL_UNAVAILABLE',{token,reason:e.message});if(e.message==='HTTP_429')break;}
+            }
+          }catch(e){emit('POOL_LIST_UNAVAILABLE',{reason:e.message});}
+          emit('CONSTRAINT',{message:'No transaction, deposit or signing. Sample only, not exhaustive. Quoted commission requires actual eligible recipients, successful execution, asset price and gas cost; not income.'});
+          JS
+      - name: Save discovery evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-permissionless-keeper-discovery
+          path: out/keeper/
+          retention-days: 7
