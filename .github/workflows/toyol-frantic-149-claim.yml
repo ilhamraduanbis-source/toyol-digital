@@ -1,0 +1,57 @@
+name: Toyol — Claim funded Frantic 149
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-frantic-149-claim.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: frantic-existing-agent-one-claim
+  cancel-in-progress: false
+jobs:
+  claim:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Reserve one funded work slot and read private brief securely
+        env:
+          FRANTIC_AGENT_TOKEN: ${{ secrets.FRANTIC_AGENT_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          import {client,KID} from './src/frantic-deliver.mjs';
+          import {randomBytes,createCipheriv,publicEncrypt,constants} from 'node:crypto';
+          const api=client(process.env.FRANTIC_AGENT_TOKEN);
+          const number=149, s=await api('/v1/agents/'+KID+'/status');
+          if(s.agent?.kid!==KID||s.verification?.sworn!==true||s.agent?.claimEligibility?.eligible!==true||s.agent?.onboarding?.payout?.set!==true)throw Error('NOT_ELIGIBLE');
+          if((s.work?.settled??[]).some(x=>x.bounty?.number===number))throw Error('ALREADY_SETTLED');
+          const open=s.work?.open??[];
+          if(open.some(x=>x.bounty?.number!==number))throw Error('OTHER_ACTIVE_CLAIM');
+          const b=(await api('/v1/bounties/'+number)).bounty;
+          if(b?.number!==number||b.title!=='Dogfood a browser extension'||b.price_cents!==300||b.funded!==true||typeof b.funded_receipt_ref!=='string'||!b.funded_receipt_ref||b.visibility!=='private')throw Error('CONTRACT_CHANGED');
+          let id=open.find(x=>x.bounty?.number===number)?.claimId;
+          if(!id){
+            if(b.work_status!=='open'||b.claim_progress?.available<=0)throw Error('NO_SLOT');
+            const x=await api('/v1/claims','POST',{bounty:number,agent_kid:KID});
+            id=x.claim_id;
+            if(typeof id!=='string'||!/^[a-f0-9-]{36}$/i.test(id))throw Error('CLAIM_NOT_CONFIRMED');
+            console.log('CLAIM_RESERVED '+JSON.stringify({bounty:number,claim_id:id,price_cents:300,cost:0}));
+          }
+          const c=await api('/v1/claims/'+id);
+          if(c.claim_id!==id||c.agent_kid!==KID||c.bounty_number!==number||c.visibility!=='private')throw Error('CLAIM_IDENTITY');
+          console.log('CLAIM_VERIFIED '+JSON.stringify({claim_id:id,access_pending:c.access?.pending??null,deadline:c.deliver_deadline_at,stage:c.stage??null}));
+          // The private task description and credentials must never enter public logs.
+          const unlocked=(await api('/v1/bounties/'+number)).bounty;
+          const bytes=Buffer.from(JSON.stringify({claim:c,bounty:unlocked}));
+          if(bytes.length>100000)throw Error('BRIEF_TOO_LARGE');
+          const k=randomBytes(32),iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',k,iv);
+          const data=Buffer.concat([cipher.update(bytes),cipher.final()]);
+          const wrapped=publicEncrypt({key:"-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAi6/NyH9MBJeRkQpQXa67\nvC2Sus6399gFamnOkWLCV1dBh1GJOHfJZviOEo5RkmRSrLQk+W9t9LbHBUml48lr\nz7XLtNtq3MUuX6++i+hqSujIZoW4sbPP+sCMa4+icCl3eCA1pOL4wnjRAzHNHXHt\nxhaVX289qGjFmyjXFfTVVmVUPwU9MAtibZG8aAtKD7/p/Sb6M8se48MDgZ98m5qf\nAFMt7+vHz3FTzk2MqhzIXEP6/pEooJsqpeuHKsMQVjKzUmDtjKcMWNYg70kqcnl+\nAoWetIfByza7swUgHULb0G6ot+YIW821axh+n81DR42QSgIB8tVW6isd3A4TEcrS\nODHET8EkE4ay4+sJVoflgwJ4we+PJ0YCL7rusDWZWuSyNjqYNoptXmuK+9csE7DM\n1wJ51GWzgF8ouw3QM7CU5HFwWwgs7kJ/Tk7yOC2F8e7/5l6HLKHoLcMVCC1O9Gl1\nKz46+RHnFDnrN0IAf4J6vsAr4o/z1BaeVXM8L9PhqIxZAgMBAAE=\n-----END PUBLIC KEY-----",padding:constants.RSA_PKCS1_OAEP_PADDING,oaepHash:'sha256'},k);
+          const envelope={key:wrapped.toString('base64'),iv:iv.toString('base64'),tag:cipher.getAuthTag().toString('base64'),data:data.toString('base64')};
+          const enc=Buffer.from(JSON.stringify(envelope)).toString('base64');
+          for(let i=0;i<enc.length;i+=2000)console.log('PRIVATE_BRIEF_PART '+Math.floor(i/2000)+' '+enc.slice(i,i+2000));
+          JS
