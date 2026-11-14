@@ -1,0 +1,42 @@
+name: Toyol — WURK Solana earning gate
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-wurk-solana.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Inspect free agent login and live work, never send payment
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://api.wurk.fun';
+          async function get(url,options={}){
+            const r=await fetch(url,{...options,redirect:'error',signal:AbortSignal.timeout(15000)});
+            const t=await r.text();if(t.length>3000000)throw Error('SIZE');
+            return {status:r.status,headers:r.headers,text:t};
+          }
+          const emit=(tag,x)=>console.log(tag+' '+JSON.stringify(x));
+          for(const path of ['/skill.md','/references/account.md','/references/worker.md']){
+            try{
+              const r=await get(root+path);
+              const lines=r.text.split('\n');
+              let chosen=new Set();
+              for(let i=0;i<lines.length;i++)if(/SIGN-IN-WITH-X|account-create|signature|base58|base64|sign-in-with-x|SIWX|\/jobs\/available|\/submissions|apikey|solana.*chain/i.test(lines[i]))for(let k=Math.max(0,i-2);k<=Math.min(lines.length-1,i+3);k++)chosen.add(k);
+              emit('DOC',{path,status:r.status,text:[...chosen].sort((a,b)=>a-b).map(i=>lines[i]).join('\n').slice(0,25000)});
+            }catch(e){emit('DOC_FAIL',{path,reason:e.message});}
+          }
+          try{
+            const r=await get(root+'/solana/siwx/account-create',{method:'POST',headers:{Accept:'application/json'}});
+            const j=JSON.parse(r.text);
+            emit('AUTH_CHALLENGE',{status:r.status,accepts:j.accepts,info:j.extensions?.['sign-in-with-x']?.info,fields:Object.keys(j)});
+          }catch(e){emit('AUTH_ERROR',{reason:e.message});}
+          try{
+            const r=await get('https://wurk.fun/api/feed/unified?limit=50',{headers:{Accept:'application/json'}}),j=JSON.parse(r.text);
+            emit('FEED',{status:r.status,data:JSON.stringify(j).slice(0,50000)});
+          }catch(e){emit('FEED_ERROR',{reason:e.message});}
+          JS
