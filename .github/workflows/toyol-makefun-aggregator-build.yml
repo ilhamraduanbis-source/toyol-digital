@@ -35,11 +35,11 @@ jobs:
               t.extractall(sys.argv[2],filter="data")
           PY
           find "$RUNNER_TEMP/aggregator-kit" -maxdepth 3 -type f | head -80
-          npm install --prefix "$HOME/tools" --no-audit --no-fund opencode-ai
+          npm install --prefix "$HOME/tools" --no-audit --no-fund opencode-ai@2.3.0
           OC="$HOME/tools/node_modules/.bin/opencode"
           "$OC" --version
-          "$OC" models opencode > "$RUNNER_TEMP/opencode-models.txt"
-          cat "$RUNNER_TEMP/opencode-models.txt"
+          "$OC" models > "$RUNNER_TEMP/opencode-models.txt"
+          cat "$RUNNER_TEMP/opencode-models.txt"\n          "$OC" run --help
           MODEL=''
           for candidate in deepseek-v4.1-flash-free glm-5.3-flash-free minimax-m3.1-flash-free big-pickle; do
             if grep -Fxq "opencode/$candidate" "$RUNNER_TEMP/opencode-models.txt"; then MODEL="opencode/$candidate"; break; fi
