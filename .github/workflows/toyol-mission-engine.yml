@@ -1,0 +1,38 @@
+name: Toyol — Mission Engine
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '07,37 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-mission-engine.yml'
+      - 'src/mission-engine.mjs'
+      - 'src/mission-runner.mjs'
+      - 'test/mission-engine.test.mjs'
+permissions:
+  contents: read
+  actions: write
+  issues: write
+concurrency:
+  group: toyol-mission-engine
+  cancel-in-progress: false
+jobs:
+  mission-cycle:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify mission selection safety before any external action
+        run: |
+          node --check src/mission-runner.mjs
+          node --test test/mission-engine.test.mjs
+      - name: Choose next eligible mission, dispatch bounded work and preserve progress
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TOYOL_OPENTASK_TOKEN: ${{ secrets.TOYOL_OPENTASK_TOKEN }}
+          FRANTIC_AGENT_TOKEN: ${{ secrets.FRANTIC_AGENT_TOKEN }}
+        run: node src/mission-runner.mjs
