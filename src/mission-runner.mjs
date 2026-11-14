@@ -68,9 +68,24 @@ async function main(){
  await Promise.all(MISSIONS.map(async m=>{try{observations[m.id]=await workflow(m);}catch(e){console.log('WORKFLOW_UNAVAILABLE '+m.id+' '+e.message);}}));
  const live=await liveGate(),changed=await skillChange(observations),now=Date.now();
  const plan=chooseMissions({now,observations,previous:previous.missions,preparedDelivery:live.preparedDelivery,skillsChanged:changed});
+ // Revenue recovery mode: a wake-up must spend its limited dispatch budget on useful work,
+ // rather than use the first two slots on accounts with no contracts or new receipts.
+ // Provider cooldowns and duplicate-run guards are unchanged. Never loop indefinitely.
+ const priority={
+  'frantic-delivery':120,
+  'contract-watch':live.contracts>0?115:40,
+  'cash-priority':110,
+  'paid-market':105,
+  'fiat-hunt':100,
+  'bounded-worker':95,
+  'payment-watch':80,
+  'skill-readiness':20
+ };
+ const selected=plan.decisions.filter(x=>x.status==='READY').sort((a,b)=>(priority[b.id]??0)-(priority[a.id]??0)).slice(0,4).map(x=>x.id);
+ console.log('REVENUE_PRIORITY '+JSON.stringify({selected,limit:4,contracts:live.contracts,preparedDelivery:live.preparedDelivery}));
  const dispatches=[];
  // Recheck immediately before dispatch. Existing workflow concurrency and provider gates remain authoritative.
- for(const id of plan.selected){
+ for(const id of selected){
   const m=MISSIONS.find(x=>x.id===id);
   try{
    const fresh=await workflow(m);
