@@ -1,0 +1,77 @@
+name: Toyol — Private WURK owner handoff
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-wurk-owner-handoff.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-wurk-owner-handoff-once
+  cancel-in-progress: false
+jobs:
+  handoff:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Request free owner verification once and encrypt the private link
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          node --input-type=module <<'JS'
+          import {createPrivateKey,createPublicKey,sign,verify,randomBytes,createCipheriv,publicEncrypt,constants} from 'node:crypto';
+          const root='https://api.wurk.fun',path='/solana/siwx/account-create',url=root+path;
+          const expected='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ',chain='solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp';
+          const alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+          function b58(b){let n=0n;for(const x of b)n=n*256n+BigInt(x);let s='';while(n){s=alphabet[Number(n%58n)]+s;n/=58n;}for(const x of b){if(x!==0)break;s='1'+s;}return s;}
+          const emit=(k,v)=>console.log(k+' '+JSON.stringify(v));
+          async function request(p,opts={}){
+            if(!p.startsWith('/')||p.startsWith('//'))throw Error('PATH');
+            const r=await fetch(root+p,{...opts,redirect:'error',signal:AbortSignal.timeout(18000),headers:{Accept:'application/json',...(opts.headers??{})}});
+            const text=await r.text();if(text.length>3000000)throw Error('LIMIT');
+            let j;try{j=JSON.parse(text)}catch{throw Error('NON_JSON_'+r.status);}
+            return {r,j};
+          }
+          const a=JSON.parse(process.env.TOYOL_SOLANA_KEYPAIR_JSON??'null');
+          if(!Array.isArray(a)||a.length!==64||!a.every(n=>Number.isInteger(n)&&n>=0&&n<=255))throw Error('KEYPAIR_FORMAT');
+          const key=createPrivateKey({key:Buffer.concat([Buffer.from('302e020100300506032b657004220420','hex'),Buffer.from(a.slice(0,32))]),format:'der',type:'pkcs8'});
+          const pub=createPublicKey(key),pk=Buffer.from(pub.export({format:'jwk'}).x,'base64url'),address=b58(pk);
+          if(address!==expected||!pk.equals(Buffer.from(a.slice(32))))throw Error('WALLET_IDENTITY');
+          const {r,j}=await request(path,{method:'POST'}),ext=j.extensions?.['sign-in-with-x'],i=ext?.info;
+          const supported=ext?.supportedChains?.find(x=>x.chainId===chain&&x.type==='ed25519'&&(!x.signatureScheme||x.signatureScheme==='siws'));
+          if(r.status!==402||j.x402Version!==2||!Array.isArray(j.accepts)||j.accepts.length!==0||!supported||!i)throw Error('NOT_FREE_AUTH');
+          const now=Date.now(),issued=Date.parse(i.issuedAt),expires=Date.parse(i.expirationTime);
+          if(i.domain!=='api.wurk.fun'||i.uri!==url||i.version!=='1'||i.statement!=='Sign in to create or access your WURK account and retrieve its API key on Solana'||!Array.isArray(i.resources)||i.resources.length!==1||i.resources[0]!==url||!/^[A-Za-z0-9]{8,128}$/.test(i.nonce??'')||!Number.isFinite(issued)||!Number.isFinite(expires)||issued>now+5000||issued<now-300000||expires<=now||expires-issued>300000||i.notBefore||i.requestId)throw Error('AUTH_INTENT_MISMATCH');
+          const info={...i,chainId:chain,type:'ed25519',...(supported.signatureScheme?{signatureScheme:supported.signatureScheme}:{})};
+          const message=[i.domain+' wants you to sign in with your Solana account:',address,'',i.statement,'','URI: '+i.uri,'Version: '+i.version,'Chain ID: '+chain.split(':')[1],'Nonce: '+i.nonce,'Issued At: '+i.issuedAt,'Expiration Time: '+i.expirationTime,'Resources:','- '+url].join('\n');
+          const sig=sign(null,Buffer.from(message),key);if(!verify(null,Buffer.from(message),pub,sig))throw Error('SIGNATURE');
+          const proof={...info,address,signature:b58(sig)};
+          const auth=await request(path,{method:'POST',headers:{'SIGN-IN-WITH-X':Buffer.from(JSON.stringify(proof)).toString('base64url')}});
+          if(!auth.r.ok){emit('AUTH_FAILED',{status:auth.r.status,code:auth.j.errorCode??null});process.exit(1);}
+          const u=auth.j;
+          if(u.ok!==true||u.auth!=='siwx'||u.paid!==false||u.network!=='solana'||u.walletAddress!==address||u.accountType!=='agent'||typeof u.accountId!=='string'||typeof u.apikey!=='string'||!u.apikey)throw Error('ACCOUNT_RESPONSE');
+          const headers={'X-API-Key':u.apikey};
+          console.log('::add-mask::'+u.apikey);
+          emit('WURK_AGENT_ACTIVE',{id:u.accountId,address,created:u.created,paid:false});
+          async function read(p){const {r,j}=await request(p,{headers});if(!r.ok)throw Error('HTTP_'+r.status+'_'+String(j.errorCode??'UNKNOWN').slice(0,80));return j;}
+          const profile=await read('/profile');
+          if(profile.accountId!==u.accountId||profile.accountType!=='agent')throw Error('PROFILE_MISMATCH');
+          emit('WURK_PROFILE',{verified:profile.humanVerified??null,balances:profile.balances??null});
+          if(profile.humanVerification?.status==='verified'){emit('OWNER_ALREADY_VERIFIED',{});process.exit(0);}
+          if(profile.onboarding?.state==='verification_pending'){emit('OWNER_PENDING_NO_REPLACEMENT',{});process.exit(0);}
+          if(!['unverified','expired'].includes(profile.humanVerification?.status))throw Error('VERIFICATION_STATUS');
+          const result=await request('/proofofhuman',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:'{}'});
+          if(!result.r.ok){emit('HANDOFF_STOP',{status:result.r.status,code:result.j.errorCode??null});process.exit(1);}
+          const data=result.j.data??result.j;
+          const link=data.verificationUrl,expiry=data.expiresAt;
+          if(typeof link!=='string'||link.length>4096||typeof expiry!=='string'||!Number.isFinite(Date.parse(expiry))||Date.parse(expiry)<=Date.now())throw Error('HANDOFF_RESPONSE');
+          const v=new URL(link);
+          if(v.protocol!=='https:'||!['wurk.fun','www.wurk.fun','api.wurk.fun'].includes(v.hostname)||v.username||v.password)throw Error('HANDOFF_ORIGIN');
+          console.log('::add-mask::'+link);
+          // Only the public encryption key is committed. The private key is held outside GitHub.
+          const pubPEM="-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAzIG3HJ/MNouhJHPJDrIb\nuai1ZGJ7NKr4eNLgs7hxIxiMZrhXXCm8u4aZctyjn5uS0PcSFXNgUEw8IT1BnwhX\nzocQiA/aFz5KHkNS+6Qo5swzMOTOXRq2CMm3/21qUIPIE7zze+z1PG/Hu9L28AzN\nZgUtE95H76wReNjaApb0n1cEFNmAcIcQ47zS81tQQ0a8BFss4oqMs5haTJI+tzDP\nJU4Cckyn1c04lPp7G9F9DXONzimJDpw/BjweW6MoeNiAMu0gf9V2AE5DbP3wy0Hz\nG8jcTUIRz2Iwcn20H1/BsTQG77/+S3D/tMccfHwFHm+va8Fma/hMTgXo+4SX7CNQ\nXO8fLx0g/hOmyxGeKwbDQT8vmnn1oVCyNIVbptwPDCmfxJZyz5CZFewEAbgTqIIS\nsVC30l7rWn9rHGZi3HQDlgJEGt6rmluXHi4v2dJnsyIrI9nStZyYsOpL1avg8Uo8\n2REGnryWBv6W+4r4Ej76lVsTbBInmSqtLUUZ9UJkWaJdAgMBAAE=\n-----END PUBLIC KEY-----";
+          const aes=randomBytes(32),iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',aes,iv);
+          const encrypted=Buffer.concat([cipher.update(JSON.stringify({url:link,expiresAt:expiry,accountId:u.accountId}),'utf8'),cipher.final()]);
+          const envelope={key:publicEncrypt({key:pubPEM,padding:constants.RSA_PKCS1_OAEP_PADDING,oaepHash:'sha256'},aes).toString('base64'),iv:iv.toString('base64'),tag:cipher.getAuthTag().toString('base64'),data:encrypted.toString('base64')};
+          emit('PRIVATE_HANDOFF_ENCRYPTED',envelope);
+          JS
