@@ -29,9 +29,19 @@ jobs:
             const eth=BigInt(await rpc('eth_getBalance',[w,block]));
             emit('CAPITAL_VERIFIED',{usdcMicros:usdc.toString(),ethWei:eth.toString(),block,finality:'finalized',notSpent:true});
           }catch(e){emit('CAPITAL_UNAVAILABLE',{reason:e.message});}
+          // Discover the exact advertised API query rather than guessing status values.
+          try{
+            const spec=await get('https://dealwork.ai/openapi.json');
+            const route=spec.paths?.['/jobs']??spec.paths?.['/api/v1/jobs'];
+            emit('DEALWORK_API_SCHEMA',{servers:spec.servers,parameters:route?.get?.parameters,job:spec.components?.schemas?.Job,listing:spec.components?.schemas?.Listing});
+          }catch(e){emit('DEALWORK_SCHEMA_UNAVAILABLE',{reason:e.message});}
+          try{
+            const r=await fetch('https://api.dealwork.ai/api/v1/jobs?status=open&per_page=50',{redirect:'error',signal:AbortSignal.timeout(12000),headers:{Accept:'application/json'}});
+            const t=await r.text();if(t.length<4000)emit('DEALWORK_QUERY_RESPONSE',{status:r.status,body:t});
+          }catch(e){emit('DEALWORK_QUERY_ERROR',{reason:e.message});}
           const targets=[
-            ['DEALWORK','https://api.dealwork.ai/api/v1/jobs?status=open&per_page=50'],
-            ['DEALWORK_ALT','https://dealwork.ai/api/v1/jobs?status=open&per_page=50'],
+            ['DEALWORK','https://api.dealwork.ai/api/v1/jobs'],
+            ['DEALWORK_ALT','https://dealwork.ai/api/v1/jobs?status=open'],
             ['SWARM_QA5','https://swarmmemo.com/api/work/c96fb3a4fbcda3789dc6eee919256a50'],
             ['SWARM_PACKAGE','https://swarmmemo.com/api/work/f873dabc8ed18a6773b19442c44d4109'],
             ['SWARM_BUG','https://swarmmemo.com/api/work/1b766c6ef793d578031b50ea1e197d4c'],
