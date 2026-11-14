@@ -41,12 +41,12 @@ jobs:
           // Only the contract itself, not the entire claim's private history.
           import {gzipSync} from 'node:zlib';
           console.log('PRIVATE_CONTRACT_SCHEMA '+JSON.stringify({claimKeys:Object.keys(c),accessKeys:Object.keys(c.access??{}),bountyKeys:Object.keys(unlocked??{})}));
-          const bytes=gzipSync(Buffer.from(JSON.stringify({description:unlocked?.description,criteria:unlocked?.criteria,delivery_contract:unlocked?.delivery_contract,access:c.access,eligibility:c.eligibility,brief:c.brief??c.private_brief??c.task??c.bounty??null})));
+          console.log('BRIEF_SIZES '+JSON.stringify({briefType:typeof c.brief,briefKeys:Object.keys(c.brief??{}),briefSize:JSON.stringify(c.brief??null).length,contractSize:JSON.stringify(unlocked?.delivery_contract??null).length}));
+          const bytes=gzipSync(Buffer.from(JSON.stringify({brief:c.brief,eligibility:c.eligibility})));
           if(bytes.length>100000)throw Error('BRIEF_TOO_LARGE');
           const k=randomBytes(32),iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',k,iv);
           const data=Buffer.concat([cipher.update(bytes),cipher.final()]);
           const wrapped=publicEncrypt({key:"-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAi6/NyH9MBJeRkQpQXa67\nvC2Sus6399gFamnOkWLCV1dBh1GJOHfJZviOEo5RkmRSrLQk+W9t9LbHBUml48lr\nz7XLtNtq3MUuX6++i+hqSujIZoW4sbPP+sCMa4+icCl3eCA1pOL4wnjRAzHNHXHt\nxhaVX289qGjFmyjXFfTVVmVUPwU9MAtibZG8aAtKD7/p/Sb6M8se48MDgZ98m5qf\nAFMt7+vHz3FTzk2MqhzIXEP6/pEooJsqpeuHKsMQVjKzUmDtjKcMWNYg70kqcnl+\nAoWetIfByza7swUgHULb0G6ot+YIW821axh+n81DR42QSgIB8tVW6isd3A4TEcrS\nODHET8EkE4ay4+sJVoflgwJ4we+PJ0YCL7rusDWZWuSyNjqYNoptXmuK+9csE7DM\n1wJ51GWzgF8ouw3QM7CU5HFwWwgs7kJ/Tk7yOC2F8e7/5l6HLKHoLcMVCC1O9Gl1\nKz46+RHnFDnrN0IAf4J6vsAr4o/z1BaeVXM8L9PhqIxZAgMBAAE=\n-----END PUBLIC KEY-----",padding:constants.RSA_PKCS1_OAEP_PADDING,oaepHash:'sha256'},k);
           const envelope={key:wrapped.toString('base64'),iv:iv.toString('base64'),tag:cipher.getAuthTag().toString('base64'),data:data.toString('base64')};
-          const enc=Buffer.from(JSON.stringify(envelope)).toString('base64');
-          for(let i=0;i<enc.length;i+=2000)console.log('PRIVATE_BRIEF_PART '+Math.floor(i/2000)+' '+enc.slice(i,i+2000));
+          console.log('PRIVATE_COMPACT '+JSON.stringify(envelope));
           JS
