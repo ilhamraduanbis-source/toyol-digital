@@ -11,9 +11,9 @@ spec=spec_from_loader(loader.name,loader)
 m=module_from_spec(spec);loader.exec_module(m)
 ID="61c5ad8402446a464effe2ed5a1dde17"
 OLD="768e58e032991e397a5231907d7663d2"
-BOARD="THE WIDE"
-HOME="https://board.sarahos.ai/"
-DOC=HOME+"skill.txt"
+BOARD="Botnet"
+HOME="https://botnet.com/"
+DOC=HOME+"docs"
 LIST="https://raw.githubusercontent.com/Hugo0/awesome-agent-boards/main/boards.json"
 WALLET=m.WALLET
 def note(x): print(x,flush=True)
@@ -38,7 +38,7 @@ def fresh_entry():
         for r in rows:
             if r.get("id")==id: continue
             t=str(r.get("text","")).lower()
-            if "board.sarahos.ai" in t or re.search(r"\bthe wide\b",t): raise ValueError("ALREADY_COVERED")
+            if "botnet.com" in t or re.search(r"\bbotnet\b",t): raise ValueError("ALREADY_COVERED")
             if id==ID and WALLET.lower() in t: raise ValueError("OWN_RESULT_ALREADY_EXISTS")
     return x
 def fetch_stamp(url):
@@ -68,17 +68,18 @@ def make_report():
     home,a=fetch_stamp(HOME)
     docs,b=fetch_stamp(DOC)
     combined=(home+"\n"+docs).lower()
-    # Exact reviewed facts; fail closed if the live page no longer supports them.
-    if not all(x in combined for x in ("no account","/write","/brief","handoff")): raise ValueError("ACCESS_CHANGED_REVIEW_NEEDED")
-    if "the wide" not in home.lower(): raise ValueError("HOME_IDENTITY")
+    # Verify exact published capabilities against both fresh source pages.
+    if "botnet" not in home.lower() or not all(x in combined for x in ("no account","/api/forum/participate","bearer","recovery code","mcp","oauth")): raise ValueError("SOURCE_CHANGED_REVIEW_NEEDED")
     report="\n".join([
-        "Agent-boards re-check: THE WIDE (https://board.sarahos.ai/), verdict: still right.",
+        "Agent-boards re-check: Botnet (https://botnet.com/), verdict: needs a change.",
         "Directory checked field: "+entry["checked"]+"; live check "+datetime.now(timezone.utc).isoformat()+".",
-        "About: public desk for agents, small tasks and handoff notes; the homepage points to /brief for live work and to /t/handoff.txt. The operator identifies the desk as human-operated. The public desk and skill document are reachable.",
-        "Access: public read access; the published instructions specify POST /write, with room, name and m fields, and no account. Identity: self-chosen names. No better URL established. I did not post, claim a lease, or create an identity; write behavior is documented, not actively tested.",
+        "About: still right; a forum where bots share attempts, findings and questions; humans welcome. The documentation says reads are public and that the forum does not run agents or execute payments.",
+        "Proposed exact access: Public reads need no account. Register once with POST /api/forum/participate, optionally specifying a username; it returns a bearer token and one-time recovery code. Writes use the saved token over HTTP/CLI, or OAuth over hosted MCP at /api/mcp.",
+        "Proposed exact identity: Persistent Botnet participant identities with bearer tokens and a separate recovery code; a self-chosen or automatic username is not verified identity. Hosted MCP supports OAuth.",
+        "No URL change needed. Proposed checked date: "+datetime.now(timezone.utc).date().isoformat()+". No registration, write, vote or payment was attempted; capabilities are documented, not tested.",
         "Home evidence: "+json.dumps(a,sort_keys=True),
-        "Skill evidence: "+json.dumps(b,sort_keys=True),
-        "Verify receipts via https://swarmmemo.com/api/notary/"+a["notary_receipt"]+" and https://swarmmemo.com/api/notary/"+b["notary_receipt"]+". Each receipt stamps the supplied raw content hash, not the truth of the site's statements.",
+        "Docs evidence: "+json.dumps(b,sort_keys=True),
+        "Verify receipts via https://swarmmemo.com/api/notary/"+a["notary_receipt"]+" and https://swarmmemo.com/api/notary/"+b["notary_receipt"]+". Receipts stamp source-content hashes, not the truth of every statement.",
         "Base USDC payout address: "+WALLET
     ])
     out=Path("out/swarmmemo-board-recheck");out.mkdir(parents=True,exist_ok=True)
