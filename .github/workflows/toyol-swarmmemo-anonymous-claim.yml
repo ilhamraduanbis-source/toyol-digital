@@ -1,0 +1,87 @@
+name: Toyol — SwarmMemo real bug reproduction
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-swarmmemo-anonymous-claim.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-swarmmemo-bug-proof
+  cancel-in-progress: false
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: Hugo0/swarmmemo
+          ref: 6fb92fa9ac89824b9f3922a50db1adb60579760c
+          persist-credentials: false
+      - name: Reproduce anonymous post plus claim locally, then test minimal fix
+        run: |
+          set -eu
+          mkdir -p out/bug-proof
+          cat > clients/python/toyol_repro.py <<'PY'
+          import contextlib, io, json, os, sys, tempfile
+          from pathlib import Path
+          from unittest.mock import patch
+          import swarmmemo as memo
+          fixed = '--fixed' in sys.argv
+          task = '1' * 32
+          result = '2' * 32
+          sent = []
+          def fake_request(self, path, body=None):
+              sent.append((path, body))
+              if path != '/v1/command':
+                  raise AssertionError('unexpected transport: ' + path)
+              if body['operation'] == 'post':
+                  assert body['reply_to'] == task
+                  assert 'signature' not in body
+                  return {'ok': True, 'receipt': {'id': result}}
+              if body['operation'] == 'work.claim':
+                  assert 'signature' not in body
+                  raise memo.UsageError('offline mock: claim requires signature')
+              raise AssertionError(body['operation'])
+          with tempfile.TemporaryDirectory() as d:
+              with patch.dict(os.environ, {'SWARMMEMO_HOME': d}), patch.object(memo.Client, '_request', fake_request), patch.object(memo.Client, '_work_data', return_value=json.dumps({'schema': 1, 'generation': '3'*32}, separators=(',', ':'))):
+                  os.environ.pop('SWARMMEMO_KEY', None)
+                  err = io.StringIO()
+                  with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                      try:
+                          code = memo.main(['--anonymous', 'post', 'bounties', 'main', 'offline reproduction', '--claim', task])
+                      except SystemExit as e:
+                          code = e.code
+                  assert code != 0, code
+                  assert not (Path(d)/'key.json').exists()
+                  if fixed:
+                      assert not sent, sent
+                      assert 'requires a signing identity' in err.getvalue(), err.getvalue()
+                      print('FIX_VERIFIED: invalid combination rejected before any request')
+                  else:
+                      assert sent and sent[0][1]['operation'] == 'post', (sent, err.getvalue())
+                      print('BUG_REPRODUCED: anonymous post sent before claim fails; calls=' + str([(p, b.get('operation'), 'signature' in b) for p,b in sent]))
+                      print('CLI exit:', code, 'stderr:', err.getvalue().strip())
+          PY
+          cd clients/python
+          python3 toyol_repro.py | tee ../../out/bug-proof/repro.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('swarmmemo.py')
+          s=p.read_text()
+          anchor='    if args.action == "post" and args.claim and args.save_request:'
+          assert s.count(anchor)==1
+          p.write_text(s.replace(anchor, '    if args.action == "post" and args.claim and args.anonymous:\n        parser.error("--claim requires a signing identity; remove --anonymous or use --key")\n'+anchor))
+          PY
+          python3 toyol_repro.py --fixed | tee -a ../../out/bug-proof/repro.txt
+          python3 -m unittest test_device_key test_main_guard |& tee -a ../../out/bug-proof/repro.txt
+          git diff -- swarmmemo.py > ../../out/bug-proof/fix.patch
+          cp toyol_repro.py ../../out/bug-proof/
+      - name: Save reproduction and fix
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-swarmmemo-real-bug
+          path: out/bug-proof/
+          retention-days: 7
