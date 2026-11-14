@@ -71,6 +71,8 @@ def choose_station():
             raise RuntimeError("Unexpected thread format")
         texts.extend(str(m.get("text", "")) for m in messages if m.get("id") != task_id)
     combined = "\n".join(texts).lower()
+    if WALLET.lower() in combined:
+        return None  # an earlier public result from this payout route must not be duplicated
     for station in STATIONS:
         if not re.search(r"\b" + station.lower() + r"\b", combined):
             return station
@@ -186,7 +188,7 @@ def claim_real_work(brief):
 def main():
     execute = "--execute" in sys.argv
     now = datetime.now(timezone.utc)
-    if execute and now.hour >= 12 and now.date() < datetime(2026, 11, 25, tzinfo=timezone.utc).date():
+    if execute and os.getenv("GITHUB_EVENT_NAME") == "schedule" and now.hour >= 12 and now.date() < datetime(2026, 11, 25, tzinfo=timezone.utc).date():
         midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=2, microsecond=0)
         seconds = (midnight - now).total_seconds()
         if 0 < seconds <= 2800:
