@@ -60,6 +60,12 @@ jobs:
           const profile=await read('/profile');
           if(profile.accountId!==u.accountId||profile.accountType!=='agent')throw Error('PROFILE_MISMATCH');
           emit('WURK_PROFILE',{verified:profile.humanVerified??null,balances:profile.balances??null});
+          // Public verification documentation only; never log a private handoff URL.
+          const docs=await fetch(root+'/references/account.md',{redirect:'error',signal:AbortSignal.timeout(15000)});
+          if(docs.ok){const t=await docs.text(),start=t.indexOf('### Account profile and Proof of Human'),end=t.indexOf('\n### ',start+4);if(start>=0)emit('VERIFICATION_PUBLIC_DOC',{text:t.slice(start,end>start?end:start+15000).slice(0,16000)});}
+          const all=await read('/jobs?limit=50');
+          const allRows=all.jobs??all.data?.jobs??all.items??all.data;
+          if(Array.isArray(allRows))for(const x of allRows.slice(0,50))emit('PUBLIC_JOB_GATE',{id:x.id,description:String(x.description??'').slice(0,700),requiresHumanVerification:x.requiresHumanVerification,availableForMe:x.availableForMe,mode:x.mode,reward:x.reward});
           const page=await read('/jobs/available?limit=50');
           const rows=page.jobs??page.data?.jobs??page.items??page.data;
           if(!Array.isArray(rows)){emit('JOB_SCHEMA',{keys:Object.keys(page)});process.exit(0);}
