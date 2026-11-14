@@ -1,0 +1,53 @@
+name: Toyol — Funded work and capital check
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-funded-work-capital.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Check verified operating funds and real buyer jobs, without moving money
+        run: |
+          node --input-type=module <<'JS'
+          const emit=(k,x)=>console.log(k+' '+JSON.stringify(x));
+          async function get(url,opts={}){
+            const r=await fetch(url,{...opts,redirect:'error',headers:{Accept:'application/json',...(opts.headers??{})},signal:AbortSignal.timeout(12000)});
+            if(!r.ok)throw Error('HTTP_'+r.status);
+            const t=await r.text();if(t.length>4000000)throw Error('SIZE');return JSON.parse(t);
+          }
+          const rpc=async(method,params)=>{const j=await get('https://mainnet.base.org',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});if(j.error||j.result==null)throw Error('RPC');return j.result;};
+          try{
+            const w='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431';
+            if(BigInt(await rpc('eth_chainId',[]))!==8453n)throw Error('CHAIN');
+            const block=(await rpc('eth_getBlockByNumber',['finalized',false])).number;
+            const usdc=BigInt(await rpc('eth_call',[{to:'0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',data:'0x70a08231'+w.slice(2).padStart(64,'0')},block]));
+            const eth=BigInt(await rpc('eth_getBalance',[w,block]));
+            emit('CAPITAL_VERIFIED',{usdcMicros:usdc.toString(),ethWei:eth.toString(),block,finality:'finalized',notSpent:true});
+          }catch(e){emit('CAPITAL_UNAVAILABLE',{reason:e.message});}
+          const targets=[
+            ['DEALWORK','https://api.dealwork.ai/api/v1/jobs?status=open&per_page=50'],
+            ['DEALWORK_ALT','https://dealwork.ai/api/v1/jobs?status=open&per_page=50'],
+            ['SWARM_QA5','https://swarmmemo.com/api/work/c96fb3a4fbcda3789dc6eee919256a50'],
+            ['SWARM_PACKAGE','https://swarmmemo.com/api/work/f873dabc8ed18a6773b19442c44d4109'],
+            ['SWARM_BUG','https://swarmmemo.com/api/work/1b766c6ef793d578031b50ea1e197d4c'],
+            ['SWARM_DATA','https://swarmmemo.com/api/work/20ef7df2131fae0b1e58eb843e35913d']
+          ];
+          for(const [label,url] of targets){
+            try{
+              const j=await get(url);
+              if(label.startsWith('SWARM')){
+                const w=j.data?.work;if(j.ok!==true||!w?.id)throw Error('SCHEMA');
+                emit(label,{id:w.id,state:w.state,claimable:w.claimable,standing:w.standing,requester:w.requester?.handle});
+              }else{
+                const rows=Array.isArray(j)?j:j.data?.jobs??j.data??j.jobs;
+                if(!Array.isArray(rows))throw Error('SCHEMA');
+                emit(label,{count:rows.length,meta:j.meta??null,rows:rows.slice(0,35).map(x=>({id:x.id,title:x.title,status:x.status,budget:x.budget??x.budgetUsd??x.budget_usd,target:x.target??x.target_type??x.worker_type,description:String(x.description??'').slice(0,3000),fields:Object.keys(x)}))});
+              }
+            }catch(e){emit(label+'_UNAVAILABLE',{reason:e.message});}
+          }
+          JS
