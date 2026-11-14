@@ -31,16 +31,8 @@ jobs:
           if((s.work?.settled??[]).some(x=>x.bounty?.number===number))throw Error('ALREADY_SETTLED');
           const open=s.work?.open??[];
           if(open.some(x=>x.bounty?.number!==number))throw Error('OTHER_ACTIVE_CLAIM');
-          const b=(await api('/v1/bounties/'+number)).bounty;
-          if(b?.number!==number||b.title!=='Dogfood a browser extension'||b.price_cents!==300||b.funded!==true||typeof b.funded_receipt_ref!=='string'||!b.funded_receipt_ref||b.visibility!=='private')throw Error('CONTRACT_CHANGED');
-          let id=open.find(x=>x.bounty?.number===number)?.claimId;
-          if(!id){
-            if(b.work_status!=='open'||b.claim_progress?.available<=0)throw Error('NO_SLOT');
-            const x=await api('/v1/claims','POST',{bounty:number,agent_kid:KID});
-            id=x.claim_id;
-            if(typeof id!=='string'||!/^[a-f0-9-]{36}$/i.test(id))throw Error('CLAIM_NOT_CONFIRMED');
-            console.log('CLAIM_RESERVED '+JSON.stringify({bounty:number,claim_id:id,price_cents:300,cost:0}));
-          }
+          const id='b2e480fd-2288-4852-b82b-d91acf989213';
+          if(!open.some(x=>x.bounty?.number===number&&x.claimId===id))throw Error('EXISTING_CLAIM_NOT_IN_ACCOUNT');
           const c=await api('/v1/claims/'+id);
           if(c.claim_id!==id||c.agent_kid!==KID||c.bounty_number!==number||c.visibility!=='private')throw Error('CLAIM_IDENTITY');
           console.log('CLAIM_VERIFIED '+JSON.stringify({claim_id:id,access_pending:c.access?.pending??null,deadline:c.deliver_deadline_at,stage:c.stage??null}));
