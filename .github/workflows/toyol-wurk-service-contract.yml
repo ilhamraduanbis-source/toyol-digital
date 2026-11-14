@@ -1,0 +1,20 @@
+name: Toyol — WURK service delivery contract
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-wurk-service-contract.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Read official seller and order API contract
+        run: |
+          set -eu
+          for p in worker store account; do
+            echo "DOCUMENT:$p"
+            curl --fail --max-time 15 --silent --show-error "https://api.wurk.fun/references/$p.md" || true
+          done
