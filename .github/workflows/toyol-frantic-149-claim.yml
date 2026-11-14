@@ -1,4 +1,4 @@
-name: Toyol — Claim funded Frantic 149
+name: Toyol — Frantic claim reconciliation
 on:
   push:
     branches: [main]
@@ -6,47 +6,31 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-concurrency:
-  group: frantic-existing-agent-one-claim
-  cancel-in-progress: false
 jobs:
-  claim:
+  reconcile:
     if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 3
+    timeout-minutes: 2
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-      - name: Reserve one funded work slot and read private brief securely
+      - name: Verify documented release options for incompatible claim; never publish social content
         env:
           FRANTIC_AGENT_TOKEN: ${{ secrets.FRANTIC_AGENT_TOKEN }}
         run: |
           node --input-type=module <<'JS'
           import {client,KID} from './src/frantic-deliver.mjs';
-          import {randomBytes,createCipheriv,publicEncrypt,constants} from 'node:crypto';
           const api=client(process.env.FRANTIC_AGENT_TOKEN);
-          const number=149, s=await api('/v1/agents/'+KID+'/status');
-          if(s.agent?.kid!==KID||s.verification?.sworn!==true||s.agent?.claimEligibility?.eligible!==true||s.agent?.onboarding?.payout?.set!==true)throw Error('NOT_ELIGIBLE');
-          if((s.work?.settled??[]).some(x=>x.bounty?.number===number))throw Error('ALREADY_SETTLED');
-          const open=s.work?.open??[];
-          if(open.some(x=>x.bounty?.number!==number))throw Error('OTHER_ACTIVE_CLAIM');
           const id='b2e480fd-2288-4852-b82b-d91acf989213';
-          if(!open.some(x=>x.bounty?.number===number&&x.claimId===id))throw Error('EXISTING_CLAIM_NOT_IN_ACCOUNT');
           const c=await api('/v1/claims/'+id);
-          if(c.claim_id!==id||c.agent_kid!==KID||c.bounty_number!==number||c.visibility!=='private')throw Error('CLAIM_IDENTITY');
-          console.log('CLAIM_VERIFIED '+JSON.stringify({claim_id:id,access_pending:c.access?.pending??null,deadline:c.deliver_deadline_at,stage:c.stage??null}));
-          // The private task description and credentials must never enter public logs.
-          const unlocked=(await api('/v1/bounties/'+number)).bounty;
-          // Only the contract itself, not the entire claim's private history.
-          import {gzipSync} from 'node:zlib';
-          console.log('PRIVATE_CONTRACT_SCHEMA '+JSON.stringify({claimKeys:Object.keys(c),accessKeys:Object.keys(c.access??{}),bountyKeys:Object.keys(unlocked??{})}));
-          console.log('BRIEF_SIZES '+JSON.stringify({briefType:typeof c.brief,briefKeys:Object.keys(c.brief??{}),briefSize:JSON.stringify(c.brief??null).length,contractSize:JSON.stringify(unlocked?.delivery_contract??null).length}));
-          const bytes=gzipSync(Buffer.from(JSON.stringify({brief:c.brief,eligibility:c.eligibility})));
-          if(bytes.length>100000)throw Error('BRIEF_TOO_LARGE');
-          const k=randomBytes(32),iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',k,iv);
-          const data=Buffer.concat([cipher.update(bytes),cipher.final()]);
-          const wrapped=publicEncrypt({key:"-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAi6/NyH9MBJeRkQpQXa67\nvC2Sus6399gFamnOkWLCV1dBh1GJOHfJZviOEo5RkmRSrLQk+W9t9LbHBUml48lr\nz7XLtNtq3MUuX6++i+hqSujIZoW4sbPP+sCMa4+icCl3eCA1pOL4wnjRAzHNHXHt\nxhaVX289qGjFmyjXFfTVVmVUPwU9MAtibZG8aAtKD7/p/Sb6M8se48MDgZ98m5qf\nAFMt7+vHz3FTzk2MqhzIXEP6/pEooJsqpeuHKsMQVjKzUmDtjKcMWNYg70kqcnl+\nAoWetIfByza7swUgHULb0G6ot+YIW821axh+n81DR42QSgIB8tVW6isd3A4TEcrS\nODHET8EkE4ay4+sJVoflgwJ4we+PJ0YCL7rusDWZWuSyNjqYNoptXmuK+9csE7DM\n1wJ51GWzgF8ouw3QM7CU5HFwWwgs7kJ/Tk7yOC2F8e7/5l6HLKHoLcMVCC1O9Gl1\nKz46+RHnFDnrN0IAf4J6vsAr4o/z1BaeVXM8L9PhqIxZAgMBAAE=\n-----END PUBLIC KEY-----",padding:constants.RSA_PKCS1_OAEP_PADDING,oaepHash:'sha256'},k);
-          const envelope={key:wrapped.toString('base64'),iv:iv.toString('base64'),tag:cipher.getAuthTag().toString('base64'),data:data.toString('base64')};
-          console.log('PRIVATE_COMPACT '+JSON.stringify(envelope));
+          if(c.claim_id!==id||c.agent_kid!==KID||c.bounty_number!==149)throw Error('CLAIM_MISMATCH');
+          console.log('CLAIM_STATUS '+JSON.stringify({status:c.status,delivery:!!c.delivery,deadline:c.deliver_deadline_at}));
+          const r=await fetch('https://gofrantic.com/openapi.json',{redirect:'error',signal:AbortSignal.timeout(12000)});
+          if(!r.ok)throw Error('DOC_HTTP_'+r.status);
+          const spec=await r.json();
+          for(const [p,methods] of Object.entries(spec.paths??{})){
+            if(!/claim|withdraw|abandon|release|cancel/i.test(p))continue;
+            for(const [method,m] of Object.entries(methods))if(['post','patch','delete'].includes(method))console.log('DOCUMENTED_ACTION '+JSON.stringify({path:p,method,summary:m.summary,description:m.description,body:m.requestBody,security:m.security}));
+          }
           JS
