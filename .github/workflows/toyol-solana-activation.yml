@@ -35,7 +35,7 @@ jobs:
             return s;
           }
           function derive(raw){
-            if(typeof raw!=='string'||raw.length>4096)throw Error('KEYPAIR_MISSING');
+            if(typeof raw!=='string'||!raw||raw.length>4096)throw Error('KEYPAIR_MISSING');
             let a;try{a=JSON.parse(raw)}catch{throw Error('KEYPAIR_FORMAT')}
             if(!Array.isArray(a)||a.length!==64||!a.every(n=>Number.isInteger(n)&&n>=0&&n<=255))throw Error('KEYPAIR_FORMAT');
             const seed=Buffer.from(a.slice(0,32)),expected=Buffer.from(a.slice(32));
@@ -64,6 +64,7 @@ jobs:
             const methods=await call('/api/auth/methods');
             if(!methods.methods?.includes('solana'))throw Error('SOLANA_AUTH_UNAVAILABLE');
             console.log('MAKEFUN_AUTH_AVAILABLE '+JSON.stringify({chain:methods.solana?.chain_id,statement:methods.solana?.key_statement??null}));
+            if(!process.env.TOYOL_SOLANA_KEYPAIR_JSON&&process.env.GITHUB_EVENT_NAME==='push'){console.log('SETUP_REQUIRED: owner must install dedicated keypair secret');return;}
             const {privateKey,publicKey,address}=derive(process.env.TOYOL_SOLANA_KEYPAIR_JSON);
             console.log('SOLANA_WALLET_READY '+JSON.stringify({address,localSignatureVerified:true,transactions:0}));
             if(process.env.GITHUB_EVENT_NAME!=='workflow_dispatch'||process.env.REGISTER_MAKEFUN!=='true'){
@@ -71,7 +72,7 @@ jobs:
             }
             // SIWS: official SDK protocol, only exact make.fun origin, sign-in message, never a transaction.
             const chain=methods.solana.chain_id;
-            if(!['mainnet','mainnet-beta','solana:mainnet','solana:mainnet-beta','5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'].includes(chain))throw Error('UNEXPECTED_CHAIN');
+            if(!['mainnet','mainnet-beta','solana:mainnet','solana:mainnet-beta','solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp','5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'].includes(chain))throw Error('UNEXPECTED_CHAIN');
             const statement=methods.solana.key_statement??'Sign in to make.fun. No transaction, no fee.';
             if(typeof statement!=='string'||statement.length>300||/[\r\n]/.test(statement)||!statement.includes('make.fun')||!/(sign in|api key)/i.test(statement)||!/(no transaction|no on.chain)/i.test(statement)||!/(no fee|no cost)/i.test(statement))throw Error('UNEXPECTED_SIGNIN_STATEMENT');
             const c=await call('/api/auth/siws/nonce',{walletAddress:address});
