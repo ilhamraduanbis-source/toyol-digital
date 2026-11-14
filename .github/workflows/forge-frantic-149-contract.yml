@@ -1,5 +1,6 @@
-name: Toyol — Frantic 149 Contract
+name: Toyol — Frantic current funded work
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths: ['.github/workflows/forge-frantic-149-contract.yml']
@@ -8,23 +9,25 @@ permissions:
 jobs:
   inspect:
     runs-on: ubuntu-24.04
+    timeout-minutes: 2
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-      - name: Read funded task and contract
+      - name: Verify exact public availability and existing account history
         env:
           FRANTIC_AGENT_TOKEN: ${{ secrets.FRANTIC_AGENT_TOKEN }}
         run: |
           node --input-type=module <<'JS'
-          import {client,contractHash,KID} from './src/frantic-deliver.mjs';
+          import {client,KID} from './src/frantic-deliver.mjs';
           const api=client(process.env.FRANTIC_AGENT_TOKEN);
-          const spec=await fetch('https://gofrantic.com/openapi.json',{redirect:'error',signal:AbortSignal.timeout(12000)}).then(r=>r.json());
-          console.log('MARKET_ROUTES '+JSON.stringify(Object.entries(spec.paths??{}).filter(([p,v])=>v.get&&/bount|board|work|hire/.test(p)).map(([p,v])=>({p,params:v.get.parameters}))));
-          const br=await fetch('https://gofrantic.com/v1/board',{headers:{Accept:'application/json',Authorization:'Bearer '+process.env.FRANTIC_AGENT_TOKEN},redirect:'error',signal:AbortSignal.timeout(15000)}); const board=await br.json();
-          if(br.ok)console.log('FRANTIC_BOARD '+JSON.stringify(board).slice(0,45000));else console.log('FRANTIC_BOARD_HTTP '+br.status);
-          const b=(await api('/v1/bounties/149')).bounty;
-          console.log('CONTRACT '+JSON.stringify({number:b.number,title:b.title,description:b.description,criteria:b.criteria,delivery_contract:b.delivery_contract,price_cents:b.price_cents,funded:b.funded,work_status:b.work_status,claim_progress:b.claim_progress,visibility:b.visibility,hash:contractHash(b)}));
+          const r=await fetch('https://gofrantic.com/v1/board',{headers:{Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(12000)});
+          if(!r.ok)throw Error('BOARD_HTTP_'+r.status);
+          const j=await r.json(),b=j.board;
+          if(j.ok!==true||!Array.isArray(b?.open_bounties)||!Array.isArray(b?.completed_bounties))throw Error('BOARD_SCHEMA');
+          const brief=x=>({number:x.number,title:x.title,price:x.price_usd,funded:x.funded,status:x.work_status,slots:x.claim_slots,visibility:x.visibility});
+          console.log('OPEN_BOUNTIES '+JSON.stringify(b.open_bounties.map(brief)));
+          console.log('SCREENSHOT_TASKS '+JSON.stringify([...b.open_bounties,...b.completed_bounties].filter(x=>[148,149,129].includes(x.number)).map(brief)));
           const s=await api('/v1/agents/'+KID+'/status');
-          console.log('AGENT_STATUS '+JSON.stringify({eligible:s.agent?.claimEligibility?.eligible,payout:s.agent?.onboarding?.payout?.set,open:s.work?.open?.map(x=>({bounty:x.bounty?.number,stage:x.stage})),settled:s.work?.settled?.map(x=>({bounty:x.bounty?.number,stage:x.stage}))}));
+          console.log('OWN_ACCOUNT '+JSON.stringify({eligible:s.agent?.claimEligibility?.eligible,payout:s.agent?.onboarding?.payout?.set,open:s.work?.open?.map(x=>({bounty:x.bounty?.number,stage:x.stage})),settled:s.work?.settled?.map(x=>({bounty:x.bounty?.number,stage:x.stage}))}));
           JS
