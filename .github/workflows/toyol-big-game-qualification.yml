@@ -1,0 +1,137 @@
+name: Toyol — Big Game Qualification Gate
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-big-game-qualification.yml']
+  workflow_run:
+    workflows: ['Toyol — Big Game and Multi-Currency Radar']
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: toyol-big-game-qualification
+  cancel-in-progress: false
+jobs:
+  qualify:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Locate latest successful big game radar run
+        id: radar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,json,urllib.request
+          url='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/actions/workflows/toyol-big-game-multicurrency.yml/runs?branch=main&status=success&per_page=1'
+          req=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'ToyolQualification'})
+          with urllib.request.urlopen(req,timeout=20) as r: j=json.load(r)
+          a=j['workflow_runs']
+          if not a: raise SystemExit('NO_SUCCESSFUL_RADAR')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f: f.write('run_id='+str(a[0]['id'])+'\n')
+          PY
+      - name: Retrieve radar report without executing it
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: toyol-big-game-report
+          run-id: ${{ steps.radar.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: input
+      - name: Verify original bounty source and reject unavailable work
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p out/qualification
+          python3 - <<'PY'
+          import os,json,re,urllib.request,datetime as dt
+          from concurrent.futures import ThreadPoolExecutor
+          from pathlib import Path
+          def get(path):
+              req=urllib.request.Request('https://api.github.com'+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'ToyolQualification'})
+              class NoRedirect(urllib.request.HTTPRedirectHandler):
+                  def redirect_request(self,*a,**kw): return None
+              with urllib.request.build_opener(NoRedirect()).open(req,timeout=15) as r:
+                  b=r.read(4000001)
+                  if len(b)>4000000: raise ValueError('RESPONSE_LIMIT')
+                  return json.loads(b)
+          # Explicit evidence from source issues, not conclusions derived from advertised price.
+          known={
+            'https://github.com/ubiquity-os/plugin-template/issues/13':('EXTERNAL_CONTRIBUTORS_INELIGIBLE','https://github.com/ubiquity-os/plugin-template/issues/13'),
+            'https://github.com/ubiquity-os/.github/issues/14':('CORE_TEAM_ONLY','https://github.com/ubiquity-os/.github/issues/14'),
+            'https://github.com/ubiquity-os-marketplace/text-conversation-rewards/issues/385':('CORE_TEAM_ONLY','https://github.com/ubiquity-os-marketplace/text-conversation-rewards/issues/385'),
+            'https://github.com/ubiquity/ubiquity-dollar/issues/997':('CORE_TEAM_ONLY','https://github.com/ubiquity/ubiquity-dollar/issues/997'),
+            'https://github.com/ubiquity/ubiquity-dollar/issues/984':('PAID_LISTING_AND_EXTERNAL_APPROVALS','https://github.com/ubiquity/ubiquity-dollar/issues/984'),
+            'https://github.com/microg/GmsCore/issues/2843':('AI_FORBIDDEN_AND_PHYSICAL_TESTS','https://github.com/microg/GmsCore/issues/2843'),
+            'https://github.com/QubesOS/qubes-issues/issues/10567':('EXISTING_ASSIGNED_IMPLEMENTATION_MERGED','https://github.com/BusKill/buskill-app/issues/106'),
+            'https://github.com/Sifchain/sifnode/issues/524':('STALE_FUNDING_UNCONFIRMED_EXISTING_ATTEMPTS','https://github.com/Sifchain/sifnode/issues/524'),
+            'https://ai-agents-founders-hetic-26.devpost.com/':('STUDENT_RESTRICTION','https://ai-agents-founders-hetic-26.devpost.com/rules')
+          }
+          def classify(x):
+              url=x.get('url',''); result={'title':x.get('title'),'url':url,'amount':x.get('amount'),'currency':x.get('currency'),'kind':x.get('kind'),'decision':'REVIEW_REQUIRED','funding':'UNVERIFIED','reasons':[]}
+              def stop(reason,evidence=url):
+                  result['decision']='DO_NOT_EXECUTE'; result['reasons'].append(reason); result['evidence']=evidence
+                  return result
+              if x.get('agentEligibility')=='HUMAN_ONLY': return stop('HUMAN_ONLY')
+              if url in known:
+                  reason,evidence=known[url]; return stop(reason,evidence)
+              m=re.fullmatch(r'https://github\.com/([\w.-]+/[\w.-]+)/issues/(\d+)',url)
+              if not m:
+                  result['reasons'].append('VERIFY_OFFICIAL_RULES_FUNDING_AND_ACCOUNT_REQUIREMENTS')
+                  return result
+              path='/repos/'+m.group(1)+'/issues/'+m.group(2)
+              try:
+                  issue=get(path); comments=get(path+'/comments?per_page=100&sort=created&direction=desc')
+                  if not isinstance(comments,list): raise ValueError('COMMENT_SCHEMA')
+                  result['originalState']=issue.get('state'); result['labels']=[v.get('name') for v in issue.get('labels',[])]
+                  result['assignees']=[v.get('login') for v in issue.get('assignees',[])]
+                  if issue.get('state')!='open': return stop('ORIGINAL_ISSUE_NOT_OPEN')
+                  if issue.get('locked'): return stop('ISSUE_LOCKED')
+                  if result['assignees']: return stop('ALREADY_ASSIGNED')
+                  body=str(issue.get('body') or '')
+                  if re.search(r'(?i)AI coding agents.{0,90}(?:forbidden|not allowed)|(?:no|not accepting) AI[- ](?:generated|written)',body): return stop('AI_RESTRICTION')
+                  if re.search(r'(?i)\bbounty proposal\b',str(issue.get('title'))): return stop('UNAPPROVED_BOUNTY_PROPOSAL')
+                  for c in comments:
+                      author=str(c.get('user',{}).get('login',''))
+                      association=c.get('author_association','')
+                      if association not in ('OWNER','MEMBER','COLLABORATOR') and not author.startswith(('ubiquity-os','algora-pbc')): continue
+                      text=str(c.get('body') or '')
+                      if re.search(r'(?i)external contributors are not eligible|must be a core team member|stopped the bounty program|payouts won.t work|not accept any bounty claims|bounty (?:is|was) (?:already )?(?:claimed|awarded|cancelled)',text): return stop('SOURCE_CONFIRMS_PAYOUT_OR_ACCESS_BLOCK',c.get('html_url',url))
+                  result['reasons'].append('NO_EXPLICIT_BLOCK_FOUND_NOT_PROOF_OF_FUNDING_OR_AI_PERMISSION')
+                  return result
+              except Exception as e:
+                  result['decision']='SOURCE_UNAVAILABLE'; result['reasons'].append(type(e).__name__)
+                  return result
+          reportfile=Path('input/report.json')
+          if not reportfile.is_file() or reportfile.stat().st_size>4000000: raise SystemExit('INVALID_RADAR_ARTIFACT')
+          data=json.loads(reportfile.read_text()); leads=data.get('leads')
+          if not isinstance(leads,list): raise SystemExit('BAD_RADAR_SCHEMA')
+          assert classify({'url':'https://example.org','agentEligibility':'HUMAN_ONLY'})['decision']=='DO_NOT_EXECUTE'
+          assert classify({'url':'https://github.com/microg/GmsCore/issues/2843'})['decision']=='DO_NOT_EXECUTE'
+          assert classify({'url':'https://example.org'})['decision']=='REVIEW_REQUIRED'
+          print('QUALIFICATION_TESTS_PASSED 3')
+          with ThreadPoolExecutor(max_workers=6) as pool: results=list(pool.map(classify,leads[:100]))
+          from collections import Counter
+          counts=dict(Counter(x['decision'] for x in results))
+          output={'generatedAt':dt.datetime.now(dt.timezone.utc).isoformat(),'radarGeneratedAt':data.get('generatedAt'),'counts':counts,'verifiedAssignableFunded':0,'results':results,'limitations':'Known blocks are conservative exclusions based on prior source review; they need fresh manual review if terms change. No claim, bid, payment, or execution performed.'}
+          Path('out/qualification/report.json').write_text(json.dumps(output,indent=2))
+          print('QUALIFICATION_COUNTS',json.dumps(counts))
+          for x in results: print('QUALIFIED_LEAD',json.dumps(x,ensure_ascii=True))
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write('## Big Game Qualification\n\n'+json.dumps(counts)+'\n\n')
+              for x in results:
+                  title=str(x['title']).replace('\n',' ')[:150]
+                  f.write(f"- {x['decision']}: {title} — {', '.join(x['reasons'])}\n")
+          PY
+      - name: Preserve qualification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-big-game-qualification
+          path: out/qualification/report.json
+          retention-days: 7
+          if-no-files-found: warn
