@@ -136,6 +136,18 @@ def run(execute):
     if not unique_route():
         announce("Chosen API route was previously used or could not be verified; abstain.")
         return
+    signer = os.environ.get("TOYOL_SWARMMEMO_SIGNER_JSON")
+    if not signer:
+        announce("Stable authorized signer unavailable; no new identity or submission.")
+        return
+    if len(signer) > 16384 or not isinstance(json.loads(signer), dict):
+        raise RuntimeError("Invalid signer format")
+    rows = status.get("results")
+    if not isinstance(rows, list):
+        raise RuntimeError("Unverified result history")
+    if any(str(((r.get("money") or {}).get("usdc") or {}).get("pay_to", "")).lower() == WALLET.lower() for r in rows):
+        announce("Prior payout-address result found; do not duplicate.")
+        return
     with tempfile.TemporaryDirectory(prefix="toyol_qa_") as folder:
         root = Path(folder)
         root.chmod(0o700)
@@ -145,11 +157,8 @@ def run(execute):
         blob = b"blob " + str(len(payload)).encode() + b"\x00" + payload
         if hashlib.sha1(blob).hexdigest() != CLIENT_BLOB:
             raise RuntimeError("Pinned official client did not match GitHub release blob")
-        created = subprocess.run(["python3", str(client), "keygen", str(key)],
-                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=25)
-        if created.returncode or not key.is_file():
-            raise RuntimeError("Could not create isolated agent identity")
-        key.chmod(0o600)
+        key.touch(mode=0o600, exist_ok=False)
+        key.write_text(signer, encoding="utf8")
         now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
         declaration = (
             "Toyol Agent API QA pre-declaration " + now + ". Route GET /api/work/" + ID +
@@ -175,7 +184,7 @@ def run(execute):
         cli(client, key, "work", "claim", ID, "--result", result, "--payout-address", WALLET)
         announce("REAL EXTERNAL WORK SUBMITTED AND CLAIMED: https://swarmmemo.com/e/" + result)
         announce("Await external acceptance and onchain settlement. This is NOT earned cash yet.")
-        # Deliberately never persist or print the separately created Ed25519 identity.
+        # The dedicated secret persists; the runner copy is temporary and never printed.
 
 if __name__ == "__main__":
     try:
