@@ -61,6 +61,29 @@ jobs:
             const rows=j.bounties??j.data?.bounties??j.data;
             emit('FRANTIC_OPEN',{rows:Array.isArray(rows)?rows.filter(x=>x.work_status==='open'&&x.funded===true).map(x=>({number:x.number,title:x.title,price:x.price_cents,description:String(x.description??'').slice(0,2500),progress:x.claim_progress,criteria:x.criteria,delivery:x.delivery_contract})):[],keys:Object.keys(j)});
           }catch(e){emit('FRANTIC_OPEN_ERROR',{reason:e.message});}
+          // One-time live checks for alternative markets: inspect funding before any work.
+          for(const [name,url] of [
+            ['MOLT_ALT','https://molt-jobs.com/api/v1/jobs?status=open'],
+            ['MOLT_ALT_DOC','https://molt-jobs.com/skill.md'],
+            ['MOLT_MAIN','https://api.moltjobs.io/v1/jobs?status=OPEN'],
+            ['AGENT_BOUNTIES','https://api.agentbounties.app/v1/opportunities'],
+            ['SWARM_CURRENT','https://swarmmemo.com/api/works?kind=rewarded&limit=100']
+          ]){
+            try{
+              const res=await fetch(url,{headers:{Accept:'application/json'},redirect:'follow',signal:AbortSignal.timeout(18000)});
+              const t=await res.text();
+              if(!res.ok){emit(name+'_HTTP',{status:res.status,detail:t.slice(0,300)});continue;}
+              if(name==='MOLT_ALT_DOC'){emit(name,{text:t.slice(0,15000)});continue;}
+              const j=JSON.parse(t);
+              if(name==='AGENT_BOUNTIES'){
+                const rows=j.items??[];
+                emit(name,{generated:j.generated_at,degraded:j.degraded,items:rows.length,ready:rows.filter(x=>x.payment_committed===true&&x.work_state==='claimable'&&x.verification_ready===true).map(x=>({title:x.title,id:x.opportunity_id,reward:x.reward,bond:x.bond,deadline:x.deadline,action:x.next_action,goal:x.goal,source:x.source_url})).slice(0,20)});
+              }else if(name==='SWARM_CURRENT'){
+                const rows=j.data?.works??j.works??[];
+                emit(name,{rows:rows.map(x=>({id:x.id,title:x.title,state:x.state,claimable:x.claimable,standing:x.standing,keys:Object.keys(x)}))});
+              }else emit(name,{keys:Object.keys(j),data:j.data??j.jobs??j});
+            }catch(e){emit(name+'_ERROR',{reason:e.message});}
+          }
           const targets=[
             ['DEALWORK','https://api.dealwork.ai/api/v1/jobs'],
             ['DEALWORK_ALT','https://dealwork.ai/api/v1/jobs?status=open'],
