@@ -1,0 +1,74 @@
+name: Toyol — Activate SwarmMemo
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-swarmmemo-activation.yml']
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: toyol-swarmmemo-activation
+  cancel-in-progress: false
+jobs:
+  activate:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Validate the dedicated signer and trigger eligible reviewed deliveries
+        env:
+          TOYOL_SWARMMEMO_SIGNER_JSON: ${{ secrets.TOYOL_SWARMMEMO_SIGNER_JSON }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'JS'
+          import {createPrivateKey,createPublicKey,createHash,sign,verify} from 'node:crypto';
+          const secret=process.env.TOYOL_SWARMMEMO_SIGNER_JSON;
+          const emit=(tag,meta={})=>console.log(tag+' '+JSON.stringify(meta));
+          function validate(raw){
+            if(!raw||raw.length>16384)throw Error('SIGNER_MISSING_OR_SIZE');
+            let x;try{x=JSON.parse(raw)}catch{throw Error('SIGNER_FORMAT')}
+            if(x.version!==1||typeof x.private_key!=='string'||typeof x.public_key!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(x.private_key)||!/^[A-Za-z0-9_-]{43}$/.test(x.public_key)||!/^[a-f0-9]{64}$/.test(x.fingerprint??''))throw Error('SIGNER_FIELDS');
+            const seed=Buffer.from(x.private_key,'base64url'),p=Buffer.from(x.public_key,'base64url');
+            if(seed.length!==32||p.length!==32||seed.toString('base64url')!==x.private_key||p.toString('base64url')!==x.public_key)throw Error('SIGNER_ENCODING');
+            // Derive public key independently from the seed, not the supplied public JWK.
+            const k=createPrivateKey({key:Buffer.concat([Buffer.from('302e020100300506032b657004220420','hex'),seed]),format:'der',type:'pkcs8'});
+            const q=createPublicKey(k),pub=q.export({format:'jwk'}).x;
+            if(pub!==x.public_key||createHash('sha256').update(p).digest('hex')!==x.fingerprint)throw Error('SIGNER_MISMATCH');
+            const msg=Buffer.from('toyol-swarmmemo-local-key-check-v1');
+            if(!verify(null,msg,q,sign(null,msg,k)))throw Error('SIGNER_PROOF');
+            return x.fingerprint;
+          }
+          let fingerprint;
+          try{fingerprint=validate(secret)}catch(e){emit('ACTIVATION_BLOCKED',{reason:['SIGNER_MISSING_OR_SIZE','SIGNER_FORMAT','SIGNER_FIELDS','SIGNER_ENCODING','SIGNER_MISMATCH','SIGNER_PROOF'].includes(e.message)?e.message:'SIGNER_INVALID'});process.exit(1);}
+          emit('SIGNER_READY',{fingerprint,verifiedLocally:true,noWalletTransfer:true});
+          if(process.env.GITHUB_EVENT_NAME!=='workflow_dispatch'){emit('READ_ONLY',{reason:'Only owner manual activation dispatches reviewed work; push validates signer'});process.exit(0);}
+          const root='https://api.github.com/repos/ilhamraduanbis-source/toyol-digital';
+          const jobs=[
+            {id:'1b766c6ef793d578031b50ea1e197d4c',workflow:'toyol-swarmmemo-round10-delivery.yml',kind:'verified_bug'},
+            {id:'20ef7df2131fae0b1e58eb843e35913d',workflow:'toyol-paid-data-brief.yml',kind:'source_data',from:'2026-11-15',until:'2026-11-25'}
+          ];
+          const wallet='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431';
+          async function request(url,opts={}){
+            const r=await fetch(url,{...opts,redirect:'error',headers:{Accept:'application/json',...(opts.headers??{})},signal:AbortSignal.timeout(15000)});
+            if(!r.ok)throw Error('HTTP_'+r.status);if(r.status===204)return null;
+            const s=await r.text();if(s.length>3000000)throw Error('SIZE');return JSON.parse(s);
+          }
+          const gh=(path,opts={})=>request(root+path,{...opts,headers:{Authorization:'Bearer '+process.env.GH_TOKEN,'X-GitHub-Api-Version':'2022-11-28',...(opts.headers??{})}});
+          for(const job of jobs){
+            try{
+              const j=await request('https://swarmmemo.com/api/work/'+job.id),w=j.data?.work,s=w?.standing;
+              if(j.ok!==true||w?.id!==job.id||w.requester?.handle!=='weaver'||!Array.isArray(w.results))throw Error('TASK_IDENTITY');
+              const now=new Date().toISOString().slice(0,10),duplicate=w.results.some(r=>String(r.money?.usdc?.pay_to??'').toLowerCase()===wallet);
+              if(job.from&&(now<job.from||now>=job.until)){emit('WORK_NOT_ELIGIBLE',{kind:job.kind,reason:'OUTSIDE_REVIEWED_DATE_WINDOW'});continue;}
+              if(w.state!=='open'||w.claimable!==true||!Number.isInteger(s?.open)||s.open<=0||duplicate){emit('WORK_NOT_ELIGIBLE',{kind:job.kind,reason:duplicate?'PRIOR_RESULT':'NO_OPEN_SEAT',seats:s?.open??null});continue;}
+              const m=await gh('/actions/workflows/'+job.workflow);
+              if(m.state!=='active')throw Error('WORKFLOW_DISABLED');
+              const r=await gh('/actions/workflows/'+job.workflow+'/runs?branch=main&per_page=10');
+              if(!Array.isArray(r.workflow_runs))throw Error('RUN_SCHEMA');
+              if(r.workflow_runs.some(x=>['queued','in_progress','waiting','requested','pending'].includes(x.status))){emit('WORK_ALREADY_RUNNING',{kind:job.kind});continue;}
+              await gh('/actions/workflows/'+job.workflow+'/dispatches',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ref:'main',inputs:{execute_open_work:'true'}})});
+              emit('WORK_DISPATCH_REQUESTED',{kind:job.kind,note:'Executor rechecks scope and duplicate work; no acceptance or income inferred'});
+            }catch(e){emit('WORK_GATE_STOP',{kind:job.kind,reason:String(e.message).slice(0,100)});}
+          }
+          JS
