@@ -26,11 +26,16 @@ jobs:
           const c=await api('/v1/claims/'+id);
           if(c.claim_id!==id||c.agent_kid!==KID||c.bounty_number!==149)throw Error('CLAIM_MISMATCH');
           console.log('CLAIM_STATUS '+JSON.stringify({status:c.status,delivery:!!c.delivery,deadline:c.deliver_deadline_at}));
+          if(c.status==='released'){console.log('CLAIM_ALREADY_RELEASED');process.exit(0);}
+          if(c.status!=='active'||c.delivery||Date.parse(c.deliver_deadline_at)<=Date.now())throw Error('RELEASE_NOT_ELIGIBLE');
           const r=await fetch('https://gofrantic.com/openapi.json',{redirect:'error',signal:AbortSignal.timeout(12000)});
           if(!r.ok)throw Error('DOC_HTTP_'+r.status);
-          const spec=await r.json();
-          for(const [p,methods] of Object.entries(spec.paths??{})){
-            if(!/claim|withdraw|abandon|release|cancel/i.test(p))continue;
-            for(const [method,m] of Object.entries(methods))if(['post','patch','delete'].includes(method))console.log('DOCUMENTED_ACTION '+JSON.stringify({path:p,method,summary:m.summary,description:m.description,body:m.requestBody,security:m.security}));
-          }
+          const spec=await r.json(),doc=spec.paths?.['/v1/claims/{id}/release']?.post;
+          if(!doc?.description?.includes('first voluntary release per operator and bounty is free')||!doc.security?.some(v=>Object.hasOwn(v,'AgentBearer')))throw Error('RELEASE_CONTRACT_CHANGED');
+          const z=await fetch('https://gofrantic.com/v1/claims/'+id+'/release',{method:'POST',headers:{Authorization:'Bearer '+process.env.FRANTIC_AGENT_TOKEN,'Content-Type':'application/json'},body:'{}',redirect:'error',signal:AbortSignal.timeout(12000)});
+          if(!z.ok)throw Error('RELEASE_HTTP_'+z.status);
+          const j=await z.json();
+          const after=await api('/v1/claims/'+id);
+          console.log('RELEASE_RESULT '+JSON.stringify({ok:j.ok===true,status:after.status,delivery:!!after.delivery,claim_id:id}));
+          if(j.ok!==true||!['released','surrendered','abandoned'].includes(after.status))throw Error('RELEASE_NOT_CONFIRMED');
           JS
