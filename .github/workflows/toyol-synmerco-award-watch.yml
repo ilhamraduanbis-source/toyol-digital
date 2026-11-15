@@ -56,3 +56,5 @@ jobs:
             if(i.j.matchedDid===did||['accepted','awarded','selected'].includes(mine?.status))emit('AWARD_REVIEW_REQUIRED',{intent:id,bid:'5553',reason:'Verify funded escrow, exact payout and timeline before first pull'});
           }catch(e){emit('SAFE_STOP',{reason:String(e.message).slice(0,150)})}
           JS
+
+# Owner-requested current reward reconciliation.
