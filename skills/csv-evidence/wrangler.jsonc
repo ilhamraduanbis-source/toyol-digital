@@ -1,0 +1,10 @@
+{
+  "name": "toyol-csv-evidence",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-11-15",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": {
+    "enabled": false
+  }
+}
