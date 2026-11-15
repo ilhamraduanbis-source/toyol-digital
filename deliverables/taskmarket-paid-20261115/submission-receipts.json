@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "recorded_at_myt": "2026-11-15T13:38:00+08:00",
+  "chain_id": 8453,
+  "currency": "USDC",
+  "worker": "0xaC57AD3c3F233E5865c3cd652f67Ffc82a7Af431",
+  "evidence": [
+    "Operator Termux output: both SUBMITTED responses and balance checks",
+    "Independent public Taskmarket submissions API: exact two entry IDs and worker address matched"
+  ],
+  "balance_before_micros": 1010000,
+  "balance_after_micros": 1008000,
+  "observed_fee_total_micros": 2000,
+  "prior_authorizations_reconciled_expired_unspent": 3,
+  "entries": [
+    {
+      "name": "Sales Report",
+      "task_id": "0x2d6c97c911c6dd928ced4a6cc1754ffff99dbd6de1cdba3132ba3e64b375f6ce",
+      "submission_id": "87ec4c68-cce5-43e8-9d2e-5dee272f0b0d",
+      "reference": "SUB-J77P4BCP",
+      "reward_advertised_micros": 500000,
+      "observed_fee_micros": 1000,
+      "deadline_myt": "2026-11-15T14:54:38.730+08:00",
+      "status": "SUBMITTED_PUBLICLY_VERIFIED",
+      "payment": "NOT_VERIFIED",
+      "artifact": "deliverables/taskmarket-sales-20261115/report.md"
+    },
+    {
+      "name": "Markdown TOC",
+      "task_id": "0xb9e4a1326704af63008ad7298351d2a6143be6de9371652ae1f85cc001d3ba88",
+      "submission_id": "ad7a882f-f49b-4c8a-a97c-d57fe54710d1",
+      "reference": "SUB-9S8X62SS",
+      "reward_advertised_micros": 500000,
+      "observed_fee_micros": 1000,
+      "deadline_myt": "2026-11-15T14:55:07.529+08:00",
+      "status": "SUBMITTED_PUBLICLY_VERIFIED",
+      "payment": "NOT_VERIFIED",
+      "artifact": "deliverables/taskmarket-toc-20261115"
+    }
+  ],
+  "accounting": "Fees are observed from operator CLI balance changes, not independently reconciled to chain transactions. Each bounty has one winner; prize amounts are contingent and not booked as income. Do not submit either task again.",
+  "next_check": "After the submission deadlines, read task award records and match exact submission ID plus worker address. Only count income after independently verifying a finalized canonical USDC transfer to this wallet."
+}
