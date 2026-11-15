@@ -87,3 +87,5 @@ jobs:
           retention-days: 7
 
 # Reconcile both existing contest entries after the current earning sprint.
+
+# Recheck final rankings and claimable prize after poem deadline 2026-11-15 UTC.
