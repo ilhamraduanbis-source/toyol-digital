@@ -27,9 +27,11 @@ test('supervisor recovers a dead known process, restarts it and honors stop', {t
  let output='';p.stdout.on('data',x=>output+=String(x));p.stderr.on('data',x=>output+=String(x));
  const ended=new Promise(resolve=>p.once('exit',resolve));
  try{
-  await until(()=>existsSync(marker)&&readFileSync(marker,'utf8').trim().length>0,8000);
+  // Child startup can write its marker before the supervisor publishes the PID.
+  // Observe both sides of the handshake, not just the child marker.
+  await until(()=>{if(!existsSync(marker))return false;const p=readPid(pidfile);return alive(p)&&readFileSync(marker,'utf8').trim().split('\n').includes(String(p));},8000);
   const first=readPid(pidfile);assert.ok(alive(first));process.kill(first,'SIGKILL');
-  await until(()=>readFileSync(marker,'utf8').trim().split('\n').length>=2,22000);
+  await until(()=>{const p=readPid(pidfile);return p!==first&&alive(p)&&readFileSync(marker,'utf8').trim().split('\n').includes(String(p));},24000);
   const next=readPid(pidfile);assert.notEqual(next,first);assert.ok(alive(next));
   writeFileSync(join(d,'runner.stop'),'stop\n');
   const result=await Promise.race([ended,wait(20000).then(()=>null)]);
