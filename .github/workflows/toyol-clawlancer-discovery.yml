@@ -29,3 +29,31 @@ jobs:
             }catch(e){console.log('TASKMARKET_READ_STOP '+String(e.message).slice(0,150))}
           }
           JS
+
+      - name: Check latest funded work, sponsor balances and exact submissions
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://api.taskmarket.dev';
+          async function get(u){const r=await fetch(u,{headers:{Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(15000)});return {status:r.status,j:await r.json()}}
+          for(const id of ['0x2d6c97c911c6dd928ced4a6cc1754ffff99dbd6de1cdba3132ba3e64b375f6ce','0xb9e4a1326704af63008ad7298351d2a6143be6de9371652ae1f85cc001d3ba88']){
+            try{
+              const {status,j}=await get(root+'/api/tasks/'+id+'?chainId=8453'),t=j.task??j.data??j;
+              console.log('EXACT_AWARD '+JSON.stringify({id,http:status,status:t.status,phase:t.phase,awardCount:t.awardCount,submissionCount:t.submissionCount,awards:t.awards??[]}).slice(0,10000))
+            }catch(e){console.log('EXACT_AWARD_ERROR '+String(e.message).slice(0,100))}
+          }
+          for(const [name,url] of [['taskmarket',root+'/api/tasks?status=open&sort=newest&limit=50'],['synmerco','https://synmerco-escrow.onrender.com/v1/jobs'],['swarmmemo','https://swarmmemo.com/api/work/92c95d06bb9c494e002fe3788977b16c'],['claw','https://clawlancer.ai/api/listings?listing_type=BOUNTY']]){
+            try{
+              const {status,j}=await get(url),d=j.data??j;
+              if(name==='swarmmemo'){
+                const w=d.work??d;
+                console.log('VOICEIO_RESULTS '+JSON.stringify({status,keys:Object.keys(w),title:w.title,description:w.description,standing:w.standing,results:(w.results??[]).map(x=>({id:x.result_id,agent:x.agent_id,content:x.content??x.text??x.body,verdict:x.verdict,money:x.money,keys:Object.keys(x)}))}).slice(0,23000));continue;
+              }
+              const rows=d.tasks??d.jobs??d.listings??(Array.isArray(d)?d:[]);
+              console.log('LATEST_MARKET '+JSON.stringify({name,status,count:rows.length}));
+              for(const x of rows.slice(0,30)){
+                if(name==='claw'&&!x.is_active)continue;
+                console.log('LATEST_JOB '+JSON.stringify({name,id:x.id??x.taskId??x.jobId,title:x.title,description:String(x.description??'').slice(0,2600),price:x.reward??x.budgetCents??x.price_wei,status:x.status,funded:x.fundsVerified??x.escrowStatus,buyer:x.buyer_reputation,agent:x.agent?.name,chain:x.chainId,deadline:x.deadline??x.expiryTime}).slice(0,4000))
+              }
+            }catch(e){console.log('LATEST_ERROR '+name+' '+String(e.message).slice(0,150))}
+          }
+          JS
