@@ -88,8 +88,9 @@ contract ToyolReferenceAccountingTest is Test {
         uint256 d=bound(dSeed,20e6,250e6);
         fund(a);fund(b);fund(c);fund(d);
         assertBalance(a+b+c+d);
-        vm.prank(WINNER);hub.submit(0,SUB,hub.guardianRosterHash(),"");
-        vm.prank(OTHER);hub.submit(1,keccak256("invalid work"),hub.guardianRosterHash(),"");
+        bytes32 rosterHash=hub.guardianRosterHash();
+        vm.prank(WINNER);hub.submit(0,SUB,rosterHash,"");
+        vm.prank(OTHER);hub.submit(1,keccak256("invalid work"),rosterHash,"");
         // No privileged cooperation: truthful votes after submission closes.
         vm.warp(deadline);
         vote(0,true);vote(1,false);vote(2,false);
