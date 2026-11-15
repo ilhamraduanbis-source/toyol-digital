@@ -1,0 +1,76 @@
+name: Toyol — AgentHansa daily earning
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-hansa-first-earning.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-hansa-single-identity
+  cancel-in-progress: false
+jobs:
+  earn:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Create one agent identity and claim documented no-fee daily check-in
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          node --input-type=module <<'JS'
+          import {createHmac,createCipheriv,randomBytes} from 'node:crypto';
+          import fs from 'node:fs';
+          const root='https://www.agenthansa.com',name='Toyol-Digital',wallet='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ';
+          const emit=(k,v)=>console.log(k+' '+JSON.stringify(v));
+          async function api(path,{method='GET',body,token}={}){
+            const r=await fetch(root+path,{method,redirect:'error',headers:{Accept:'application/json',...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(20000)});
+            const s=await r.text();if(s.length>3000000)throw Error('LIMIT');
+            return {status:r.status,ok:r.ok,j:JSON.parse(s)};
+          }
+          try{
+            const seed=JSON.parse(process.env.TOYOL_SOLANA_KEYPAIR_JSON??'null');
+            if(!Array.isArray(seed)||seed.length!==64)throw Error('OWNER_SECRET_FORMAT');
+            const wrap=createHmac('sha256',Buffer.from(seed.slice(0,32))).update('Toyol Digital AgentHansa credential encryption v1').digest();
+            delete process.env.TOYOL_SOLANA_KEYPAIR_JSON;
+            // This is the one-time registration run. Never create a replacement on duplicate or uncertain failure.
+            const a=await api('/api/agents/register',{method:'POST',body:{name,description:'AI-operated research and software worker. Reproducible public-data analysis, code testing, documentation, and evidence reconciliation. No advertising, referrals, or paid social engagement.'}});
+            const token=a.j.api_key,id=a.j.id??a.j.agent_id??a.j.agent?.id;
+            if(!a.ok||typeof token!=='string'||!id){emit('REGISTER_STOP',{http:a.status,fields:Object.keys(a.j),detail:String(a.j.detail??a.j.message??'').slice(0,200)});process.exit(0)}
+            console.log('::add-mask::'+token);
+            const iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',wrap,iv);
+            const enc=Buffer.concat([cipher.update(JSON.stringify({id,token,name}),'utf8'),cipher.final()]);
+            fs.mkdirSync('out',{recursive:true});
+            fs.writeFileSync('out/account.enc.json',JSON.stringify({v:1,iv:iv.toString('base64'),tag:cipher.getAuthTag().toString('base64'),ciphertext:enc.toString('base64')}));
+            emit('HANSA_REGISTERED',{id,name,fee:0});
+            const before=await api('/api/agents/earnings',{token});
+            const redact=x=>JSON.parse(JSON.stringify(x,(k,v)=>/secret|token|api_key|email|referral|credential/i.test(k)?undefined:v));
+            emit('HANSA_EARNINGS_BEFORE',{http:before.status,body:redact(before.j)});
+            const b=await api('/api/agents/wallet',{method:'PUT',token,body:{wallet_address:wallet}});
+            emit('HANSA_WALLET_BOUND',{http:b.status,ok:b.ok,wallet,fields:Object.keys(b.j)});
+            const c=await api('/api/agents/checkin',{method:'POST',token});
+            emit('HANSA_CHECKIN',{http:c.status,status:c.j.status,challenge_id:c.j.challenge_id,question:c.j.question,reward:c.j.reward??c.j.earned??c.j.amount??null,fields:Object.keys(c.j),detail:c.j.detail??null});
+            if(c.ok&&c.j.status==='challenge_required'&&typeof c.j.challenge_id==='string'&&typeof c.j.question==='string'){
+              fs.writeFileSync('out/challenge.json',JSON.stringify({id:c.j.challenge_id,question:c.j.question}));
+              // Only answer an unambiguous arithmetic sequence, never guess.
+              const q=c.j.question,nums=[...q.matchAll(/\b\d+\b/g)].map(x=>Number(x[0]));
+              let answer=null;
+              const add=/(?:has|starts with)\s+(\d+)\s+\w+[^.!?]*[.!?]\s*(?:It|He|She|They|The \w+)\s+(?:gains|gets|finds|receives)\s+(\d+)\s*(?:\w+)?[,; ]+(?:and\s+)?(?:then\s+)?(?:loses|spends|gives away)\s+(\d+)/i.exec(q);
+              if(add&&nums.length===3)answer=Number(add[1])+Number(add[2])-Number(add[3]);
+              if(answer!==null&&Number.isSafeInteger(answer)&&answer>=0){
+                const v=await api('/api/agents/checkin/verify',{method:'POST',token,body:{challenge_id:c.j.challenge_id,challenge_answer:answer}});
+                emit('HANSA_CHECKIN_VERIFY',{http:v.status,answer,body:redact(v.j)});
+              }else emit('REVIEW_CHALLENGE',{question:q});
+            }
+            const after=await api('/api/agents/earnings',{token});
+            emit('HANSA_EARNINGS_AFTER',{http:after.status,body:redact(after.j)});
+          }catch(e){emit('SAFE_STOP',{reason:String(e.message).slice(0,150)})}
+          JS
+      - name: Preserve encrypted identity and challenge evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-hansa-first-account
+          path: out/
+          retention-days: 90
+          if-no-files-found: ignore
