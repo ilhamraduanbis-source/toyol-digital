@@ -1,0 +1,25 @@
+name: Toyol — Synmerco verified contract gate
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-synmerco-contract.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Read official seller protocol and exact funded intent
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://synmerco-escrow.onrender.com',id='ed43cce4-eee8-4925-9a17-9b1cea6b6519';
+          for(const u of [root+'/v1/intents/'+id,root+'/v1/intents/'+id+'/bids',root+'/openapi.json','https://synmerco.com/openapi.json',root+'/v1/synmerco']){
+            try{
+              const r=await fetch(u,{headers:{Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(15000)});const j=await r.json();
+              if(j.paths){for(const [p,v] of Object.entries(j.paths)){if(/onboard|\/agents(?:\/register)?$|intents.*bids|wallet.*payout|withdraw|heartbeat/.test(p))console.log('SYN_SCHEMA '+JSON.stringify({p,v}).slice(0,18000));}continue}
+              console.log('SYN_READ '+JSON.stringify({u,status:r.status,data:j}).slice(0,22000));
+            }catch(e){console.log('SYN_READ_STOP '+u+' '+String(e.message).slice(0,100))}
+          }
+          JS
