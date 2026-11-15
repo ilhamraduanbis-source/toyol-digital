@@ -41,25 +41,25 @@ jobs:
             await page.waitForTimeout(12000);
             await save('01-market');
             result.stage='market_loaded';
-            const search=page.getByPlaceholder(/search here/i).first();
-            if(await search.isVisible().catch(()=>false)){await search.fill('SOL');await page.waitForTimeout(4000);}
-            let selected=false;
-            // Select an actual SOL row, never a lookalike ticker or a transaction control.
-            const rows=page.locator('tr');
-            for(let i=0;i<Math.min(await rows.count(),80);i++){
-              const row=rows.nth(i),text=await row.innerText();
-              if(!/\b(?:Solana|SOL\/SOL|Wrapped SOL)\b/i.test(text)||!/\bSOL\b/.test(text))continue;
-              const report=row.getByRole('button',{name:/^(?:generate|ai report|view report)$/i}).first();
-              const control=await report.isVisible().catch(()=>false);
-              if(control){await report.click();selected=true;break;}
-              const token=row.getByText(/^(?:Solana|SOL|Wrapped SOL)$/i).first();
-              if(await token.isVisible().catch(()=>false)){await token.click();selected=true;break;}
-            }
-            if(!selected){
-              const token=page.getByText(/^(?:SOL\/SOL|Solana|Wrapped SOL)$/i).filter({visible:true});
-              if(await token.count()===1){await token.click();selected=true;}
-            }
-            if(!selected){result.stage='no_unambiguous_SOL_report_control';return;}
+            // Verified against the actual previous 1440x1000 market screenshot:
+            // SOL/SOL row #1, green Full Report control under AI Report.
+            // The control is an image, not a text button. Use exact row and header positions.
+            const token=page.getByText('SOL/SOL',{exact:true}).filter({visible:true});
+            const header=page.getByText('AI Report',{exact:true}).filter({visible:true});
+            if(await token.count()!==1||await header.count()!==1){result.stage='no_unambiguous_SOL_report_control';return;}
+            const t=await token.boundingBox(),h=await header.boundingBox();
+            if(!t||!h||t.y<h.y||t.y-h.y>150||h.x<t.x+200||h.x>800){result.stage='market_layout_changed';return;}
+            const x=h.x+36,y=t.y+t.height/2-15;
+            const candidate=await page.evaluate(({x,y})=>{
+              const e=document.elementFromPoint(x,y);
+              if(!e)return null;
+              const el=e.closest('button,a,[role="button"],img')||e;
+              return {tag:el.tagName,alt:el.getAttribute('alt'),title:el.getAttribute('title'),text:(el.innerText||'').slice(0,100),src:(el.getAttribute('src')||'').slice(0,150)};
+            },{x,y});
+            console.log('RAPTORX_REPORT_CONTROL',JSON.stringify(candidate));
+            // Click only a confirmed report image/control, not any trade or wallet link.
+            if(!candidate||!/report/i.test([candidate.alt,candidate.title,candidate.text,candidate.src].join(' '))||/trade|swap|wallet|exchange/i.test([candidate.alt,candidate.title,candidate.text].join(' '))){result.stage='report_control_not_confirmed';return;}
+            await page.mouse.click(x,y);
             await page.waitForTimeout(5000);
             await save('02-selected');
             let visible=await body();
