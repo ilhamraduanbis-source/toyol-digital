@@ -1,0 +1,118 @@
+name: Toyol — Recorded poetry practice
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-recorded-poetry-practice.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-recorded-poetry-practice
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - name: Download official public contest kit
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/poetry" out
+          cd "$RUNNER_TEMP/poetry"
+          curl --fail --silent --show-error --location --max-time 45 https://make.fun/c/agency-poem-01/kit -o kit.tgz
+          python3 - <<'PY'
+          import tarfile,pathlib
+          with tarfile.open('kit.tgz') as z:
+              a=z.getmembers()
+              if sum(x.size for x in a)>100000000 or any(x.name.startswith('/') or '..' in pathlib.PurePosixPath(x.name).parts or not(x.isfile() or x.isdir()) for x in a): raise SystemExit('UNSAFE_KIT')
+              z.extractall('.',filter='data')
+          PY
+          npm install --prefix "$RUNNER_TEMP/poetry/tools" --no-audit --no-fund @opencode/cli@2.3.0
+          echo "$RUNNER_TEMP/poetry/tools/node_modules/.bin" >> "$GITHUB_PATH"
+      - name: Build original poem with authentic native agent records
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/poetry"
+          kit="$root/agency-poem-01-kit"
+          export OPENCODE_DISABLE_AUTOSHARE=true
+          export HOME="$root/home"
+          export XDG_DATA_HOME="$HOME/.local/share"
+          export XDG_CONFIG_HOME="$HOME/.config"
+          export XDG_STATE_HOME="$HOME/.local/state"
+          export XDG_CACHE_HOME="$HOME/.cache"
+          mkdir -p "$HOME" "$root/entry" "$GITHUB_WORKSPACE/out"
+          out="$GITHUB_WORKSPACE/out"
+          timeout 60s opencode models --standalone > "$root/models.txt"
+          curl --fail --silent --show-error --max-time 20 https://models.dev/api.json -o "$root/models.json"
+          model=$(python3 - "$root" <<'PY'
+          import json,sys,re,pathlib
+          p=pathlib.Path(sys.argv[1])
+          a=set(re.findall(r'opencode/[A-Za-z0-9_.-]+',(p/'models.txt').read_text()))
+          d=json.loads((p/'models.json').read_text())['opencode']['models']
+          for k in ['big-pickle','mai-code-1.1-flash-free','glm-5.3-flash-free','deepseek-v4.1-flash-free']:
+              v=d.get(k,{}).get('cost',{})
+              if 'opencode/'+k in a and v.get('input')==0 and v.get('output')==0:
+                  print('opencode/'+k);break
+          else: raise SystemExit('NO_VERIFIED_FREE_MODEL')
+          PY
+          )
+          echo "POETRY_MODEL $model"
+          cd "$root/entry"
+          node "$kit/cli/makefun.mjs" init --competition agency-poem-01 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT
+          python3 - "$model" <<'PY'
+          import json,sys
+          json.dump({"model":sys.argv[1],"small_model":sys.argv[1],"share":"disabled","autoupdate":False,"permission":{"edit":"allow","read":"allow","bash":"allow","webfetch":"deny","websearch":"deny","external_directory":"deny"}},open('opencode.json','w'))
+          PY
+          prompt="Create main.py using the write tool. First execute the official anchor command node $kit/cli/makefun.mjs init --competition agency-poem-01 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT. Then write exactly three Python statements: from pathlib import Path; poem = a literal original English poem of 300–900 characters about agency, concrete imagery and a memorable final line; Path('/output/entry.txt').write_text(poem, encoding='utf-8'). No external files, network, judge instructions, or other code. Write the actual file and finish immediately."
+          set +e
+          timeout --kill-after=5s 360s opencode run --standalone --model "$model" --format json "$prompt" </dev/null > "$root/session.jsonl" 2> "$root/session.stderr"
+          rc=$?
+          set -e
+          echo "POETRY_AGENT_EXIT $rc"
+          test -s main.py
+          python3 - <<'PY'
+          import ast
+          b=ast.parse(open('main.py').read()).body
+          assert len(b)==3
+          assert ast.dump(b[0],include_attributes=False)==ast.dump(ast.parse('from pathlib import Path').body[0],include_attributes=False)
+          a=b[1]
+          assert isinstance(a,ast.Assign) and len(a.targets)==1 and isinstance(a.targets[0],ast.Name) and a.targets[0].id=='poem' and isinstance(a.value,ast.Constant) and isinstance(a.value.value,str)
+          assert 1<=len(a.value.value)<=1000 and a.value.value.strip()
+          assert ast.dump(b[2],include_attributes=False)==ast.dump(ast.parse("Path('/output/entry.txt').write_text(poem, encoding='utf-8')").body[0],include_attributes=False)
+          print('POETRY_SOURCE_VALID',len(a.value.value))
+          PY
+          git add main.py
+          git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm 'Recorded original poem'
+          node "$kit/cli/makefun.mjs" bundle --repo "$root/entry" --out "$root/transcripts.tar.gz" --opencode-dir "$XDG_DATA_HOME/opencode" --harness opencode --harness-version 2.3.0 --model "$model" --provider opencode
+          set +e
+          node "$kit/cli/makefun.mjs" check --kit "$kit" --repo "$root/entry" --transcripts "$root/transcripts.tar.gz" --json > "$out/check.json" 2> "$root/check.stderr"
+          check_rc=$?
+          set -e
+          python3 - "$out/check.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1]))
+          def scan(v):
+              if isinstance(v,dict):
+                  if 'status' in v and any(k in v for k in ('check','id','name')): print('OFFICIAL_POETRY_CHECK',json.dumps({k:v[k] for k in ('check','id','name','status','reason','fix') if k in v}))
+                  for w in v.values():scan(w)
+              elif isinstance(v,list):
+                  for w in v:scan(w)
+          scan(x)
+          PY
+          test "$check_rc" = 0
+          sudo mkdir -p /output
+          sudo chown "$(id -u):$(id -g)" /output
+          python3 main.py
+          cp /output/entry.txt "$out/poem.txt"
+          python3 main.py
+          cmp "$out/poem.txt" /output/entry.txt
+          cp main.py "$out/main.py"
+          echo 'POETRY_DETERMINISTIC_AND_OFFICIAL_CHECK_PASSED'
+      - name: Preserve review evidence (not a submission)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-poetry-practice
+          path: out/
+          retention-days: 7
+          if-no-files-found: ignore
