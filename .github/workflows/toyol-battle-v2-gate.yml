@@ -1,0 +1,64 @@
+name: Toyol — Battle Armor v2 comparative gate
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-battle-v2-gate.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.18.0'
+      - name: Compare candidate against active v1 and official house bots on held-out maps
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/armor"
+          mkdir -p "$root" out
+          cp skills/battle-training/armor-controller.js "$root/v1.js"
+          cp skills/battle-training/armor-controller-v2.js "$root/v2.js"
+          curl -fsS --max-time 30 https://api.battle.training/sdk/arena-sim.mjs -o "$root/arena-sim.mjs"
+          cd "$root"
+          node --check v2.js
+          node --input-type=module <<'JS' | tee "$GITHUB_WORKSPACE/out/comparison.txt"
+          import {readFileSync} from 'node:fs';
+          import {runMatch,makeHouseBot,RULES_S2,verifyReplay,decodeReplay,encodeReplay} from './arena-sim.mjs';
+          const sources=['v1.js','v2.js'].map(x=>readFileSync(x,'utf8'));
+          let errors=0,verified=0;
+          function fresh(version){
+            delete globalThis.controller;new Function(sources[version])();
+            const c=globalThis.controller;
+            return {draft:h=>c.draft(h),hello:h=>c.hello(h),tick:o=>{try{return c.tick(o)}catch(e){errors++;return {units:[]}}}};
+          }
+          const result={direct:{wins:0,losses:0,draws:0},house:[{},{}]};
+          function run(seed,a,b,side,stats){
+            const r=runMatch(seed,side===0?a:b,side===0?b:a,{rules:RULES_S2});
+            if(r.final.winner===side)stats.wins++;else if(r.final.winner===null)stats.draws++;else stats.losses++;
+            if(verifyReplay(decodeReplay(encodeReplay(r.replay)),{rules:RULES_S2}).ok)verified++;else throw Error('REPLAY_MISMATCH');
+          }
+          for(let i=11;i<23;i++){
+            const seed=(i*2654435761)>>>0;
+            for(const side of [0,1])run(seed,fresh(1),fresh(0),side,result.direct);
+          }
+          for(let version=0;version<2;version++)for(const opp of ['brawler','holder','hunter','random']){
+            const stats={wins:0,losses:0,draws:0};result.house[version][opp]=stats;
+            for(let i=11;i<17;i++)for(const side of [0,1])run((i*2654435761)>>>0,fresh(version),makeHouseBot({style:opp,seed:7}),side,stats);
+          }
+          const tally=v=>Object.values(result.house[v]).reduce((s,r)=>s+r.wins+.5*r.draws,0);
+          const direct=result.direct,eligible=errors===0&&verified===120&&direct.wins+.5*direct.draws>=15&&tally(1)>=tally(0);
+          console.log('ARMOR_V2_COMPARISON '+JSON.stringify({...result,verified,errors,eligible,activeVersionUnchanged:true,incomeVerified:false}));
+          JS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: armor-v2-comparison
+          path: out/
+          retention-days: 14
