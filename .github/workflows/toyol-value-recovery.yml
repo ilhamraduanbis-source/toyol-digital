@@ -142,3 +142,5 @@ jobs:
           retention-days: 7
 
 # Manual owner-requested reconciliation, 2026-11-15 MYT.
+
+# Owner requested live collection reconciliation, 15 November 2026.
