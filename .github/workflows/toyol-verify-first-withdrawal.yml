@@ -28,3 +28,5 @@ jobs:
           JS
 
 # Recheck receiving wallet balance after Sendstables UI displays zero.
+
+# Verify balance following second Sendstables authentication failure, 15 Nov.
