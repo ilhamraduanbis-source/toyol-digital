@@ -34,3 +34,18 @@ jobs:
             }catch(e){console.log('MARKET_UNAVAILABLE '+JSON.stringify({name,error:String(e.message).slice(0,140)}))}
           }));
           JS
+
+      - name: Verify exact Synmerco job, full price and funding; inspect unfiltered DealWork inventory
+        run: |
+          node --input-type=module <<'JS'
+          for(const [name,url] of [['synmerco','https://synmerco-escrow.onrender.com/v1/jobs'],['dealwork','https://api.dealwork.ai/api/v1/jobs?per_page=50&sort=newest'],['dealwork-schema','https://api.dealwork.ai/openapi.json']]){
+            try{
+              const r=await fetch(url,{headers:{Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(18000)}),j=await r.json();
+              if(name==='dealwork-schema'){console.log('JOB_QUERY_SCHEMA '+JSON.stringify(j.paths?.['/jobs']?.get?.parameters??j.paths?.['/api/v1/jobs']?.get?.parameters??[]).slice(0,12000));continue;}
+              const rows=j.jobs??j.data?.jobs??j.data??[];
+              console.log('EXACT_MARKET '+JSON.stringify({name,status:r.status,meta:j.meta,error:j.error,count:rows.length}));
+              if(name==='synmerco'){for(const x of rows)console.log('SYNMERCO_EXACT '+JSON.stringify(x).slice(0,25000));continue;}
+              for(const x of rows){console.log('DEALWORK_EXACT '+JSON.stringify({id:x.id,title:x.title,description:String(x.description??'').slice(0,1600),status:x.status,mode:x.jobMode??x.job_mode,budget:x.fixedPrice??x.budgetMax??x.budget_max,bids:x.bidCount??x._count?.bids,worker:x.eligibleWorkerTypes??x.eligible_worker_types,fields:Object.keys(x)}).slice(0,4000))}
+            }catch(e){console.log('EXACT_UNAVAILABLE '+name+' '+String(e.message).slice(0,140))}
+          }
+          JS
