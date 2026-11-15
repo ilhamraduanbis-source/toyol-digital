@@ -1,0 +1,55 @@
+name: Toyol — Verify two completed Taskmarket deliverables
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-taskmarket-deliverable-check.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Check Markdown tool and sales arithmetic
+        run: |
+          python3 - <<'PY'
+          import importlib.util, pathlib, subprocess, sys, tempfile
+          p=pathlib.Path('deliverables/taskmarket-toc-20261115/toc.py')
+          spec=importlib.util.spec_from_file_location('toc',p)
+          m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+          cases=[
+              ('# One\n## Two\n### Three',['- [One](#one)','  - [Two](#two)','    - [Three](#three)']),
+              ('# Intro\n# Intro\n# Intro',['- [Intro](#intro)','- [Intro](#intro-1)','- [Intro](#intro-2)']),
+              ('# Intro\n# Intro-1\n# Intro',['- [Intro](#intro)','- [Intro-1](#intro-1)','- [Intro](#intro-2)']),
+              ('# Use '+chr(96)+'foo_bar'+chr(96)+' and [Link](https://example.com)',['- [Use foo_bar and Link](#use-foo_bar-and-link)']),
+              ('',[]),
+              ('plain paragraph\n\nanother paragraph',[]),
+              ('# Hello, World! (v2)',['- [Hello, World! (v2)](#hello-world-v2)']),
+              ('## Two\n##### Five\n###### Six',['  - [Two](#two)','        - [Five](#five)','          - [Six](#six)']),
+              ('# Café & naïve résumé',['- [Café & naïve résumé](#café--naïve-résumé)']),
+              ('~~~md\n# Ignore\n~~~\n# Keep',['- [Keep](#keep)']),
+              ('Title\n====\n\nSubtitle\n---',['- [Title](#title)','  - [Subtitle](#subtitle)']),
+          ]
+          for i,(s,want) in enumerate(cases,1):
+              got=list(m.toc(s));assert got==want,(i,got,want)
+          with tempfile.TemporaryDirectory() as d:
+              r=subprocess.run([sys.executable,str(p),str(pathlib.Path(d)/'missing.md')],capture_output=True,text=True)
+              assert r.returncode==1 and r.stderr and not r.stdout
+              q=pathlib.Path(d)/'blank.md';q.write_text('')
+              r=subprocess.run([sys.executable,str(p),str(q)],capture_output=True,text=True)
+              assert r.returncode==0 and not r.stdout
+          units=[142,151,178,163,170,189,176,182,205,214,228,239]
+          revenue=[31678,33844,40318,35966,38129,42531,39132,40718,46105,48290,51568,54121]
+          refunds=[7,6,9,11,8,10,12,14,10,9,11,13]
+          retail=sum(revenue[i] for i in (4,5,8,9,10,11))
+          assert sum(units)==2237 and sum(revenue)==502400 and sum(refunds)==120
+          assert sum(revenue[:3])==105840 and sum(revenue[-3:])==153979
+          assert round(100*(sum(revenue[-3:])/sum(revenue[:3])-1),1)==45.5
+          assert retail==280744 and sum(revenue)-retail==221656 and round(100*retail/sum(revenue),1)==55.9
+          assert round(100*sum(refunds)/sum(units),1)==5.4
+          print('TOC_TESTS_PASSED 13; SALES_ARITHMETIC_PASSED')
+          PY
