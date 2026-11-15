@@ -24,6 +24,17 @@ jobs:
           const bot='toyol-digital-armor',cup='promotedby-cup-nov-2026';
           await Promise.all([
             (async()=>{try{
+              const url='https://toyol-csv-evidence.ilhamraduan-bis.workers.dev/v1/csv/audit';
+              const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({csv:'id,name\n1,Ada\n',unique:['id']}),redirect:'error',signal:AbortSignal.timeout(18000)});
+              if(r.status!==402)throw Error('QUOTE_HTTP_'+r.status);
+              const q=JSON.parse(Buffer.from(r.headers.get('payment-required'),'base64').toString('utf8'));
+              const a=q.accepts.find(x=>x.network==='eip155:8453');
+              if(a?.amount!=='10000'||a?.payTo?.toLowerCase()!=='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431')throw Error('QUOTE_DRIFT');
+              const status=await get('https://settled.tools/v1/peek?url='+encodeURIComponent(url));
+              const credit=await get('https://facilitator.payai.network/free-credits?payTo=0xaC57AD3c3F233E5865c3cd652f67Ffc82a7Af431&network=eip155%3A8453');
+              emit('TOYOL_CSV_MARKET_OBSERVED',{url,quote:402,priceMicros:a.amount,settledStatus:status.status??null,settledPrice:status.price_usd??null,settledNetwork:status.network??null,settledDeliveryVerified:status.delivery_verified??null,settledPage:status.page??null,facilitatorCredit:credit.status,ownerSpend:0,paymentVerified:false});
+            }catch(e){emit('TOYOL_CSV_MARKET_UNAVAILABLE',{reason:String(e.message).slice(0,120),paymentVerified:false})}})(),
+            (async()=>{try{
               const j=await get('https://settled.tools/v1/income/venues');
               const rows=Array.isArray(j)?j:j.venues??j.data;
               if(!Array.isArray(rows))throw Error('VENUE_EVIDENCE_SCHEMA');
