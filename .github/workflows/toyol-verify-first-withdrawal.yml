@@ -26,3 +26,5 @@ jobs:
             for(const a of [from,to]){const raw=await rpc('eth_call',[{to:token,data:'0x70a08231'+a.slice(2).padStart(64,'0')},'latest']);console.log('WALLET_BALANCE '+JSON.stringify({address:a,usdcMicros:String(BigInt(raw))}))}
           }catch(e){console.log('VERIFICATION_UNAVAILABLE '+String(e.message).slice(0,100))}
           JS
+
+# Recheck receiving wallet balance after Sendstables UI displays zero.
