@@ -37,9 +37,9 @@ jobs:
           python3 - <<'PY'
           import pathlib,re,json
           p=pathlib.Path("out/benchmark.txt"); s=p.read_text()
-          m=re.search(r"games (\d+) W-L-D (\d+)-(\d+)-(\d+)",s)
+          m=re.search(r"games\s+(\d+)\s+W-L-D\s+(\d+)-(\d+)-(\d+)",s)
           assert m and int(m[1])==64
-          assert "tick errors 0 in 0/64 games matches aborted 0" in s
+          assert re.search(r"tick errors\s+0 in 0/64 games\s+matches aborted\s+0",s)
           assert "replays verified 64/64" in s
           assert "rules s2.0.0" in s
           rows={}
