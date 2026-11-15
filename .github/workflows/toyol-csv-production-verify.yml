@@ -1,0 +1,37 @@
+name: Toyol — CSV production public verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-csv-production-verify.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Confirm public service and unpaid x402 quote
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const base='https://toyol-csv-evidence.ilhamraduan-bis.workers.dev';
+          const request=(path,opts={})=>fetch(base+path,{...opts,redirect:'error',signal:AbortSignal.timeout(20000)});
+          const health=await request('/health');assert.equal(health.status,200);assert.equal((await health.json()).ok,true);
+          const root=await request('/');assert.equal(root.status,200);const meta=await root.json();assert.equal(meta.service,'Toyol CSV Evidence');
+          const post=(body,headers={})=>request('/v1/csv/audit',{method:'POST',headers:{'content-type':'application/json',...headers},body:JSON.stringify(body)});
+          const sample={csv:'id,name\n1,Ada\n',required:['name'],unique:['id']};
+          const r=await post(sample);assert.equal(r.status,402);
+          const q=JSON.parse(Buffer.from(r.headers.get('payment-required'),'base64').toString('utf8'));
+          assert.equal(q.x402Version,2);
+          const a=q.accepts.find(x=>x.network==='eip155:8453');
+          assert.equal(a.amount,'10000');assert.equal(a.scheme,'exact');
+          assert.equal(a.payTo.toLowerCase(),'0xac57ad3c3f233e5865c3cd652f67ffc82a7af431');
+          assert.equal(a.asset.toLowerCase(),'0x833589fcd6edb6e08f4c7c32d4f71b54bda02913');
+          assert.equal(q.resource.url,base+'/v1/csv/audit');
+          assert.ok(q.extensions?.bazaar);
+          console.log('TOYOL_PRODUCTION_VERIFIED '+JSON.stringify({url:base,health:200,quote:r.status,price:a.amount,network:a.network,payTo:a.payTo,bazaar:q.extensions.bazaar,paid:false}));
+          const invalid=await post({csv:'id\n"bad'});assert.equal(invalid.status,400);
+          const badPay=await post(sample,{'payment-signature':'invalid'});assert.ok([400,402].includes(badPay.status));
+          console.log('TOYOL_PRODUCTION_REJECTION_PASS '+JSON.stringify({invalidCsv:invalid.status,invalidPayment:badPay.status,spend:0}));
+          JS
