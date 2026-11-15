@@ -94,8 +94,22 @@ jobs:
             }catch(e){console.log('BASE_RPC_UNAVAILABLE '+String(e.message).slice(0,120));}
           }
           try{
-            const {status,j}=await post('https://api.relay.link/quote/v2',{user:base,recipient:sol,originChainId:8453,destinationChainId:792703809,originCurrency:usdc,destinationCurrency:'11111111111111111111111111111111',amount:'130000',tradeType:'EXACT_INPUT'});
+            const {status,j}=await post('https://api.relay.link/quote/v2',{user:base,recipient:sol,originChainId:8453,destinationChainId:792703809,originCurrency:usdc,destinationCurrency:'11111111111111111111111111111111',amount:'150000',tradeType:'EXACT_INPUT'});
             const d=j.details??{};console.log('SOL_FUNDING_QUOTE '+JSON.stringify({status,code:j.errorCode??j.code??null,message:String(j.message??'').slice(0,200),input:d.currencyIn?.amount,output:d.currencyOut?.amount,minOutput:d.currencyOut?.minimumAmount,gasFeeUsd:j.fees?.gas?.amountUsd,steps:j.steps?.map(s=>({id:s.id,kind:s.kind}))}));
           }catch(e){console.log('FUNDING_QUOTE_UNAVAILABLE '+String(e.message).slice(0,120));}
           console.log('NO_TRANSACTION_NO_PAYMENT');
+          JS
+
+      - name: Quote gasless Base bootstrap without payment
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://agentgas.madebydevx.com',to='0xaC57AD3c3F233E5865c3cd652f67Ffc82a7Af431';
+          for(const usd of ['0.01','0.02','0.04']){
+            try{
+              const url=root+'/v1/quote?'+new URLSearchParams({chain:'base',to,usd});
+              const r=await fetch(url,{redirect:'error',signal:AbortSignal.timeout(10000)}),j=await r.json();
+              console.log('GASLESS_BOOTSTRAP_QUOTE '+JSON.stringify({requestedUsd:usd,status:r.status,result:j}).slice(0,3500));
+            }catch(e){console.log('GASLESS_QUOTE_UNAVAILABLE '+String(e.message).slice(0,120));}
+          }
+          console.log('NO_PAYMENT_NO_SIGNING');
           JS
