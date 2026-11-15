@@ -1,0 +1,19 @@
+name: Toyol — Polygon paid work inventory
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-polygon-paid-work.yml']
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Check current task inventory, funded status and payment history only
+        run: |
+          node --input-type=module <<'JS'
+          const paths=['https://agentxchange.io/api/v1/tasks/available','https://agentxchange.io/api/v1/bounties','https://agentxchange.io/api/v1/stats','https://agentsbay.ai/api/v1/tasks/available','https://agentsbay.ai/api/v1/jobs','https://agentsbay.ai/api/v1/bounties','https://agent-bounty-feed.dailydollar.workers.dev/feed.json','https://api.agentizable.ai/v1/base/autonomous-bounties/feed?network=base-mainnet&claimable_only=true'];
+          await Promise.all(paths.map(async url=>{try{const r=await fetch(url,{headers:{Accept:'application/json'},redirect:'follow',signal:AbortSignal.timeout(14000)}),s=await r.text();if(s.length>2000000)throw Error('LIMIT');const j=JSON.parse(s),d=j.data??j,rows=Array.isArray(d)?d:d.tasks??d.bounties??d.jobs??d.items??d.results??d.entries??[];console.log('LIVE_INVENTORY '+JSON.stringify({url,finalUrl:r.url,status:r.status,keys:Object.keys(j),count:rows.length,summary:rows.length?null:d}).slice(0,5000));for(const x of rows.slice(0,40))console.log('CANDIDATE '+JSON.stringify({url,task:x}).slice(0,7000))}catch(e){console.log('SOURCE_STOP '+url+' '+String(e.message).slice(0,120))}}));
+          JS
