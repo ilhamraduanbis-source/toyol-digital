@@ -1,0 +1,41 @@
+name: Toyol — Cash sprint reviewed deliveries
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-cash-sprint-reviewed.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-cash-sprint-reviewed
+  cancel-in-progress: false
+jobs:
+  deliver:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Execute existing reviewed paid work only if live seats are claimable
+        env:
+          TOYOL_SWARMMEMO_SIGNER_JSON: ${{ secrets.TOYOL_SWARMMEMO_SIGNER_JSON }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$TOYOL_SWARMMEMO_SIGNER_JSON"
+          # Each existing script verifies the live task, prior results, and seat availability.
+          # No new identity, no fee, no retry of uncertain signed writes.
+          failed=0
+          for task in swarmmemo-first-paid-qa.py swarmmemo-paid-data-brief.py swarmmemo-board-recheck.py; do
+            echo "CASH_SPRINT_TASK $task"
+            if timeout --kill-after=5s 120s python3 "src/$task" --execute; then
+              echo "CASH_SPRINT_CHECK_COMPLETE $task"
+            else
+              echo "CASH_SPRINT_BLOCKED $task"
+              failed=1
+            fi
+          done
+          echo "CASH_SPRINT_COMPLETE blocked=$failed; submission is not payment"
+          exit "$failed"
