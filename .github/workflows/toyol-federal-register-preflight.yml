@@ -1,0 +1,32 @@
+name: Toyol — Federal Register research readiness
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-federal-register-preflight.yml']
+permissions:
+  contents: read
+jobs:
+  sample:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Validate source access and exact fields without claiming formal contract progress
+        run: |
+          python3 -m py_compile skills/federal-register-research/collect.py
+          python3 skills/federal-register-research/collect.py --sample --out out/preparation-sample.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open("out/preparation-sample.json"))
+          for a,n in x["agency_counts"].items(): print("AGENCY_SAMPLE",a,n)
+          print("SAMPLE_SOURCE_ERRORS", x["errors"])
+          print("NOT_FORMAL_PULL",x["mode"])
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: federal-register-preparation-sample
+          path: out/
+          retention-days: 7
+          if-no-files-found: ignore
