@@ -324,6 +324,30 @@
       "skippedSteps": [],
       "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
       "incomeInferred": false
+    },
+    {
+      "worker": "payment-reconciliation",
+      "runId": 43757840738,
+      "attempt": 1,
+      "completedAt": "2026-11-15T20:24:09Z",
+      "sourceCommit": "9620a5b31562212a59b8dd74c62553015819ebf8",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "frantic-delivery",
+      "runId": 43771138925,
+      "attempt": 1,
+      "completedAt": "2026-11-15T22:46:41Z",
+      "sourceCommit": "9620a5b31562212a59b8dd74c62553015819ebf8",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
     }
   ]
 }
