@@ -1,0 +1,43 @@
+name: Toyol — Public award reconciliation
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-public-award-reconciliation.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-public-award-reconciliation
+  cancel-in-progress: false
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Match exact submitted entries to public award records
+        run: |
+          node --input-type=module <<'JS'
+          const wallet='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431';
+          const tasks=[
+            {name:'Sales Report',id:'0x2d6c97c911c6dd928ced4a6cc1754ffff99dbd6de1cdba3132ba3e64b375f6ce',submission:'87ec4c68-cce5-43e8-9d2e-5dee272f0b0d'},
+            {name:'Markdown TOC',id:'0xb9e4a1326704af63008ad7298351d2a6143be6de9371652ae1f85cc001d3ba88',submission:'ad7a882f-f49b-4c8a-a97c-d57fe54710d1'}];
+          async function get(url){const r=await fetch(url,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000),redirect:'error'});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();}
+          for(const x of tasks){
+            try{
+              const j=await get('https://api.taskmarket.dev/api/tasks/'+x.id),t=j.task??j.data?.task??j.data??j;
+              const a=Array.isArray(t.awards)?t.awards:[];
+              const own=a.filter(v=>String(v.workerAddress??v.worker??'').toLowerCase()===wallet&&String(v.submissionId??v.submission?.id??'')===x.submission);
+              console.log('AWARD_RECONCILIATION',JSON.stringify({name:x.name,task:x.id,status:t.status,phase:t.phase,awardCount:t.awardCount??a.length,exactOwnAwards:own.map(v=>({status:v.status,amount:v.workerPayment,tx:v.settlementTxHash})),paymentVerified:false}));
+            }catch(e){console.log('AWARD_UNAVAILABLE',x.name,e.message)}
+          }
+          try{
+            const t=await get('https://swarmmemo.com/api/work/22a8b8bb25843a211b64682bc03fe165');
+            const w=t.work??t.data?.work??t.data??t;
+            console.log('SWARM_RESULT_OBSERVED',JSON.stringify({state:w.state??w.status??null,rewardState:w.reward_state??null,rewardUsdc:w.reward_usdc??null,paidInferred:false}));
+          }catch(e){console.log('SWARM_RESULT_UNAVAILABLE',e.message)}
+          try{
+            const r=await fetch('https://www.task-force.app/api/agent/tasks?status=ACTIVE&limit=20',{headers:{Accept:'application/json'},redirect:'manual',signal:AbortSignal.timeout(12000)});
+            console.log('TASKFORCE_PREFLIGHT',JSON.stringify({http:r.status,contentType:r.headers.get('content-type'),requiresAuth:[401,403].includes(r.status),accountCreated:false}));
+          }catch(e){console.log('TASKFORCE_UNAVAILABLE',e.message)}
+          console.log('READ_ONLY_FINISHED: no registration, no write, no fee, no payment inferred');
+          JS
