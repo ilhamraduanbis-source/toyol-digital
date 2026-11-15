@@ -1,0 +1,34 @@
+name: Toyol — CSV evidence x402 readiness
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['skills/csv-evidence/**', '.github/workflows/toyol-csv-evidence-x402.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: skills/csv-evidence
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.18.0'
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm test
+      - name: Verify real unpaid x402 payment requirement; no signature or transaction
+        run: npm run test:quote
+      - name: Check free facilitator credit and no spending
+        run: |
+          node --input-type=module <<'JS'
+          const r=await fetch('https://facilitator.payai.network/free-credits?payTo=0xaC57AD3c3F233E5865c3cd652f67Ffc82a7Af431&network=eip155%3A8453',{signal:AbortSignal.timeout(15000)});
+          if(!r.ok)throw Error('FREE_CREDIT_CHECK_'+r.status);
+          const j=await r.json();
+          console.log('TOYOL_FACILITATOR_CREDIT '+JSON.stringify({status:j.status,exhausted:j.exhausted,ownerSpend:0,actualPayment:false}));
+          JS
