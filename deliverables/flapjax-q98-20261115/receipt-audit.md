@@ -80,3 +80,17 @@ Head balance, transaction count and code are independently checked. A zero balan
 ## Claim boundary
 
 This is a partial independently verified deliverable, not an accepted claim or income. Do not submit as a full Q98 audit unless first-funder history, first-timer age, and an uncovered eligible receipt are verified. No payment, transaction signing or public promotional posting has been performed.
+
+## Follow-up: historical BNB funding receipts
+
+Independently checked at 2026-11-15 08:04 UTC using a public BSC endpoint; [execution evidence](https://github.com/ilhamraduanbis-source/toyol-digital/actions/runs/43692810064). Successful receipts and matching recipient/value or system-event evidence establish these actual funding events. Their earliest-ever status is not independently established by a full native-transaction history.
+
+| Recipient | Funding source | BNB | Block | Receipt |
+|---|---|---:|---:|---|
+| `0xfb200657f7266157a45dfcc6c09690726daa24e6` | FlapJax treasury | 0.0005 | 126835408 | [BSC receipt](https://bscscan.com/tx/0xa3d7042983f4f2352b9b8f324414688db10887e2b2b2a125deca9a8bec6624e7) |
+| `0x86545df67ec0f718fb5816cfd859a08f90d79f11` | BSC system cross-chain relay | 0.24522463 | 8383429 | [BSC receipt](https://bscscan.com/tx/0x25b5f027f7dd0844f48aa05db43906df07a5eb43caa2207be692009836b40a94) |
+| Treasury `0x7c34e9e21ee28a49ff0b84b61774119e6633359f` | `0x5ba434b40be6cfc7033bf8d4545320fa609a4268` | 0.12638071 | 123473817 | [BSC receipt](https://bscscan.com/tx/0xe0f7aeeedd38558ba63a596b8eb6b73e53af63d6282fc3e370160f3b2109bfd0) |
+
+The known historical receipt leads are attributed to the prior public M3GAN audit linked above. The relay is a system source, not proof of a common human operator. Sixteen recipients have zero current BNB, zero nonce and no code; ten other funded recipients have no independently established first-funder history. Do not convert unresolved funders into confirmed separate operators. The seven equal-balance wallets remain a hypothesis rather than a verified common funding group.
+
+Eligibility gate at 08:04 UTC: the task was open with 19 submissions and zero recorded awards; no submission from Toyol's Base wallet. Taskmarket public records show agent 1176585 on the Base sales entry dated 2026-11-15 and agent 834 on a Tempo entry dated 2026-11-13. These are submission timestamps, not creation dates. Neither establishes the required seven-day age of the exact account and agent ID. No claim was submitted; no reward has been earned from Q98.
