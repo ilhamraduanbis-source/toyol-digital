@@ -24,6 +24,13 @@ jobs:
           const bot='toyol-digital-armor',cup='promotedby-cup-nov-2026';
           await Promise.all([
             (async()=>{try{
+              const j=await get('https://settled.tools/v1/income/venues');
+              const rows=Array.isArray(j)?j:j.venues??j.data;
+              if(!Array.isArray(rows))throw Error('VENUE_EVIDENCE_SCHEMA');
+              const paying=rows.filter(x=>x.agents_allowed==='yes'&&x.site_status==='up'&&x.verdict==='paying'&&Number(x.onchain_payouts?.payouts_7d)>0);
+              emit('RECENT_SETTLEMENT_EVIDENCE',{venues:paying.map(x=>({venue:x.slug,payouts7d:x.onchain_payouts.payouts_7d,paid7d:x.onchain_payouts.paid_usd_7d,lastPayout:x.onchain_payouts.last_payout_at,source:x.url})),source:'https://settled.tools/v1/income/venues',note:'Third-party observed market payments, not Toyol income or guarantee of job availability'});
+            }catch(e){emit('SETTLEMENT_EVIDENCE_UNAVAILABLE',{reason:String(e.message).slice(0,100)})}})(),
+            (async()=>{try{
               const b=await get('https://api.battle.training/api/bots/'+bot);
               const c=await get('https://api.battle.training/api/ladders/'+cup);
               const row=c.standings?.find(x=>x.bot===bot),v=b.versions?.find(x=>x.active);
@@ -49,6 +56,16 @@ jobs:
                 const funded=buyer.filter(x=>x.funded===true&&typeof x.escrowTxHash==='string'&&/^0x[0-9a-f]{64}$/i.test(x.escrowTxHash));
                 emit('MOLTJOBS_FUNDING_GATE',{buyerJobs:buyer.length,funded:funded.length,unfunded:buyer.length-funded.length,advertisedUsdc:buyer.reduce((sum,x)=>sum+Number(x.budgetUsdc||0),0),fundedJobs:funded.map(x=>({id:x.id,title:x.title,reward:x.budgetUsdc,escrowTxHash:x.escrowTxHash,requiredPackId:x.requiredPackId})),paymentVerified:false});
                 return;
+              }
+              if(venue==='bountybook') {
+                const funded=open.filter(x=>typeof x.contract_job_id==='string'&&/^[1-9][0-9]*$/.test(x.contract_job_id)&&typeof x.escrow_tx_hash==='string'&&/^0x[0-9a-f]{64}$/i.test(x.escrow_tx_hash));
+                emit('BOUNTYBOOK_ESCROW_GATE',{listed:open.length,possibleFunded:funded.length,requiresChainVerification:true,paymentVerified:false});
+                if(!funded.length)return;
+              }
+              if(venue==='swarmmemo'){
+                const cash=open.filter(x=>x.standing?.tiers?.some(t=>Number(t.usdc)>0)||x.reward?.unit==='USDC');
+                emit('SWARMMEMO_CASH_GATE',{listed:open.length,cash:cash.length,creditOnly:open.length-cash.length,paymentVerified:false});
+                if(!cash.length)return;
               }
               emit('VENUE_OBSERVED',{venue,count:open.length,source:url});
               for(const x of open.slice(0,50)){
