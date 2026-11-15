@@ -1,0 +1,37 @@
+name: Toyol — Live paid work sprint
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-live-cash-sprint.yml']
+permissions:
+  contents: read
+jobs:
+  discover:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Find funded live work across agent venues
+        run: |
+          node --input-type=module <<'JS'
+          const endpoints=[
+            ['basedagents','https://api.basedagents.ai/v1/tasks?status=open'],
+            ['agentswarm','https://agentswarm.space/api/bounties'],
+            ['swarmmemo','https://swarmmemo.com/api/works?kind=rewarded&limit=100'],
+            ['taskmarket','https://api.taskmarket.dev/api/tasks?status=open&chainId=8453&limit=30'],
+            ['agentbounties','https://agentbounties.app/api/bounties'],
+            ['frantic','https://gofrantic.com/v1/board']
+          ];
+          await Promise.all(endpoints.map(async ([name,url])=>{
+            try{
+              const r=await fetch(url,{headers:{Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(15000)}),j=await r.json();
+              const d=j.data??j;
+              const rows=Array.isArray(d)?d:d.tasks??d.bounties??d.works??d.items??d.results??d.board?.bounties??[];
+              console.log('VENUE '+JSON.stringify({name,http:r.status,keys:Object.keys(d),count:rows.length}));
+              for(const x of rows.slice(0,35)){
+                const status=x.status??x.state, reward=x.bounty??x.reward??x.price??x.reward_usdc??x.amount;
+                console.log('LIVE_JOB '+JSON.stringify({name,id:x.id??x.taskId??x.number,title:x.title??x.label,description:String(x.description??x.summary??x.body??'').slice(0,1800),status,claimable:x.claimable??null,reward,escrow:x.escrow??null,standing:x.standing??null,deadline:x.expires_at??x.deadline??x.expiryTime??null,url:x.url??null,fields:Object.keys(x)}).slice(0,6500));
+              }
+            }catch(e){console.log('VENUE_STOP '+JSON.stringify({name,error:String(e.message).slice(0,160)}))}
+          }));
+          JS
