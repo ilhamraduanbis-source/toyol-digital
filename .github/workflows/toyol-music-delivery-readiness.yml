@@ -1,0 +1,65 @@
+name: Toyol — Music delivery readiness and Tempo balance
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-music-delivery-readiness.yml']
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Check real escrow and existing public Tempo balance; no wallet signing
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          const wallet='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431',id='0xce38437f4cf4c83ffeaa45c55881ce7b68aa044c7a24a0f0a2a93ee0579cae85',token='0x20c0000000000000000000006a37da5c996874be';
+          const emit=(k,v)=>console.log(k+' '+JSON.stringify(v));
+          async function get(u){const r=await fetch(u,{redirect:'error',headers:{Accept:'application/json'},signal:AbortSignal.timeout(18000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json()}
+          try {
+            const t=await get('https://api.taskmarket.dev/api/tasks/'+id+'?chainId=4217');
+            const x=t.task??t;
+            const eligible=x.id===id&&x.status==='open'&&x.chainId===4217&&x.stakeRequired===false&&x.submissionWindowOpen===true&&x.escrow?.tracked===true&&String(x.escrow.booked)==='700000';
+            emit('MUSIC_TASK',{eligible,submissions:x.submissionCount,rewardMicros:x.reward,deadline:x.expiryTime,globalFreeCap:50,estimatedFeeMicros:x.submissionCount>=50?1000:0});
+            const rows=await get('https://api.taskmarket.dev/api/tasks/'+id+'/submissions?chainId=4217');
+            if(!Array.isArray(rows))throw Error('SUBMISSION_HISTORY_UNKNOWN');
+            emit('MUSIC_PRIOR_ENTRY',{own:rows.filter(x=>String(x.workerAddress??'').toLowerCase()===wallet).map(x=>({id:x.id,rejected:!!x.rejectedAt})),count:rows.length});
+            async function rpc(method,params){const r=await fetch('https://rpc.tempo.xyz',{method:'POST',redirect:'error',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(18000)});if(!r.ok)throw Error('RPC_HTTP_'+r.status);const j=await r.json();if(j.error||typeof j.result!=='string')throw Error('RPC_RESULT_INVALID');return j.result}
+            const chain=await rpc('eth_chainId',[]);if(BigInt(chain)!==4217n)throw Error('CHAIN_MISMATCH');
+            const block=await rpc('eth_blockNumber',[]);
+            const balance=await rpc('eth_call',[{to:token,data:'0x70a08231'+wallet.slice(2).padStart(64,'0')},block]);
+            const n=BigInt(balance);
+            emit('TEMPO_OUSD_BALANCE',{wallet,block:String(BigInt(block)),balanceMicros:String(n),feeAffordable:n>=1000n,spend:0,submissionPerformed:false});
+          } catch(e){emit('READINESS_UNAVAILABLE',{reason:String(e.message).slice(0,160),spend:0});}
+          JS
+      - name: Reproduce complete original music package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --quiet numpy==2.3.5
+          command -v ffmpeg
+          mkdir -p out/source
+          cp skills/original-music/source/render.py out/source/
+          cp skills/original-music/README.md out/README.md
+          python3 out/source/render.py
+          python3 - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('out')
+          j=json.loads((p/'verification.json').read_text())
+          assert j['notes']==925 and 145<j['duration_s']<146 and j['peak_dbfs']<0
+          assert j['rerender_identical'] and j['wav_readback_pass'] and j['mp3_decode_pass']
+          assert (p/'source/score.json').is_file()
+          print('MUSIC_REPRODUCIBLE',json.dumps(j))
+          PY
+          (cd out && zip -q -r ../Lanterns_at_First_Light.zip .)
+          sha256sum Lanterns_at_First_Light.zip
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-lanterns-original-music
+          path: Lanterns_at_First_Light.zip
+          retention-days: 30
