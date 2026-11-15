@@ -1,0 +1,109 @@
+name: Toyol — AIBTC CityCoins independent audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-aibtc-citycoins-audit.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-aibtc-citycoins-audit
+  cancel-in-progress: false
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.18.0'
+      - name: Obtain exact public pre-deployment audit scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/citycoins-evidence"
+          git clone --quiet --no-checkout https://github.com/Rapha-btc/citycoins-protocol.git "$RUNNER_TEMP/citycoins"
+          cd "$RUNNER_TEMP/citycoins"
+          git checkout --quiet --detach 46885083b55362e06ab3386cc13d275ed6040bd0
+          test "$(git rev-parse HEAD)" = 46885083b55362e06ab3386cc13d275ed6040bd0
+          sha256sum contracts/proposals/ccip028-activate-mia-fair-redemption.clar contracts/extensions/ccd015-redemption-book-mia-stx.clar contracts/extensions/ccd016-swap-vault-mia-v2.clar | tee "$RUNNER_TEMP/citycoins-evidence/source-sha256.txt"
+          grep -q '^b3526d4c' "$RUNNER_TEMP/citycoins-evidence/source-sha256.txt"
+          grep -q '^ac0c305f' "$RUNNER_TEMP/citycoins-evidence/source-sha256.txt"
+          cp contracts/extensions/README-ccd016-swap-vault-v2.md "$RUNNER_TEMP/citycoins-evidence/prior-findings.md"
+          node --version | tee "$RUNNER_TEMP/citycoins-evidence/node-version.txt"
+      - name: Independently verify bounded arithmetic properties against pinned source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/citycoins"
+          python3 - "$RUNNER_TEMP/citycoins-evidence" <<'PY'
+          import pathlib,sys,random,json
+          from fractions import Fraction
+          out=pathlib.Path(sys.argv[1])
+          book=pathlib.Path("contracts/extensions/ccd015-redemption-book-mia-stx.clar").read_text()
+          proposal=pathlib.Path("contracts/proposals/ccip028-activate-mia-fair-redemption.clar").read_text()
+          # Source correspondence; fail if the actual expressions differ.
+          for expr in ["(/ (* amount remaining) ask)","amount: (- amount taken)","ustx: (- ask remaining)","(<= (* ask PAR_SCALE) (* amount (var-get par-scaled)))","(define-constant PAR_SCALE (pow u10 u8))","(some (/ (* treasury-ustx PAR_SCALE) supply))"]:
+              assert expr in book,expr
+          assert "(asserts! (and (is-eq contract-caller DAO) (is-eq tx-sender DAO)) ERR_UNAUTHORIZED)" in proposal
+          assert proposal.count("(try! (contract-call?")==14
+          rng=random.Random(28015)
+          count=0; skipped=0
+          for i in range(50000):
+              amount=rng.randrange(1,10**13+1); ask=rng.randrange(1,10**15+1)
+              remaining=rng.randrange(0,ask)
+              taken=amount*remaining//ask
+              assert 0<=taken<amount
+              assert amount*remaining<2**128
+              if taken==0:
+                  # Any later offer whose price is no lower also yields zero units.
+                  a2=rng.randrange(1,10**13+1); k=(ask*a2+amount-1)//amount
+                  assert a2*remaining//k==0
+                  skipped+=1
+              else:
+                  # The paid price is at least the original; the residual price
+                  # is no higher, preserving order after the frontier.
+                  assert Fraction(remaining,taken)>=Fraction(ask,amount)
+                  assert Fraction(ask-remaining,amount-taken)<=Fraction(ask,amount)
+                  assert 0<ask-remaining<=ask and 0<amount-taken<=amount
+                  count+=1
+          # Separate sampled par rounding: floor never overstates the rational par.
+          for i in range(10000):
+              treasury=rng.randrange(1,10**16); supply=rng.randrange(1,10**17)
+              par=treasury*10**8//supply
+              assert treasury*10**8<2**128
+              assert par*supply<=treasury*10**8<(par+1)*supply
+              if par: assert Fraction(par,10**8)<=Fraction(treasury,supply)
+          result={"commit":"46885083b55362e06ab3386cc13d275ed6040bd0","partial_cases":count,"zero_fill_cases":skipped,"par_cases":10000,"source_expressions_checked":True,"result":"PASS","scope":"independent arithmetic model and source correspondence only; not a VM execution or novel finding"}
+          (out/"arithmetic.json").write_text(json.dumps(result,indent=2))
+          print("INDEPENDENT_ARITHMETIC_PASS",json.dumps(result))
+          PY
+      - name: Execute original Clarinet integration tests on pinned pre-deployment source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/citycoins"
+          npm ci --no-audit --no-fund
+          npm run test:ccip028 2>&1 | tee "$RUNNER_TEMP/citycoins-evidence/activation-tests.txt"
+          npm run test:book 2>&1 | tee "$RUNNER_TEMP/citycoins-evidence/book-tests.txt"
+          npm run test:vault 2>&1 | tee "$RUNNER_TEMP/citycoins-evidence/vault-tests.txt"
+          git diff --exit-code -- contracts
+          echo "BASELINE_CONTRACT_TESTS_PASS" | tee "$RUNNER_TEMP/citycoins-evidence/baseline-status.txt"
+      - name: Record honest bounded review result
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import pathlib,json,os
+          p=pathlib.Path(os.environ["RUNNER_TEMP"])/"citycoins-evidence"
+          a=p/"arithmetic.json"; b=p/"baseline-status.txt"
+          r={"bounty":"https://aibtc.com/bounties/mw4761qx68024266725f","reward_sats":8000,"arithmetic_pass":a.exists(),"baseline_pass":b.exists(),"novel_vulnerability_claimed":False,"submission":"not performed; registered AIBTC identity and independent review required","income_verified":False}
+          (p/"review-status.json").write_text(json.dumps(r,indent=2))
+          print("CITYCOINS_REVIEW_STATUS",json.dumps(r))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: toyol-citycoins-audit-evidence
+          path: ${{ runner.temp }}/citycoins-evidence/
+          retention-days: 14
