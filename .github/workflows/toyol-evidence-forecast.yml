@@ -1,0 +1,116 @@
+name: Toyol — Evidence Forecast Engine
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '29 3 * * *'
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-evidence-forecast.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-evidence-forecast
+  cancel-in-progress: false
+jobs:
+  forecast:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Train and evaluate probabilistic forecasts on public USGS observations
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out/forecast
+          python3 - <<'PY'
+          import datetime as dt, json, math, statistics, urllib.request, urllib.parse, csv, io
+          from pathlib import Path
+          from collections import Counter
+          UTC=dt.timezone.utc
+          today=dt.datetime.now(UTC).date()
+          def poisson_tail(lam,k):
+              if k<=0: return 1.
+              t=math.exp(-lam); s=t
+              for i in range(1,k):
+                  t*=lam/i; s+=t
+              return max(0.,min(1.,1-s))
+          def negbin_tail(mean,var,k):
+              if k<=0:return 1.
+              if var<=mean+1e-9 or mean<=0:return poisson_tail(mean,k)
+              r=mean*mean/(var-mean); p=r/(r+mean)
+              t=p**r; s=t
+              for i in range(1,k):
+                  t*=((r+i-1)/i)*(1-p); s+=t
+              return max(0.,min(1.,1-s))
+          def predict(history,k,method):
+              if len(history)<12:raise ValueError('INSUFFICIENT_HISTORY')
+              mean=(sum(history)+0.5)/(len(history)+0.5)
+              if method=='poisson':p=poisson_tail(mean,k)
+              elif method=='negbin':p=negbin_tail(mean,statistics.variance(history),k)
+              elif method=='empirical':p=(sum(x>=k for x in history)+1)/(len(history)+2)
+              else:raise ValueError('UNKNOWN_METHOD')
+              return min(.995,max(.005,p))
+          def brier(p,y):return (p-y)**2
+          def logloss(p,y):return -(y*math.log(p)+(1-y)*math.log1p(-p))
+          def evaluate(counts,k):
+              methods=('poisson','negbin','empirical')
+              # Use time-ordered selection on one period, then untouched later holdout.
+              # Each prediction sees only earlier complete, non-overlapping weeks.
+              n=len(counts); split=int(n*.75); start=max(20,n//3)
+              if split<=start or n-split<12:raise ValueError('INSUFFICIENT_WEEKS')
+              def score(m,lo,hi):
+                  rows=[(predict(counts[max(0,i-52):i],k,m),int(counts[i]>=k)) for i in range(lo,hi)]
+                  return {'n':len(rows),'brier':statistics.mean(brier(p,y) for p,y in rows),'logLoss':statistics.mean(logloss(p,y) for p,y in rows),'meanPrediction':statistics.mean(p for p,y in rows),'observedFrequency':statistics.mean(y for p,y in rows)}
+              validation={m:score(m,start,split) for m in methods}
+              choice=min(methods,key=lambda m:validation[m]['brier'])
+              holdout={m:score(m,split,n) for m in methods}
+              latest=counts[-52:]; p=predict(latest,k,choice)
+              return {'thresholdCount':k,'method':choice,'probability':p,'validation':validation,'holdout':holdout,'holdoutSelectionWasFrozen':True,'recentMean':statistics.mean(latest),'recentWeeks':len(latest),'uncertainty':'Historical stationary-count models only; aftershock clustering, catalogue revisions and incomplete detection may affect accuracy.'}
+          assert abs(poisson_tail(1,1)-(1-math.exp(-1)))<1e-12
+          assert poisson_tail(2,0)==1
+          assert abs(negbin_tail(2,2,2)-poisson_tail(2,2))<1e-12
+          assert negbin_tail(2,5,2)>0 and negbin_tail(2,5,2)<1
+          assert brier(.5,1)==.25
+          assert abs(predict([0]*20,1,'empirical')-1/22)<1e-12
+          assert evaluate([0,1,2,1]*26,1)['holdoutSelectionWasFrozen']
+          print('FORECAST_TESTS_PASSED 7')
+          # Weekly windows end at today's UTC midnight, excluding incomplete days.
+          end=today; start=end-dt.timedelta(weeks=156)
+          def source(mag):
+              q=urllib.parse.urlencode({'format':'csv','starttime':start.isoformat(),'endtime':end.isoformat(),'minmagnitude':mag,'eventtype':'earthquake','orderby':'time-asc','limit':20000})
+              url='https://earthquake.usgs.gov/fdsnws/event/1/query?'+q
+              with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'ToyolEvidenceForecast/1.0','Accept':'text/csv'}),timeout=30) as r:
+                  b=r.read(12000001)
+              if len(b)>12000000:raise ValueError('RESPONSE_LIMIT')
+              rows=list(csv.DictReader(io.StringIO(b.decode('utf-8'))))
+              if len(rows)>=20000:raise ValueError('PAGINATION_REQUIRED')
+              count=Counter(); seen=set()
+              for row in rows:
+                  if row.get('id') in seen:continue
+                  seen.add(row.get('id'))
+                  day=dt.datetime.fromisoformat(row['time'].replace('Z','+00:00')).date()
+                  if start<=day<end and float(row['mag'])>=mag:
+                      count[(day-start).days//7]+=1
+              return url,[count[i] for i in range(156)],len(seen)
+          report={'generatedAt':dt.datetime.now(UTC).isoformat(),'forecastStartUTC':end.isoformat(),'forecastEndUTC':(end+dt.timedelta(days=7)).isoformat(),'source':'USGS earthquake catalogue','methodology':'Time-ordered validation and holdout; Laplace smoothing; no community forecast scraping; no betting or live submission. Retrospective catalogue may contain later revisions.','forecasts':[]}
+          for mag,k in [(5.0,20),(6.0,2),(6.5,1),(7.0,1)]:
+              url,counts,n=source(mag)
+              if n==0:raise ValueError('EMPTY_SOURCE')
+              result=evaluate(counts,k)
+              result.update({'minimumMagnitude':mag,'question':f'At least {k} global earthquakes of magnitude >= {mag} in the next seven UTC days?','catalogueUrl':url,'eventsRead':n,'weeks':len(counts)})
+              report['forecasts'].append(result)
+              print('FORECAST_RESULT',json.dumps(result))
+          Path('out/forecast/forecast.json').write_text(json.dumps(report,indent=2))
+          with open(__import__('os').environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write('## Toyol Evidence Forecast Engine\n\nReal historical USGS observations, seven-day future window, no competition entry.\n\n')
+              for x in report['forecasts']:
+                  f.write(f"- {x['question']} **{x['probability']:.1%}** ({x['method']}); holdout Brier {x['holdout'][x['method']]['brier']:.4f}\n")
+              f.write('\nNot calibrated for arbitrary tournament questions. No claim of prize eligibility or income.\n')
+          PY
+      - name: Preserve forecast and evaluation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-evidence-forecast
+          path: out/forecast/forecast.json
+          retention-days: 30
+          if-no-files-found: warn
