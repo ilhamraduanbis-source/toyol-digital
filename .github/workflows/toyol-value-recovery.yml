@@ -140,3 +140,5 @@ jobs:
           name: toyol-own-asset-recovery
           path: out/recovery/
           retention-days: 7
+
+# Manual owner-requested reconciliation, 2026-11-15 MYT.
