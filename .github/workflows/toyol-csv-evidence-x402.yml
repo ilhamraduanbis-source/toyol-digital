@@ -22,6 +22,35 @@ jobs:
           node-version: '22.18.0'
       - run: npm install --ignore-scripts --no-audit --no-fund
       - run: npm test
+      - name: Build Cloudflare Worker without account credentials or deployment
+        run: npm run build
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+      - name: Smoke-test actual local Workers runtime without payment
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --no-install wrangler dev --local --ip 127.0.0.1 --port 8794 > "$RUNNER_TEMP/toyol-worker.log" 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 3 http://127.0.0.1:8794/health; then ready=1; break; fi
+            sleep 1
+          done
+          if [ "$ready" != 1 ]; then cat "$RUNNER_TEMP/toyol-worker.log"; exit 1; fi
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const r=await fetch('http://127.0.0.1:8794/v1/csv/audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csv:'id,name\n1,Ada\n',unique:['id']}),signal:AbortSignal.timeout(25000)});
+          assert.equal(r.status,402);
+          const q=JSON.parse(Buffer.from(r.headers.get('payment-required'),'base64').toString('utf8'));
+          const a=q.accepts.find(x=>x.network==='eip155:8453');
+          assert.equal(a.amount,'10000');
+          assert.equal(a.payTo.toLowerCase(),'0xac57ad3c3f233e5865c3cd652f67ffc82a7af431');
+          console.log('TOYOL_WORKERS_LOCAL_QUOTE_PASS '+JSON.stringify({status:r.status,amount:a.amount,network:a.network,deployed:false,payment:false}));
+          JS
+        env:
+          WRANGLER_SEND_METRICS: 'false'
       - name: Verify real unpaid x402 payment requirement; no signature or transaction
         run: npm run test:quote
       - name: Check free facilitator credit and no spending
