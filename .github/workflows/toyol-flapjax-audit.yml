@@ -1,0 +1,57 @@
+name: Toyol — FlapJax treasury audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-flapjax-audit.yml']
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Collect exact BSC treasury transfers for the public Q98 brief
+        run: |
+          mkdir -p out
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const treasury='0x7c34e9e21ee28a49ff0b84b61774119e6633359f',token='0x90c8889f428f9ebb77bb8f15cad3a50a9ac680df';
+          const taskId='0xf630cc3f1929d42a6225a1365498a194d5ddb658f0bf9f356bbe825c7fd05dc7';
+          const emit=(k,v)=>console.log(k+' '+JSON.stringify(v));
+          const endpoints=['https://bsc-rpc.publicnode.com','https://bsc-dataseed.binance.org','https://bsc.drpc.org'];
+          let idx=0;
+          async function rpc(method,params){
+            for(let n=0;n<endpoints.length;n++){
+              try{const u=endpoints[(idx+n)%endpoints.length],r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(10000)}),j=await r.json();if(!r.ok||j.error||j.result==null)throw Error('RPC');idx=(idx+n)%endpoints.length;return j.result;}catch(e){if(n===endpoints.length-1)throw Error(method+' unavailable')}
+            }
+          }
+          const h=n=>'0x'+n.toString(16),num=x=>Number(BigInt(x));
+          const start=Date.parse('2026-11-11T05:00:00Z')/1000,end=Date.parse('2026-11-12T05:00:00Z')/1000;
+          const task=await fetch('https://api.taskmarket.dev/api/tasks/'+taskId,{signal:AbortSignal.timeout(10000)}).then(r=>r.json()),t=task.task??task;
+          emit('TASK_TERMS',{status:t.status,phase:t.phase,mode:t.mode,description:t.description,submissionCount:t.submissionCount,awardCount:t.awardCount,actions:t.pendingActions?.map(x=>({role:x.role,action:x.action,requiresPayment:x.requiresPayment})),reward:t.reward,token:t.rewardToken});
+          if(t.status!=='open')throw Error('TASK_NOT_OPEN');
+          if(await rpc('eth_chainId',[])!=='0x38')throw Error('WRONG_CHAIN');
+          const latest=num(await rpc('eth_blockNumber',[]));
+          async function boundary(timestamp){let lo=0,hi=latest;while(lo<hi){const m=Math.floor((lo+hi)/2),b=await rpc('eth_getBlockByNumber',[h(m),false]);if(num(b.timestamp)<timestamp)lo=m+1;else hi=m}return lo}
+          const first=await boundary(start),next=await boundary(end),last=next-1;
+          emit('BOUNDARIES',{first,last,next,startUTC:new Date(start*1000).toISOString(),endUTC:new Date(end*1000).toISOString()});
+          const logs=[];
+          for(let a=first;a<=last;a+=2000){
+            const b=Math.min(last,a+1999),part=await rpc('eth_getLogs',[{address:token,fromBlock:h(a),toBlock:h(b),topics:['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef','0x'+treasury.slice(2).padStart(64,'0')]}]);logs.push(...part);
+          }
+          const rows=[],times=new Map();let total=0n;
+          for(const l of logs){if(!times.has(l.blockNumber))times.set(l.blockNumber,num((await rpc('eth_getBlockByNumber',[l.blockNumber,false])).timestamp));let amount=BigInt(l.data);total+=amount;rows.push({hash:l.transactionHash,logIndex:num(l.logIndex),block:num(l.blockNumber),timestampCOT:new Date((times.get(l.blockNumber)-18000)*1000).toISOString().replace('Z','-05:00'),recipient:'0x'+l.topics[2].slice(-40),amountAtomic:amount.toString()})}
+          rows.sort((a,b)=>a.block-b.block||a.logIndex-b.logIndex);
+          const result={taskId,treasury,token,first,last,rows,totalAtomic:total.toString(),recipients:[...new Set(rows.map(x=>x.recipient))]};
+          fs.writeFileSync('out/treasury.json',JSON.stringify(result,null,2));emit('AUDIT_TRANSFERS',result);
+          try{const p=await fetch('https://api.dexscreener.com/token-pairs/v1/bsc/'+token,{signal:AbortSignal.timeout(10000)}).then(r=>r.json());emit('TOKEN_LIQUIDITY',Array.isArray(p)?p.map(x=>({pair:x.pairAddress,priceUsd:x.priceUsd,liquidity:x.liquidity?.usd,volume24h:x.volume?.h24,base:x.baseToken?.address,quote:x.quoteToken?.address})):null)}catch(e){emit('TOKEN_PRICE_UNAVAILABLE',{reason:e.message})}
+          JS
+      - name: Preserve audit data
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-flapjax-treasury-evidence
+          path: out/
+          if-no-files-found: ignore
+          retention-days: 7
