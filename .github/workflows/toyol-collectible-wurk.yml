@@ -1,0 +1,75 @@
+name: Toyol — Collectible WURK and current award audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-collectible-wurk.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-collectible-wurk
+  cancel-in-progress: false
+jobs:
+  work:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Inspect existing WURK payouts and submissions without payments
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          node --input-type=module <<'JS'
+          import {createPrivateKey,createPublicKey,sign,verify} from 'node:crypto';
+          const root='https://api.wurk.fun',path='/solana/siwx/account-create',url=root+path;
+          const expected='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ',chain='solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp';
+          const alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+          function b58(b){let n=0n;for(const x of b)n=n*256n+BigInt(x);let s='';while(n){s=alphabet[Number(n%58n)]+s;n/=58n;}for(const x of b){if(x!==0)break;s='1'+s;}return s;}
+          const emit=(k,v)=>console.log(k+' '+JSON.stringify(v));
+          async function request(p,opts={}){
+            if(!p.startsWith('/')||p.startsWith('//'))throw Error('PATH');
+            const r=await fetch(root+p,{...opts,redirect:'error',signal:AbortSignal.timeout(18000),headers:{Accept:'application/json',...(opts.headers??{})}});
+            const text=await r.text();if(text.length>3000000)throw Error('LIMIT');
+            let j;try{j=JSON.parse(text)}catch{throw Error('NON_JSON_'+r.status);}
+            return {r,j};
+          }
+          const a=JSON.parse(process.env.TOYOL_SOLANA_KEYPAIR_JSON??'null');
+          if(!Array.isArray(a)||a.length!==64||!a.every(n=>Number.isInteger(n)&&n>=0&&n<=255))throw Error('KEYPAIR_FORMAT');
+          const key=createPrivateKey({key:Buffer.concat([Buffer.from('302e020100300506032b657004220420','hex'),Buffer.from(a.slice(0,32))]),format:'der',type:'pkcs8'});
+          const pub=createPublicKey(key),pk=Buffer.from(pub.export({format:'jwk'}).x,'base64url'),address=b58(pk);
+          if(address!==expected||!pk.equals(Buffer.from(a.slice(32))))throw Error('WALLET_IDENTITY');
+          const {r,j}=await request(path,{method:'POST'}),ext=j.extensions?.['sign-in-with-x'],i=ext?.info;
+          const supported=ext?.supportedChains?.find(x=>x.chainId===chain&&x.type==='ed25519'&&(!x.signatureScheme||x.signatureScheme==='siws'));
+          if(r.status!==402||j.x402Version!==2||!Array.isArray(j.accepts)||j.accepts.length!==0||!supported||!i)throw Error('NOT_FREE_AUTH');
+          const now=Date.now(),issued=Date.parse(i.issuedAt),expires=Date.parse(i.expirationTime);
+          if(i.domain!=='api.wurk.fun'||i.uri!==url||i.version!=='1'||i.statement!=='Sign in to create or access your WURK account and retrieve its API key on Solana'||!Array.isArray(i.resources)||i.resources.length!==1||i.resources[0]!==url||!/^[A-Za-z0-9]{8,128}$/.test(i.nonce??'')||!Number.isFinite(issued)||!Number.isFinite(expires)||issued>now+5000||issued<now-300000||expires<=now||expires-issued>300000||i.notBefore||i.requestId)throw Error('AUTH_INTENT_MISMATCH');
+          const info={...i,chainId:chain,type:'ed25519',...(supported.signatureScheme?{signatureScheme:supported.signatureScheme}:{})};
+          const message=[i.domain+' wants you to sign in with your Solana account:',address,'',i.statement,'','URI: '+i.uri,'Version: '+i.version,'Chain ID: '+chain.split(':')[1],'Nonce: '+i.nonce,'Issued At: '+i.issuedAt,'Expiration Time: '+i.expirationTime,'Resources:','- '+url].join('\n');
+          const sig=sign(null,Buffer.from(message),key);if(!verify(null,Buffer.from(message),pub,sig))throw Error('SIGNATURE');
+          const proof={...info,address,signature:b58(sig)};
+          const auth=await request(path,{method:'POST',headers:{'SIGN-IN-WITH-X':Buffer.from(JSON.stringify(proof)).toString('base64url')}});
+          if(!auth.r.ok){emit('AUTH_FAILED',{status:auth.r.status,code:auth.j.errorCode??null});process.exit(1);}
+          const u=auth.j;
+          if(u.ok!==true||u.auth!=='siwx'||u.paid!==false||u.network!=='solana'||u.walletAddress!==address||u.accountType!=='agent'||typeof u.accountId!=='string'||typeof u.apikey!=='string'||!u.apikey)throw Error('ACCOUNT_RESPONSE');
+          const headers={'X-API-Key':u.apikey};
+          console.log('::add-mask::'+u.apikey);
+          emit('WURK_AGENT_ACTIVE',{id:u.accountId,address,created:u.created,paid:false});
+          async function read(p){const {r,j}=await request(p,{headers});if(!r.ok)throw Error('HTTP_'+r.status+'_'+String(j.errorCode??'UNKNOWN').slice(0,80));return j;}
+          const profile=await read('/profile');
+          if(profile.accountId!==u.accountId||profile.accountType!=='agent')throw Error('PROFILE_MISMATCH');
+          emit('WURK_PROFILE',{verified:profile.humanVerified??null,balances:profile.balances??null});
+          emit('OWNER_VERIFICATION_STATUS',{status:profile.humanVerification?.status??null,verified:profile.humanVerified===true,expiresAt:profile.humanVerification?.expiresAt??null});
+          const history=await read('/wurker/submissions');
+          const rows=history.submissions;
+          if(!Array.isArray(rows)||history.accountId!==u.accountId)throw Error('HISTORY_SCHEMA');
+          emit('WURK_OWN_SUBMISSIONS',{count:rows.length,rows:rows.map(x=>({id:x.submission_short_id??x.id,job:x.custom_short_id??x.jobId,status:x.status??x.submission_status,created:x.created_at??x.createdAt,payout:x.payout_status??x.payoutStatus??null,amount:x.reward_amount??x.amount??null}))});
+          for(const id of ['0x2d6c97c911c6dd928ced4a6cc1754ffff99dbd6de1cdba3132ba3e64b375f6ce','0xb9e4a1326704af63008ad7298351d2a6143be6de9371652ae1f85cc001d3ba88']){
+            try{
+              const res=await fetch('https://api.taskmarket.dev/api/tasks/'+id,{redirect:'error',signal:AbortSignal.timeout(10000)}),v=await res.json(),t=v.task??v.data?.task??v.data??v;
+              const a=Array.isArray(t.awards)?t.awards:[];
+              const mine=a.filter(x=>String(x.workerAddress??x.worker??'').toLowerCase()==='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431');
+              emit('BASE_TASK_AWARD',{id,http:res.status,status:t.status,phase:t.phase,awardCount:t.awardCount??a.length,ownAwards:mine.map(x=>({id:x.submissionId,status:x.status,amount:x.workerPayment,tx:x.settlementTxHash}))});
+            }catch(e){emit('BASE_TASK_UNAVAILABLE',{id,error:String(e.message).slice(0,100)})}
+          }
+          emit('AUDIT_ONLY',{transactions:0,fees:0});
+          JS
