@@ -1,0 +1,17 @@
+{
+  "name": "toyol-bitcoin-data-doctor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test.mjs",
+    "build": "wrangler deploy --dry-run --outdir dist"
+  },
+  "dependencies": {
+    "@aibtc/x402-stacks-agents": "https://github.com/aibtcdev/cloudflare-agents-x402/releases/download/x402-stacks-agents-v0.1.0/aibtc-x402-stacks-agents-0.1.0.tgz",
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
