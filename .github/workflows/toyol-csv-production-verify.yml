@@ -34,4 +34,17 @@ jobs:
           const invalid=await post({csv:'id\n"bad'});assert.equal(invalid.status,400);
           const badPay=await post(sample,{'payment-signature':'invalid'});assert.ok([400,402].includes(badPay.status));
           console.log('TOYOL_PRODUCTION_REJECTION_PASS '+JSON.stringify({invalidCsv:invalid.status,invalidPayment:badPay.status,spend:0}));
+          let probe;
+          for(let i=0;i<6;i++){
+            probe=await post({});
+            if(probe.status===402)break;
+            if(i<5)await new Promise(r=>setTimeout(r,10000));
+          }
+          assert.equal(probe.status,402);
+          const discovery=JSON.parse(Buffer.from(probe.headers.get('payment-required'),'base64').toString('utf8'));
+          assert.equal(discovery.accepts.find(x=>x.network==='eip155:8453').amount,'10000');
+          assert.equal((await post({}, {'payment-signature':'invalid'})).status,400);
+          console.log('TOYOL_PUBLIC_DISCOVERY_PROBE_PASS '+JSON.stringify({unsignedEmpty:402,signedEmpty:400,paid:false}));
+          const c=await fetch('https://settled.tools/v1/peek?url='+encodeURIComponent(base+'/v1/csv/audit'),{signal:AbortSignal.timeout(15000)});
+          console.log('TOYOL_SETTLED_PEEK '+JSON.stringify({http:c.status,result:(await c.text()).slice(0,5000)}));
           JS
