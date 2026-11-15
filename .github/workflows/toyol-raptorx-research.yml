@@ -1,0 +1,117 @@
+name: Toyol — RaptorX original research evidence
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-raptorx-research.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-raptorx-research
+  cancel-in-progress: false
+jobs:
+  research:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.18.0'
+      - name: Generate genuine public Solana research evidence if free and available
+        run: |
+          set -euo pipefail
+          mkdir -p out "$RUNNER_TEMP/raptorx"
+          npm install --prefix "$RUNNER_TEMP/raptorx" --no-audit --no-fund playwright@1.56.1
+          "$RUNNER_TEMP/raptorx/node_modules/.bin/playwright" install --with-deps chromium
+          node --input-type=module - "$RUNNER_TEMP/raptorx/node_modules/playwright/index.mjs" <<'JS'
+          import fs from 'node:fs';
+          const {chromium}=await import(process.argv[2]);
+          const browser=await chromium.launch({headless:true});
+          const page=await browser.newPage({viewport:{width:1440,height:1000}});
+          const result={stage:'started',report_generated:false,question_answered:false,payment:false,submission:false};
+          const save=async(name)=>{
+            await page.screenshot({path:'out/'+name+'.png',fullPage:false});
+            fs.writeFileSync('out/'+name+'.txt',(await page.locator('body').innerText()).slice(0,30000));
+          };
+          const body=()=>page.locator('body').innerText();
+          const fee=/\b(?:subscribe now|upgrade to (?:pro|premium)|purchase credits|insufficient credits|payment required|connect (?:your )?wallet|sign (?:a |the )?transaction|buy credits)\b/i;
+          try{
+            await page.goto('https://www.raptorx.trade/solana',{waitUntil:'domcontentloaded',timeout:45000});
+            await page.waitForTimeout(12000);
+            await save('01-market');
+            result.stage='market_loaded';
+            const search=page.getByPlaceholder(/search here/i).first();
+            if(await search.isVisible().catch(()=>false)){await search.fill('SOL');await page.waitForTimeout(4000);}
+            let selected=false;
+            // Select an actual SOL row, never a lookalike ticker or a transaction control.
+            const rows=page.locator('tr');
+            for(let i=0;i<Math.min(await rows.count(),80);i++){
+              const row=rows.nth(i),text=await row.innerText();
+              if(!/\b(?:Solana|SOL\/SOL|Wrapped SOL)\b/i.test(text)||!/\bSOL\b/.test(text))continue;
+              const report=row.getByRole('button',{name:/^(?:generate|ai report|view report)$/i}).first();
+              const control=await report.isVisible().catch(()=>false);
+              if(control){await report.click();selected=true;break;}
+              const token=row.getByText(/^(?:Solana|SOL|Wrapped SOL)$/i).first();
+              if(await token.isVisible().catch(()=>false)){await token.click();selected=true;break;}
+            }
+            if(!selected){
+              const token=page.getByText(/^(?:SOL\/SOL|Solana|Wrapped SOL)$/i).filter({visible:true});
+              if(await token.count()===1){await token.click();selected=true;}
+            }
+            if(!selected){result.stage='no_unambiguous_SOL_report_control';return;}
+            await page.waitForTimeout(5000);
+            await save('02-selected');
+            let visible=await body();
+            if(fee.test(visible)){result.stage='cost_or_wallet_gate';return;}
+            const generate=page.getByRole('button',{name:/^(?:generate all|generate report|generate)$/i}).first();
+            if(await generate.isVisible().catch(()=>false)){
+              if(await generate.isEnabled()){await generate.click();await page.waitForTimeout(18000);}
+            }
+            for(let i=0;i<5;i++){
+              visible=await body();
+              if(fee.test(visible)){result.stage='cost_or_wallet_gate';return;}
+              if(/(?:RSI|MACD|liquidity)/i.test(visible)&&/(?:bullish|bearish|neutral|analysis|support|resistance|momentum)/i.test(visible)&&!(/generating report|report in progress/i.test(visible)))break;
+              await page.waitForTimeout(6000);
+            }
+            await save('03-report');
+            visible=await body();
+            // A chart or ordinary market table alone is not evidence of a generated report.
+            const lines=visible.split('\n').map(x=>x.trim()).filter(x=>x.length>90&&/(?:RSI|MACD|liquidity|momentum|support|resistance|volume)/i.test(x));
+            if(!lines.length){result.stage='report_not_verified';return;}
+            result.report_generated=true;
+            result.stage='report_verified';
+            const evidence=lines.slice(0,3).join(' ').slice(0,1000);
+            const question='Your SOL report states: '+evidence+' Which parts of that interpretation would remain true after adjusting for market-wide Solana activity and liquidity changes? Give two competing explanations, one observable falsification criterion for each, and identify which required measurements are absent from this report. Distinguish evidence of directional demand from indicators derived from the same price series; do not infer causation merely from agreement between MACD and RSI.';
+            const ai=page.getByRole('button',{name:/Claw AI/i}).first();
+            if(await ai.isVisible().catch(()=>false)){await ai.click();await page.waitForTimeout(3500);}
+            const input=page.locator('textarea').filter({visible:true}).first();
+            if(!(await input.isVisible().catch(()=>false))){result.stage='report_ready_chat_requires_access';return;}
+            if(fee.test(await body())){result.stage='chat_cost_or_wallet_gate';return;}
+            await input.fill(question);
+            const send=page.getByRole('button',{name:/^(?:send|submit|ask)$/i}).first();
+            if(await send.isVisible().catch(()=>false)){if(!(await send.isEnabled())){result.stage='chat_disabled';return;}await send.click();}
+            else await input.press('Enter');
+            await page.waitForTimeout(22000);
+            await save('04-question');
+            const answered=await body();
+            fs.writeFileSync('out/question.txt',question);
+            // Leave answer status unverified unless a meaningful response follows the exact question.
+            const after=answered.indexOf(question);
+            if(after>=0&&answered.slice(after+question.length).trim().length>350){
+              result.question_answered=true;
+              result.stage='research_and_question_evidence_ready_for_review';
+            }else result.stage='question_sent_answer_not_verified';
+          }catch(e){result.stage='browser_blocked';result.error=String(e.message).slice(0,200);}
+          finally{
+            fs.writeFileSync('out/status.json',JSON.stringify(result,null,2));
+            console.log('RAPTORX_RESULT',JSON.stringify(result));
+            await browser.close();
+          }
+          JS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: raptorx-original-research-evidence
+          path: out/
+          retention-days: 7
+          if-no-files-found: ignore
