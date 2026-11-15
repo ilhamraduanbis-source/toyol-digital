@@ -66,7 +66,7 @@ jobs:
           if(!Array.isArray(rows)){emit('JOB_SCHEMA',{keys:Object.keys(page)});process.exit(0);}
           emit('AVAILABLE',{count:rows.length,hasMore:page.hasMore??page.pagination?.hasMore??null,additionalVerifiedJobs:page.proofOfHumanOpportunity?.additionalJobs??null});
           for(const x of rows.slice(0,30))emit('JOB',{id:x.customId??x.id??x.custom_id??x.short_id,mode:x.mode??x.jobMode??x.job_mode,description:String(x.description??x.message_markdown??x.descriptionPreview??x.title??'').slice(0,600),reward:x.reward??x.rewardFinancials??x.gross_pool??null,fields:Object.keys(x)});
-          const eligible=rows.filter(x=>{const s=JSON.stringify(x);return !/twitter|instagram|telegram|discord|social media|casino|gambling|betting|referral|airdrop|buy tokens|deposit|proof.of.human|repost|follow us/i.test(s);}).slice(0,3);
+          const eligible=rows.filter(x=>{const s=JSON.stringify(x);return !/twitter|instagram|telegram|discord|social media|casino|gambling|betting|referral|airdrop|buy tokens|deposit|proof.of.human|repost|follow us/i.test(s);}).slice(0,5);
           for(let n=0;n<eligible.length;n++){
             if(n)await new Promise(r=>setTimeout(r,11000));
             const x=eligible[n],id=x.customId??x.id??x.custom_id??x.short_id;
