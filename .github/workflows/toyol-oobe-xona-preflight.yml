@@ -1,0 +1,68 @@
+name: Toyol — OOBE and XONA no-cost preparation
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-oobe-xona-preflight.yml']
+permissions:
+  contents: read
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Discover OOBE tools, make free reads and inspect payment quotes
+        run: |
+          node --input-type=module <<'JS'
+          const endpoint='https://mcp.sap.oobeprotocol.ai/mcp', wallet='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ',sol='So11111111111111111111111111111111111111112',usdc='EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+          let session,protocol='2025-03-26',id=0;
+          async function mcp(method,params,notify=false){
+            const body={jsonrpc:'2.0',...(notify?{}:{id:++id}),method,params};
+            const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream',...(session?{'Mcp-Session-Id':session,'MCP-Protocol-Version':protocol}:{})},body:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(12000)});
+            session=r.headers.get('mcp-session-id')??session;
+            const txt=await r.text();let j;
+            try{j=JSON.parse(txt)}catch{const data=txt.split('\n').filter(x=>x.startsWith('data:')).map(x=>x.slice(5).trim());for(const line of data)try{const v=JSON.parse(line);if(v.id===id||!j)j=v}catch{}}
+            return {status:r.status,j,payment:r.headers.get('payment-required')??r.headers.get('x-payment-required')??null};
+          }
+          try{
+            const init=await mcp('initialize',{protocolVersion:protocol,capabilities:{},clientInfo:{name:'toyol-readonly',version:'1.0.0'}});
+            if(!init.j?.result)throw Error('INIT_'+init.status);
+            protocol=init.j.result.protocolVersion??protocol;
+            await mcp('notifications/initialized',{},true);
+            let tools=[],cursor;
+            for(let p=0;p<8;p++){const l=await mcp('tools/list',cursor?{cursor}:{});if(!Array.isArray(l.j?.result?.tools))throw Error('LIST_'+l.status);tools.push(...l.j.result.tools);cursor=l.j.result.nextCursor;if(!cursor)break;}
+            const wanted=['sol_get_balance','jupiter_getPrice','jupiter_getQuote'];
+            const targets=tools.filter(t=>wanted.includes(t.name));
+            console.log('OOBE_TOOL_SCHEMAS '+JSON.stringify(targets.map(t=>({name:t.name,inputSchema:t.inputSchema}))));
+            function argsFor(t){
+              const s=t.inputSchema??{},p=s.properties??{},args={};
+              for(const [k,v] of Object.entries(p)){
+                const key=k.toLowerCase(),arr=v.type==='array';
+                if(/^(address|pubkey|publickey|wallet|walletaddress|owner|account)$/.test(key))args[k]=wallet;
+                else if(/^(ids|mints|mintaddresses|tokens|tokenmints)$/.test(key))args[k]=arr?[sol]:sol;
+                else if(/^(mint|token|tokenmint)$/.test(key))args[k]=sol;
+                else if(key==='inputmint')args[k]=sol;
+                else if(key==='outputmint')args[k]=usdc;
+                else if(key==='amount')args[k]=v.type==='string'?'100000000':100000000;
+                else if(key==='slippagebps')args[k]=50;
+                else if(key==='commitment')args[k]='finalized';
+                else if((s.required??[]).includes(k)&&v.default!==undefined)args[k]=v.default;
+              }
+              if((s.required??[]).some(k=>!(k in args)))return null;
+              return args;
+            }
+            for(const t of targets){
+              const args=argsFor(t);if(!args){console.log('OOBE_SCHEMA_REVIEW '+t.name);continue}
+              const r=await mcp('tools/call',{name:t.name,arguments:args});
+              console.log('OOBE_RESULT '+JSON.stringify({name:t.name,args,status:r.status,result:r.j??null,paymentChallenge:!!r.payment}).slice(0,12000));
+            }
+          }catch(e){console.log('OOBE_PREPARATION_STOP '+String(e.message).slice(0,180))}
+          try{
+            const r=await fetch('https://api.xona-agent.com/image/gpt-image-2',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({prompt:'A clean, original emblem for Toyol Digital, a tiny autonomous digital worker, abstract circuit motif, no lettering.'}),redirect:'error',signal:AbortSignal.timeout(12000)});
+            const txt=await r.text();let j;try{j=JSON.parse(txt)}catch{}
+            const raw=r.headers.get('payment-required')??r.headers.get('x-payment-required');let challenge=j;
+            if(raw)try{challenge=JSON.parse(Buffer.from(raw,'base64').toString())}catch{}
+            console.log('XONA_QUOTE '+JSON.stringify({status:r.status,accepts:challenge?.accepts?.map(x=>({network:x.network,asset:x.asset,amount:x.amount??x.maxAmountRequired,scheme:x.scheme})),code:j?.errorCode??null}).slice(0,3000));
+          }catch(e){console.log('XONA_QUOTE_STOP '+String(e.message).slice(0,180))}
+          console.log('NO_KEYS_NO_PAYMENT_NO_SUBMISSION');
+          JS
