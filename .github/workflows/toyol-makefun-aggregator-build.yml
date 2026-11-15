@@ -55,7 +55,7 @@ jobs:
           timeout 90 opencode models --standalone > "$RUNNER_TEMP/makefun/models.txt"
           # Verify a zero-priced model from the public pricing catalog AND the actual local model list.
           curl --fail --silent --show-error --max-time 20 https://models.dev/api.json -o "$RUNNER_TEMP/makefun/prices.json"
-          MODEL=$(python3 - "$RUNNER_TEMP/makefun/models.txt" "$RUNNER_TEMP/makefun/prices.json" <<'PY'
+          python3 - "$RUNNER_TEMP/makefun/models.txt" "$RUNNER_TEMP/makefun/prices.json" > "$RUNNER_TEMP/makefun/free-candidates.txt" <<'PY'
           import json,sys,re
           avail=set(re.findall(r"opencode/[A-Za-z0-9_.-]+",open(sys.argv[1]).read()))
           data=json.load(open(sys.argv[2])).get("opencode",{}).get("models",{})
@@ -65,11 +65,33 @@ jobs:
               if "opencode/"+mid in avail and (mid.endswith("-free") or mid=="big-pickle") and cost.get("input")==0 and cost.get("output")==0:
                   choices.append(mid)
           if not choices:raise SystemExit("NO_VERIFIED_FREE_MODEL")
-          order=["mai-code-1.1-flash-free","deepseek-v4.1-flash-free","glm-5.3-flash-free","big-pickle"]
+          order=["glm-5.3-flash-free","big-pickle","minimax-m3.1-flash-free","mai-code-1.1-flash-free","deepseek-v4.1-flash-free"]
           choices.sort(key=lambda x:(order.index(x) if x in order else len(order),x))
-          print("opencode/"+choices[0])
+          print("\n".join("opencode/"+x for x in choices[:5]))
           PY
-          )
+          # Probe actual provider availability in a separate home/repository before building.
+          # An advertised free model is not necessarily accepting requests.
+          MODEL=""
+          probe="$RUNNER_TEMP/makefun/provider-probe"
+          mkdir -p "$probe"
+          while IFS= read -r candidate; do
+            mkdir -p "$probe/home" "$probe/work"
+            set +e
+            (cd "$probe/work" && HOME="$probe/home" XDG_DATA_HOME="$probe/home/.local/share" XDG_CONFIG_HOME="$probe/home/.config" XDG_STATE_HOME="$probe/home/.local/state" XDG_CACHE_HOME="$probe/home/.cache" timeout --kill-after=5s 45s opencode run --standalone --model "$candidate" --format json 'Respond with exactly TOYOL_READY_7. Do not use tools.' </dev/null) > "$probe/response.jsonl" 2> "$probe/stderr"
+            status=$?
+            set -e
+            echo "FREE_PROVIDER_PROBE $candidate exit=$status"
+            if [ "$status" -eq 0 ] && python3 - "$probe/response.jsonl" <<'PY'
+          import json,sys
+          for line in open(sys.argv[1]):
+              try: j=json.loads(line)
+              except ValueError: continue
+              if j.get("type")=="text" and "TOYOL_READY_7" in str((j.get("part") or {}).get("text","")):sys.exit(0)
+          sys.exit(1)
+          PY
+            then MODEL="$candidate"; break; fi
+          done < "$RUNNER_TEMP/makefun/free-candidates.txt"
+          test -n "$MODEL" || { echo 'NO_RESPONSIVE_ZERO_PRICE_PROVIDER'; exit 1; }
           echo "VERIFIED_FREE_MODEL $MODEL"
           python3 - "$MODEL" <<'PY'
           import json,sys
@@ -82,6 +104,7 @@ jobs:
           set -e
           echo "INITIAL_AGENT_EXIT $rc"
           test -s main.ts
+          if [ "$rc" -ne 0 ] && git diff --quiet HEAD -- main.ts lib; then echo "FIRST_AGENT_NO_SOURCE_CHANGE"; exit 1; fi
           # A timeout may leave genuine useful edits; continue only with the recorded native session.
           for n in 2 3 4; do
             case "$n" in
