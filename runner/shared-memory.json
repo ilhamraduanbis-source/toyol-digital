@@ -247,6 +247,18 @@
       "skippedSteps": [],
       "lesson": "Verify actual platform report controls and report output, not browser exit code. Stop on ambiguous controls or cost gates.",
       "incomeInferred": false
+    },
+    {
+      "worker": "protocol-analysis",
+      "runId": 43715855624,
+      "attempt": 1,
+      "completedAt": "2026-11-15T12:50:17Z",
+      "sourceCommit": "5280a051140efc7c5a7832e49aac8c59f040d16c",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
     }
   ]
 }
