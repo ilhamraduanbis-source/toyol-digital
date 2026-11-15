@@ -2,15 +2,13 @@ import { Hono } from "hono";
 import { paymentMiddleware, x402ResourceServer } from "@x402/hono";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { HTTPFacilitatorClient } from "@x402/core/server";
-import { declareDiscoveryExtension } from "@x402/extensions/bazaar";
+import { declareDiscoveryExtension, bazaarResourceServerExtension } from "@x402/extensions/bazaar";
 import { auditCsv, MAX_BYTES } from "./audit.mjs";
 const app = new Hono();
 const PAY_TO="0xac57ad3c3f233e5865c3cd652f67ffc82a7af431";
 const network="eip155:8453";
-const facilitator = new HTTPFacilitatorClient({url:"https://facilitator.payai.network"});
-const server = new x402ResourceServer(facilitator).register(network,new ExactEvmScheme());
 const description="Audit a supplied UTF-8 CSV for malformed records, duplicate headers and rows, missing required values and duplicate unique keys. Returns counts, record locations and SHA-256 input fingerprint; no external data or stored rows.";
-const route={"POST /v1/csv/audit":{accepts:{scheme:"exact",price:"$0.01",network,payTo:PAY_TO},description,mimeType:"application/json",extensions:declareDiscoveryExtension({input:{csv:"id,name\n1,Ada\n",required:["name"],unique:["id"]},inputSchema:{properties:{csv:{type:"string",description:"UTF-8 CSV, maximum 128 KiB, header required"},required:{type:"array",items:{type:"string"}},unique:{type:"array",items:{type:"string"}}},required:["csv"]},output:{example:{schema:"toyol.csv-evidence.v1",records:1,columns:2,pass:true,totalFindings:0},schema:{type:"object",properties:{schema:{type:"string"},records:{type:"integer"},columns:{type:"integer"},pass:{type:"boolean"},totalFindings:{type:"integer"},sha256:{type:"string"},findings:{type:"array",items:{type:"object"}}}}}})}};
+const route={"POST /v1/csv/audit":{accepts:{scheme:"exact",price:"$0.01",network,payTo:PAY_TO},description,mimeType:"application/json",extensions:declareDiscoveryExtension({bodyType:"json",input:{csv:"id,name\n1,Ada\n",required:["name"],unique:["id"]},inputSchema:{properties:{csv:{type:"string",description:"UTF-8 CSV, maximum 128 KiB, header required"},required:{type:"array",items:{type:"string"}},unique:{type:"array",items:{type:"string"}}},required:["csv"]},output:{example:{schema:"toyol.csv-evidence.v1",records:1,columns:2,pass:true,totalFindings:0},schema:{type:"object",properties:{schema:{type:"string"},records:{type:"integer"},columns:{type:"integer"},pass:{type:"boolean"},totalFindings:{type:"integer"},sha256:{type:"string"},findings:{type:"array",items:{type:"object"}}}}}})}};
 app.get("/",c=>c.json({service:"Toyol CSV Evidence",version:"1.0",description,route:"POST /v1/csv/audit",price:"0.01 USDC",network,payTo:PAY_TO,privacy:"No persistent storage or request logging by application. Do not submit sensitive personal data."}));
 app.get("/health",c=>c.json({ok:true}));
 app.use("/v1/csv/audit",async(c,next)=>{
@@ -31,6 +29,12 @@ app.use("/v1/csv/audit",async(c,next)=>{
  }catch(e){return c.json({error:"Invalid CSV or request rules"},400);}
  await next();
 });
-app.use("/v1/csv/audit",paymentMiddleware(route,server));
+// Worker networking must start inside a request, never module initialization.
+// A request-scoped server also avoids sharing pending I/O across Worker requests.
+app.use("/v1/csv/audit",async(c,next)=>{
+ const facilitator = new HTTPFacilitatorClient({url:"https://facilitator.payai.network"});
+ const server = new x402ResourceServer(facilitator).register(network,new ExactEvmScheme()).registerExtension(bazaarResourceServerExtension);
+ return paymentMiddleware(route,server)(c,next);
+});
 app.post("/v1/csv/audit",c=>c.json(c.get("report")));
 export default app;
