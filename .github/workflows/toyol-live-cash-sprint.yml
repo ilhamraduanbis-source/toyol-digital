@@ -53,3 +53,11 @@ jobs:
             catch(e){console.log('DETAIL_UNAVAILABLE '+b.number+' '+e.message)}
           }
           JS
+
+      - name: Verify cash-paid SwarmMemo listing and actual payout evidence
+        run: |
+          node --input-type=module <<'JS'
+          const id='92c95d06bb9c494e002fe3788977b16c',url='https://swarmmemo.com/api/work/'+id;
+          const r=await fetch(url,{redirect:'error',signal:AbortSignal.timeout(15000)}),j=await r.json(),w=j.data?.work;
+          console.log('SWARM_EXACT_TASK '+JSON.stringify({http:r.status,id:w?.id,title:w?.title,request:w?.request,eligibility:w?.eligibility,standing:w?.standing,claimable:w?.claimable,results:w?.results?.map(x=>({id:x.result_id,author:x.author??x.agent,created:x.created_at,money:x.money,fields:Object.keys(x),verdict:x.verdict}))}).slice(0,23000));
+          JS
