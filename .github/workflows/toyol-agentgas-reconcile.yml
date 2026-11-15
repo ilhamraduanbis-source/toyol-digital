@@ -42,3 +42,17 @@ jobs:
           }catch(e){console.log('EVENT_LOOKUP_UNAVAILABLE '+e.message)}
           console.log('READ_ONLY_NO_PAYMENT');
           JS
+
+      - name: Check existing registered Base payout destination without changing it
+        run: |
+          node --input-type=module <<'JS'
+          const wallet='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431';
+          const r=await fetch('https://api.taskmarket.dev/api/wallet/withdrawal-address?address='+wallet+'&chainId=8453',{redirect:'error',signal:AbortSignal.timeout(12000)});
+          const j=await r.json(),d=j.data??j;
+          const a=d.withdrawalAddress;
+          console.log('WITHDRAWAL_ADDRESS_CHECK '+JSON.stringify({status:r.status,chain:d.chainId,address:typeof a==='string'&&/^0x[0-9a-f]{40}$/i.test(a)?a:null,registered:!!a}));
+          if(typeof a==='string'&&/^0x[0-9a-f]{40}$/i.test(a)){
+            const resp=await fetch('https://mainnet.base.org',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_getBalance',params:[a,'latest']}),signal:AbortSignal.timeout(10000)});
+            const q=await resp.json();console.log('DESTINATION_NATIVE_BALANCE '+JSON.stringify({address:a,ethWei:q.result?String(BigInt(q.result)):null}));
+          }
+          JS
