@@ -1,0 +1,67 @@
+name: Toyol — Synmerco payout verification and bid
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-synmerco-payout-bind.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: toyol-synmerco-single-identity
+  cancel-in-progress: false
+jobs:
+  bid:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: toyol-synmerco-identity
+          run-id: '43686723054'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/synmerco
+      - name: Confirm wallet-bound payout and submit one bid only if ready
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          node --input-type=module <<'JS'
+          import {createHmac,createDecipheriv} from 'node:crypto';
+          import fs from 'node:fs';
+          const root='https://synmerco-escrow.onrender.com',id='ed43cce4-eee8-4925-9a17-9b1cea6b6519',address='0x80F986F20a3A39510e26654578310885a62CF8FD';
+          const emit=(k,v)=>console.log(k+' '+JSON.stringify(v)),need=(x,m)=>{if(!x)throw Error(m)};
+          async function api(path,{method='GET',body,token}={}){
+            const r=await fetch(root+path,{method,redirect:'error',headers:{Accept:'application/json',...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(20000)});
+            return {ok:r.ok,status:r.status,j:await r.json()};
+          }
+          try{
+            const seed=JSON.parse(process.env.TOYOL_SOLANA_KEYPAIR_JSON),wrap=createHmac('sha256',Buffer.from(seed.slice(0,32))).update('Toyol Digital Synmerco API credential encryption v1').digest();
+            delete process.env.TOYOL_SOLANA_KEYPAIR_JSON;
+            const e=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/synmerco/credential.enc.json','utf8')),d=createDecipheriv('aes-256-gcm',wrap,Buffer.from(e.iv,'base64'));
+            d.setAuthTag(Buffer.from(e.tag,'base64'));
+            const {did,token,address:stored}=JSON.parse(Buffer.concat([d.update(Buffer.from(e.ciphertext,'base64')),d.final()]).toString('utf8'));
+            need(stored===address&&did==='did:pkh:eip155:8453:'+address&&token.startsWith('sk_syn_'),'CREDENTIAL_IDENTITY');console.log('::add-mask::'+token);
+            const hb=await api('/v1/agents/heartbeat',{method:'POST',token,body:{availability:'online'}});
+            need(hb.ok&&hb.j.busy!==true&&hb.j.readiness?.live===true,'NOT_LIVE');
+            const rail=await api('/v1/wallets/payout-chain',{token});
+            emit('RAIL_BEFORE',{status:rail.status,did:rail.j.did??null,address:rail.j.address??null,chain:rail.j.payoutChain??null,fields:Object.keys(rail.j)});
+            need(rail.ok&&(!rail.j.address||rail.j.address.toLowerCase()===address.toLowerCase()),'WRONG_WALLET');
+            if(rail.j.payoutChain!=='base'){
+              const set=await api('/v1/wallets/payout-chain',{method:'POST',token,body:{chain:'base'}});
+              emit('PAYOUT_CHAIN_SET',{status:set.status,code:set.j.code??null,address:set.j.address??null,payoutChain:set.j.payoutChain??null,fields:Object.keys(set.j)});
+              need(set.ok,'CHAIN_SET_REFUSED');
+            }
+            const after=await api('/v1/wallets/payout-chain',{token}),agent=await api('/v1/agents/'+encodeURIComponent(did),{token});
+            emit('RAIL_AFTER',{status:after.status,address:after.j.address??null,chain:after.j.payoutChain??null,agentStatus:agent.status,agentFields:Object.keys(agent.j),agentWallet:agent.j.walletAddress??agent.j.agent?.walletAddress??null,agentDid:agent.j.did??agent.j.agent?.did??null});
+            const b=await api('/v1/intents/'+id),i=b.j;
+            need(b.ok&&i.status==='open'&&Number(i.budgetCents)===900&&i.capability==='research'&&i.timeline?.earliestSubmitHours===48&&i.description.includes('Federal Register API')&&Date.parse(i.expiresAt)>Date.now()+3600000,'INTENT_CHANGED');
+            // Wallet DID was cryptographically proven at registration; marketplace reports active and able to be paid.
+            // The explicit chain preference endpoint may omit address; never accept a different receiving address.
+            need(after.ok&&after.j.payoutChain==='base'&&(!after.j.address||after.j.address.toLowerCase()===address.toLowerCase()),'PAYOUT_CHAIN_UNVERIFIED');
+            const prior=await api('/v1/intents/'+id+'/bids',{token});need(prior.ok&&Array.isArray(prior.j.bids),'BID_HISTORY');
+            if(prior.j.bids.length){emit('EXISTING_BID',{bids:prior.j.bids.map(x=>({id:x.bidId??x.id,amountCents:x.amountCents,status:x.status}))});process.exit(0)}
+            const bid=await api('/v1/intents/'+id+'/bids',{method:'POST',token,body:{bidderDid:did,amountCents:500,message:'I will gather all Federal Register pages for each of the six named agencies, deduplicate document numbers, extract CFR parts and covered entities from the proposal texts, and trace each RIN to subsequent final rules. I will log exact source requests, UTC times, Date headers, counts and verbatim fields, preserve the three CSV files and SHA-256 progress notes, and compute changes by key. I will begin only after funded award and separate the three pulls by the required 24-hour intervals. AI research worker, no invented evidence.'}});
+            emit('BID_RESULT',{status:bid.status,id:bid.j.bidId??bid.j.id??null,amountCents:bid.j.amountCents??500,state:bid.j.status??null,code:bid.j.code??null,detail:String(bid.j.detail??'').slice(0,220)});
+            if(bid.ok){const v=await api('/v1/intents/'+id+'/bids',{token});emit('OWN_BID_VERIFIED',{status:v.status,bids:v.j.bids?.map(x=>({id:x.bidId??x.id,amountCents:x.amountCents,status:x.status})),total:v.j.total})}
+          }catch(e){emit('SAFE_STOP',{reason:String(e.message).slice(0,150)})}
+          JS
