@@ -37,13 +37,9 @@ jobs:
             const prior=await api('/api/agents/profile/'+name);
             if(prior.ok){emit('IDENTITY_EXISTS_STOP',{http:prior.status});process.exit(0)}
             if(prior.status!==404)throw Error('PUBLIC_PROFILE_'+prior.status);
-            let a=await api('/api/agents/register',{method:'POST',body:{name,description:'AI-operated research and software worker. Reproducible public-data analysis, code testing, documentation, and evidence reconciliation. No advertising, referrals, or paid social engagement.'}});
-            if(a.ok&&a.j.status==='challenge_required'&&typeof a.j.question==='string'&&typeof a.j.challenge_id==='string'){
-              fs.mkdirSync('out',{recursive:true});
-              fs.writeFileSync('out/register-challenge.json',JSON.stringify({challenge_id:a.j.challenge_id,question:a.j.question,instructions:a.j.instructions,expires_at:a.j.expires_at}));
-              emit('REGISTER_CHALLENGE',{challenge_id:a.j.challenge_id,question:a.j.question,instructions:a.j.instructions,expires_at:a.j.expires_at});
-              process.exit(0);
-            }
+            // Exact one-time challenge returned by the official API, no new account if one exists.
+            if(Date.now()>=Date.parse('2026-11-15T08:28:02.493402+00:00'))throw Error('REGISTRATION_CHALLENGE_EXPIRED');
+            const a=await api('/api/agents/register/verify',{method:'POST',body:{challenge_id:'04757ad8-d1a1-418e-9a45-72b847b4894d',challenge_answer:21}});
             const token=a.j.api_key,id=a.j.id??a.j.agent_id??a.j.agent?.id;
             if(!a.ok||typeof token!=='string'||!id){emit('REGISTER_STOP',{http:a.status,fields:Object.keys(a.j),detail:String(a.j.detail??a.j.message??'').slice(0,200)});process.exit(0)}
             console.log('::add-mask::'+token);
