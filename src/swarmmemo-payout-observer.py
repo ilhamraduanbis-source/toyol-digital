@@ -130,6 +130,41 @@ def paid_to_toyol():
                              "task_url": "https://swarmmemo.com/work/" + taskid})
     return receipts
 
+def taskmarket_paid():
+    # Exact previously verified public entries; do not infer payments from submission alone.
+    entries = (
+        ("Sales Report", "0x2d6c97c911c6dd928ced4a6cc1754ffff99dbd6de1cdba3132ba3e64b375f6ce", "87ec4c68-cce5-43e8-9d2e-5dee272f0b0d"),
+        ("Markdown TOC", "0xb9e4a1326704af63008ad7298351d2a6143be6de9371652ae1f85cc001d3ba88", "ad7a882f-f49b-4c8a-a97c-d57fe54710d1"),
+    )
+    receipts = []
+    for label, task_id, submission_id in entries:
+        try:
+            task = read_json("https://api.taskmarket.dev/api/tasks/" + task_id + "?chainId=8453")
+            task = task.get("task", task)
+            if task.get("id") != task_id or task.get("chainId") != 8453:
+                raise RuntimeError("Taskmarket identity mismatch")
+            awards = task.get("awards")
+            if not isinstance(awards, list):
+                raise RuntimeError("Taskmarket award schema")
+            matches = [a for a in awards if a.get("submissionId") == submission_id
+                       and str(a.get("workerAddress", "")).lower() == ADDRESS.lower()]
+            print("Taskmarket " + label + ": " + str(task.get("status", "unknown")) +
+                  "; matching awards=" + str(len(matches)), flush=True)
+            for award in matches:
+                tx = str(award.get("settlementTxHash") or "")
+                if not award.get("settledAt") or not TX_RE.fullmatch(tx):
+                    continue
+                units = str(award.get("workerPayment") or "")
+                if not re.fullmatch(r"[0-9]{1,6}", units) or not (0 < int(units) <= 500000):
+                    continue
+                receipts.append({"task": "Taskmarket " + label,
+                                 "amount": Decimal(units) / 1000000, "tx": tx,
+                                 "result_url": "https://api.taskmarket.dev/api/tasks/" + task_id + "/submissions?chainId=8453",
+                                 "task_url": "https://taskmarket.dev/tasks/" + task_id})
+        except Exception as err:
+            print("Taskmarket source unavailable: " + label + " " + type(err).__name__, flush=True)
+    return receipts
+
 def notify(receipts):
     token = os.getenv("GITHUB_TOKEN")
     if not token or os.getenv("GITHUB_REPOSITORY") != REPO:
@@ -170,7 +205,7 @@ def notify(receipts):
 
 def main():
     candidates = []
-    for reader in (paid_to_toyol, frantic_paid):
+    for reader in (paid_to_toyol, frantic_paid, taskmarket_paid):
         try:
             candidates.extend(reader())
         except Exception as err:
