@@ -16,14 +16,14 @@ jobs:
           node --input-type=module <<'JS'
           const user='0x2f4f4B790f1d899d02e3ba238cAbA8E104FB1142',recipient='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ',usdc='0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
           async function req(url,body){const r=await fetch(url,{method:body?'POST':'GET',headers:{Accept:'application/json',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),redirect:'error',signal:AbortSignal.timeout(20000)});return {status:r.status,j:await r.json()}}
-          for(const [kind,amount] of [['permit','200000'],['permit','300000'],['deposit','200000'],['deposit','300000']]){
+          for(const [kind,amount] of [['deposit','300000']]){
             try{
               const {status,j}=await req('https://api.relay.link/quote/v2',{user,recipient,originChainId:8453,destinationChainId:792703809,originCurrency:usdc,destinationCurrency:'11111111111111111111111111111111',amount,tradeType:'EXACT_INPUT',refundTo:user,...(kind==='permit'?{usePermit:true,permitExpiry:600}:{useDepositAddress:true,recoveryAddress:user})});
               const d=j.details??{},steps=j.steps??[];
               console.log('RELAY_SOL_QUOTE '+JSON.stringify({kind,amount,status,code:j.errorCode,message:j.message,in:d.currencyIn,out:d.currencyOut,fees:j.fees,steps:steps.map(s=>({id:s.id,kind:s.kind,action:s.action,depositAddress:s.depositAddress,items:s.items?.map(x=>({status:x.status,dataKeys:Object.keys(x.data??{}),to:x.data?.to,depositAddress:x.data?.depositAddress,check:x.check}))})),fields:Object.keys(j)}).slice(0,16000));
               const deposit=steps.find(s=>s.depositAddress)?.depositAddress??j.depositAddress;
               if(kind==='deposit'&&status===200&&typeof deposit==='string'&&/^0x[a-f0-9]{40}$/i.test(deposit)){
-                for(const extra of [100000,150000,200000]){
+                for(const extra of [100000]){
                   const gross=(Number(amount)+extra)/1e6,u=new URL('https://sendstables.com/api/v1/quote');
                   for(const [k,v] of Object.entries({from:'base',to:'base',amount:String(gross),recipient:deposit}))u.searchParams.set(k,v);
                   try{const q=await req(u.toString());console.log('SAME_CHAIN_QUOTE '+JSON.stringify({relayDeposit:deposit,desiredDeposit:amount,gross,status:q.status,quote:q.j}).slice(0,6500))}catch(e){console.log('SAME_CHAIN_STOP '+String(e.message).slice(0,150))}
@@ -36,3 +36,5 @@ jobs:
           }
           console.log('QUOTE_ONLY_NO_TRANSFER_NO_SIGNATURE');
           JS
+
+# Refresh the single 0.30 USDC deposit order for operator review; no transfers.
