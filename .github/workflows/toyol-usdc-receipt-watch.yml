@@ -35,6 +35,35 @@ jobs:
         if: always()
         run: node src/taskmarket-forge-watch.mjs
 
+
+      - name: Check finalized Base balance and recent incoming USDC; do not infer sales
+        if: always()
+        run: |
+          node --input-type=module <<'JS'
+          const wallet='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431',token='0x833589fcd6edb6e08f4c7c32d4f71b54bda02913';
+          const providers=['https://mainnet.base.org','https://base-rpc.publicnode.com'];
+          async function rpc(method,params){
+            for(const url of providers){
+              try{
+                const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),redirect:'error',signal:AbortSignal.timeout(10000)});
+                if(!r.ok)continue;const j=await r.json();if(!j.error&&j.result!==undefined)return j.result;
+              }catch{}
+            }
+            throw Error('RPC_UNAVAILABLE_'+method);
+          }
+          try{
+            if(await rpc('eth_chainId',[])!=='0x2105')throw Error('WRONG_CHAIN');
+            const f=await rpc('eth_getBlockByNumber',['finalized',false]);const end=BigInt(f.number);
+            const balance=await rpc('eth_call',[{to:token,data:'0x70a08231'+wallet.slice(2).padStart(64,'0')},f.number]);
+            console.log('TOYOL_FINALIZED_BALANCE '+JSON.stringify({block:end.toString(),usdcMicros:BigInt(balance).toString(),notProofOfNewIncome:true}));
+            const from=end>3600n?end-3600n:0n;
+            const logs=await rpc('eth_getLogs',[{address:token,fromBlock:'0x'+from.toString(16),toBlock:f.number,topics:['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',null,'0x'+wallet.slice(2).padStart(64,'0')]}]);
+            if(!Array.isArray(logs))throw Error('INVALID_LOG_RESPONSE');
+            const rows=logs.filter(x=>!x.removed&&x.address?.toLowerCase()===token&&x.topics?.[2]?.toLowerCase()==='0x'+wallet.slice(2).padStart(64,'0')&&BigInt(x.data)>0n).map(x=>({tx:x.transactionHash,block:BigInt(x.blockNumber).toString(),from:'0x'+x.topics[1].slice(-40),micros:BigInt(x.data).toString(),classification:'UNATTRIBUTED_TRANSFER_NOT_CONFIRMED_SALE'}));
+            console.log('TOYOL_RECENT_FINALIZED_INBOUND '+JSON.stringify({fromBlock:from.toString(),toBlock:end.toString(),count:rows.length,rows,coverage:'bounded recent window, not complete ledger',salesVerified:false}));
+          }catch(e){console.log('TOYOL_CHAIN_CHECK_UNAVAILABLE '+JSON.stringify({reason:String(e.message).slice(0,160),salesVerified:false}));}
+          JS
+
       - name: Record RM400 mission checkpoint (no revenue inference)
         if: always()
         run: |
