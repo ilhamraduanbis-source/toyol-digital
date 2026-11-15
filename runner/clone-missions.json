@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "maxConcurrent": 6,
+  "maxLaunchPerTick": 2,
+  "missions": [
+    {
+      "id": "aggregator",
+      "workflow": "toyol-makefun-aggregator-build.yml",
+      "mode": "adopt",
+      "deadlineUtc": "2026-11-16T02:30:00Z",
+      "purpose": "One original aggregator competition entry; existing duplicate and official grade gates."
+    },
+    {
+      "id": "raptorx",
+      "workflow": "toyol-raptorx-research.yml",
+      "mode": "adopt",
+      "purpose": "Genuine research evidence only; no entry or payment inferred."
+    },
+    {
+      "id": "frantic-delivery",
+      "workflow": "frantic-deliver.yml",
+      "mode": "scheduled",
+      "purpose": "Deliver existing reviewed funded assignments only."
+    },
+    {
+      "id": "swarmmemo-qa",
+      "workflow": "toyol-first-paid-qa.yml",
+      "mode": "scheduled",
+      "purpose": "Wait for the official seat opening; existing signed QA worker."
+    },
+    {
+      "id": "swarmmemo-data",
+      "workflow": "toyol-paid-data-brief.yml",
+      "mode": "scheduled",
+      "purpose": "Existing scheduled paid data worker; no early duplicate."
+    },
+    {
+      "id": "payment-reconciliation",
+      "workflow": "toyol-usdc-receipt-watch.yml",
+      "mode": "scheduled",
+      "purpose": "Verify and deduplicate real settlement, never count advertised prizes."
+    }
+  ]
+}
