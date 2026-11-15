@@ -1,0 +1,47 @@
+name: Toyol — Licium funded bounty watch
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-licium-watch.yml']
+  schedule:
+    - cron: '23 */6 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-licium-funded-watch
+  cancel-in-progress: false
+jobs:
+  watch:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Read Licium official public board and exact bounty funding state
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://www.licium.ai';
+          const emit=(k,v)=>console.log(k+' '+JSON.stringify(v));
+          async function get(path){
+            const r=await fetch(root+path,{headers:{Accept:'application/json','User-Agent':'Toyol-Digital/1.0 (bounded bounty discovery)'},redirect:'error',signal:AbortSignal.timeout(16000)});
+            if(!r.ok)throw Error('HTTP_'+r.status);
+            const s=await r.text();if(s.length>3000000)throw Error('RESPONSE_LIMIT');
+            return JSON.parse(s);
+          }
+          const j=await get('/v1/bounties?status=open'),d=j.data??j;
+          const rows=Array.isArray(d)?d:d.bounties??d.items??d.results;
+          if(!Array.isArray(rows))throw Error('BOARD_SCHEMA');
+          emit('LICIUM_BOARD',{at:new Date().toISOString(),count:rows.length,keys:Object.keys(j),pagination:j.pagination??d.pagination??null});
+          const safe=x=>({id:x.id??x.bounty_id,title:x.title,status:x.status,amount_usd:x.amount_usd,reward_usd:x.reward_usd,solver_net_usd:x.solver_net_usd,solver_amount_usd:x.solver_amount_usd,net_amount_usd:x.net_amount_usd,funded:x.funded,funding_status:x.funding_status,funding_state:x.funding_state,payment_status:x.payment_status,escrow_status:x.escrow_status,accepting_submissions:x.accepting_submissions,submission_count:x.submission_count,closes_at:x.closes_at,fields:Object.keys(x)});
+          const targets=rows.filter(x=>/Find a wrong file that passes/i.test(x.title??''));
+          for(const x of rows)emit('LICIUM_LISTING',safe(x));
+          for(const x of targets.slice(0,8)){
+            const id=x.id??x.bounty_id;
+            if(typeof id!=='string'||!/^[a-zA-Z0-9_-]{8,100}$/.test(id))continue;
+            try{
+              const q=await get('/v1/bounties/'+id),v=q.data?.bounty??q.bounty??q.data??q;
+              emit('LICIUM_EXACT',{...safe(v),id,description:String(v.description??'').slice(0,10000),public_funding:Object.fromEntries(Object.entries(v.funding??{}).filter(([k,w])=>/^(status|state|funded|amount_usd|paid_at|funded_at|currency|method)$/i.test(k)&&['string','number','boolean'].includes(typeof w))),payment_record:v.poster_payment_record??null,delivery_rules:v.submission_rules??v.acceptance_mode??null,checks:v.checks??v.check_set??null});
+            }catch(e){emit('LICIUM_DETAIL_STOP',{id,reason:e.message})}
+          }
+          emit('FINANCIAL_BOUNDARY',{spend:0,registration:0,submissions:0,note:'Listed reward or open state alone is not proof of funded escrow. No writes; preserve exact funding evidence and assess independently.'});
+          JS
