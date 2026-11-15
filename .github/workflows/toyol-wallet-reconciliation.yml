@@ -1,0 +1,77 @@
+name: Toyol — Finalized wallet reconciliation and live cash check
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-wallet-reconciliation.yml']
+permissions:
+  contents: read
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Reconcile public USDC transfers from known receipts; no signing
+        run: |
+          node --input-type=module <<'JS'
+          const wallet='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431',token='0x833589fcd6edb6e08f4c7c32d4f71b54bda02913';
+          const topic='0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',who='0x'+wallet.slice(2).padStart(64,'0');
+          const known=['0x5e1563608e7d4f8e7d699685712d108fc5cd3c16db8fd4f2f3c7397e2bdb67df','0x3b83d5dc24ee6c0d69a3db62e35a70d213359cc9f2918808b733b2b941b68897'];
+          const providers=['https://base-rpc.publicnode.com','https://mainnet.base.org'];
+          const emit=(k,v)=>console.log(k+' '+JSON.stringify(v));
+          async function rpc(method,params){
+            for(const url of providers){
+              try{
+                const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),redirect:'error',signal:AbortSignal.timeout(10000)});
+                if(!r.ok)continue;const j=await r.json();if(!j.error&&j.result!==undefined)return j.result;
+              }catch{}
+            }
+            throw Error('RPC_UNAVAILABLE_'+method);
+          }
+          const hex=n=>'0x'+n.toString(16);
+          async function balance(block){return BigInt(await rpc('eth_call',[{to:token,data:'0x70a08231'+wallet.slice(2).padStart(64,'0')},hex(block)]));}
+          try{
+            if(await rpc('eth_chainId',[])!=='0x2105')throw Error('WRONG_CHAIN');
+            const receipts=await Promise.all(known.map(tx=>rpc('eth_getTransactionReceipt',[tx])));
+            if(receipts.some((r,i)=>r?.status!=='0x1'||r.transactionHash.toLowerCase()!==known[i]))throw Error('RECEIPT_MISMATCH');
+            const start=receipts.map(r=>BigInt(r.blockNumber)).reduce((a,b)=>a<b?a:b);
+            const end=BigInt((await rpc('eth_getBlockByNumber',['finalized',false])).number);
+            if(end<start||end-start>500000n)throw Error('SCAN_RANGE_BOUND');
+            const before=await balance(start-1n),after=await balance(end);
+            emit('WALLET_BALANCE_BOUNDARY',{start:start.toString(),end:end.toString(),openingMicros:before.toString(),closingMicros:after.toString()});
+            const rows=[],failed=[];
+            function ingest(log,dir){if(log.removed||log.address.toLowerCase()!==token||log.topics[0]!==topic||log.topics[dir==='out'?1:2].toLowerCase()!==who)throw Error('LOG_MISMATCH');rows.push({tx:log.transactionHash,block:BigInt(log.blockNumber).toString(),index:BigInt(log.logIndex).toString(),from:'0x'+log.topics[1].slice(-40),to:'0x'+log.topics[2].slice(-40),micros:BigInt(log.data).toString(),dir});}
+            async function scan(a,b,dir){
+              try{
+                const topics=dir==='out'?[topic,who]:[topic,null,who];
+                const logs=await rpc('eth_getLogs',[{address:token,fromBlock:hex(a),toBlock:hex(b),topics}]);
+                if(!Array.isArray(logs))throw Error('LOG_SCHEMA');for(const l of logs)ingest(l,dir);
+              }catch(e){
+                if(b-a>4999n){const mid=(a+b)/2n;await scan(a,mid,dir);await scan(mid+1n,b,dir);}
+                else failed.push({from:a.toString(),to:b.toString(),dir,reason:String(e.message).slice(0,90)});
+              }
+            }
+            const jobs=[];
+            for(let a=start;a<=end;a+=20000n){const b=a+19999n>end?end:a+19999n;jobs.push([a,b,'in'],[a,b,'out']);}
+            let cursor=0;
+            await Promise.all(Array.from({length:2},async()=>{while(cursor<jobs.length){const job=jobs[cursor++];await scan(...job);await new Promise(r=>setTimeout(r,150));}}));
+            rows.sort((a,b)=>BigInt(a.block)<BigInt(b.block)?-1:BigInt(a.block)>BigInt(b.block)?1:Number(a.index)-Number(b.index));
+            const sum=dir=>rows.filter(x=>x.dir===dir).reduce((a,b)=>a+BigInt(b.micros),0n);
+            const inbound=sum('in'),outbound=sum('out');
+            const complete=failed.length===0&&before+inbound-outbound===after;
+            emit('WALLET_RECONCILIATION',{complete,openingMicros:before.toString(),incomingMicros:inbound.toString(),outgoingMicros:outbound.toString(),closingMicros:after.toString(),transfers:rows,failedRanges:failed,classification:'Public transfers only; no attribution or sales inferred',ownerSpend:0});
+          }catch(e){emit('WALLET_RECONCILIATION_UNAVAILABLE',{reason:String(e.message).slice(0,160),ownerSpend:0});}
+          JS
+      - name: Check live catalog and compatible direct bounty inventory
+        if: always()
+        run: |
+          node --input-type=module <<'JS'
+          const origin='https://toyol-csv-evidence.ilhamraduan-bis.workers.dev',url=origin+'/v1/csv/audit',emit=(k,v)=>console.log(k+' '+JSON.stringify(v));
+          async function get(url){const r=await fetch(url,{headers:{accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json()}
+          await Promise.all([
+            (async()=>{try{const j=await get('https://settled.tools/v1/free/check?url='+encodeURIComponent(url));emit('SETTLED_CURRENT',{status:j.status,price:j.price_usd,payTo:j.pay_to,deliveryVerified:j.delivery_verified,lastProbe:j.last_probe_at,page:j.page,receipt:j.delivery_receipt??null,ownerSpend:0});}catch(e){emit('SETTLED_UNAVAILABLE',{reason:e.message})}})(),
+            (async()=>{try{const j=await get('https://agent402.tools/api/index?seller='+encodeURIComponent(new URL(origin).hostname));emit('AGENT402_CURRENT',{listed:j.routable,paywall:j.paywall?.ok,tools:j.tools?.map(t=>({name:t.name,price:t.price,callable:t.executeViaCallableNow,lane:t.executeViaLane,reason:t.routerDispatchReason})),health:j.health});}catch(e){emit('AGENT402_UNAVAILABLE',{reason:e.message})}})(),
+            (async()=>{try{const j=await get('https://api.battle.training/api/ladders/promotedby-cup-nov-2026');emit('BATTLE_CURRENT',j.standings?.find(x=>x.bot==='toyol-digital-armor')??{});}catch(e){emit('BATTLE_UNAVAILABLE',{reason:e.message})}})(),
+            ...[8453,4217].map(async chainId=>{try{const j=await get('https://api.taskmarket.dev/api/tasks?status=open&chainId='+chainId+'&limit=50');const rows=j.tasks??j.data?.tasks??j.data??[];emit('TASKMARKET_CURRENT',{chainId,rows:Array.isArray(rows)?rows.map(x=>({id:x.id,title:String(x.title??x.description??'').slice(0,1000),reward:x.reward,submissionCount:x.submissionCount,escrow:x.escrow,stakeRequired:x.stakeRequired})):[]});}catch(e){emit('TASKMARKET_UNAVAILABLE',{chainId,reason:e.message})}})
+          ]);
+          JS
