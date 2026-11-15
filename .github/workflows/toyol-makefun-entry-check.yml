@@ -83,3 +83,5 @@ jobs:
           name: toyol-makefun-authenticated-status
           path: out/entry.json
           retention-days: 7
+
+# Reconcile both existing contest entries after the current earning sprint.
