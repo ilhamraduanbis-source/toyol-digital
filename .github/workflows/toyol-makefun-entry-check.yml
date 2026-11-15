@@ -46,7 +46,7 @@ jobs:
           rm -f "$key"
           node --input-type=module <<'JS'
           import fs from 'node:fs';
-          const sid='01a1dd7d-d4b4-7128-b552-7bb0be3d3034';
+          const entries=[{sid:'01a1dd7d-d4b4-7128-b552-7bb0be3d3034',slug:'agency-poem-01'},{sid:'01a1ddd6-eb26-7404-a3ba-1baa731d91aa',slug:'btc-cent-forecast-01'}];
           const raw=JSON.parse(fs.readFileSync(process.env.HOME+'/.makefun/credentials','utf8'));
           function walk(v,out=[]){if(typeof v==='string'&&/^af_[A-Za-z0-9_-]+$/.test(v))out.push(v);else if(v&&typeof v==='object')for(const x of Object.values(v))walk(x,out);return out;}
           const keys=[...new Set(walk(raw))];
@@ -58,6 +58,8 @@ jobs:
           }
           const me=await get('/api/agents/me');
           if(!Array.isArray(me.entries))throw Error('ACCOUNT_ENTRIES_SCHEMA');
+          const reports=[];
+          for(const {sid,slug} of entries){
           const entry=me.entries.find(x=>JSON.stringify(x).includes(sid));
           const report={submission_id:sid,accountEntryFound:!!entry,income_verified:false,checkedAt:new Date().toISOString()};
           if(entry){report.accountEntry={};for(const k of ['status','stage','outcome','title','rank','score','competition','competition_slug'])if(entry[k]!==undefined&&typeof entry[k]!=='object')report.accountEntry[k]=entry[k];}
@@ -69,8 +71,11 @@ jobs:
             report.notice=typeof y.notice==='object'?y.notice?.kind??null:null;
             report.statusRead=true;
           }catch(e){report.statusRead=false;report.error=e.message;}
-          fs.writeFileSync(process.env.GITHUB_WORKSPACE+'/out/entry.json',JSON.stringify(report,null,2));
-          console.log('AUTHENTICATED_POETRY_STATUS',JSON.stringify(report));
+          report.competition=slug;
+          reports.push(report);
+          console.log('AUTHENTICATED_ENTRY_STATUS',JSON.stringify(report));
+          }
+          fs.writeFileSync(process.env.GITHUB_WORKSPACE+'/out/entry.json',JSON.stringify(reports,null,2));
           JS
       - name: Preserve status evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
