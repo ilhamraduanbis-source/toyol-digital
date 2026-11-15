@@ -32,7 +32,7 @@ jobs:
           set -euo pipefail
           npx --no-install wrangler dev --local --ip 127.0.0.1 --port 8794 > "$RUNNER_TEMP/toyol-worker.log" 2>&1 &
           pid=$!
-          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          trap 'rc=$?; if [ "$rc" != 0 ]; then cat "$RUNNER_TEMP/toyol-worker.log"; fi; kill "$pid" 2>/dev/null || true' EXIT
           ready=0
           for i in $(seq 1 30); do
             if curl -fsS --max-time 3 http://127.0.0.1:8794/health; then ready=1; break; fi
@@ -42,6 +42,7 @@ jobs:
           node --input-type=module <<'JS'
           import assert from 'node:assert/strict';
           const r=await fetch('http://127.0.0.1:8794/v1/csv/audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csv:'id,name\n1,Ada\n',unique:['id']}),signal:AbortSignal.timeout(25000)});
+          if(r.status!==402) console.error('WORKER_LOCAL_RESPONSE',r.status,(await r.clone().text()).slice(0,1000));
           assert.equal(r.status,402);
           const q=JSON.parse(Buffer.from(r.headers.get('payment-required'),'base64').toString('utf8'));
           const a=q.accepts.find(x=>x.network==='eip155:8453');
