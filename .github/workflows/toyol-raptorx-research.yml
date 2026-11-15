@@ -35,6 +35,7 @@ jobs:
           };
           const body=()=>page.locator('body').innerText();
           const fee=/\b(?:subscribe now|upgrade to (?:pro|premium)|purchase credits|insufficient credits|payment required|connect (?:your )?wallet|sign (?:a |the )?transaction|buy credits)\b/i;
+          async function research(){
           try{
             await page.goto('https://www.raptorx.trade/solana',{waitUntil:'domcontentloaded',timeout:45000});
             await page.waitForTimeout(12000);
@@ -107,6 +108,8 @@ jobs:
             console.log('RAPTORX_RESULT',JSON.stringify(result));
             await browser.close();
           }
+          }
+          await research();
           JS
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
