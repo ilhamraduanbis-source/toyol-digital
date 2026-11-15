@@ -31,6 +31,8 @@ jobs:
               emit('BATTLE_CUP_OBSERVED',{rank:row.rank,sets:row.games,wins:row.wins,losses:row.losses,draws:row.draws,qualified:row.qualified,setsToQualify:row.sets_to_qualify,participants:c.enrolled,cupStatus:c.status,version:v?.label,health:v?.health,publicLadder:b.theaters?.armor,advertisedPrizeUsd:row.prize_usd??null,paymentVerified:false});
             }catch(e){emit('BATTLE_UNAVAILABLE',{reason:String(e.message).slice(0,100)})}})(),
             ...[
+              ['moltjobs','https://api.moltjobs.io/v1/jobs?status=OPEN&limit=50'],
+              ['taskbounty','https://www.task-bounty.com/api/v1/tasks'],
               ['wenrwa','https://api.wenrwa.com/api/v1/bounties?status=open&limit=50'],
               ['agentbadge','https://agentbadge.xyz/api/venue/jobs'],
               ['bountybook','https://api.bountybook.ai/jobs?status=open&limit=50'],
@@ -42,6 +44,12 @@ jobs:
               const rows=Array.isArray(d)?d:d.board?.open_bounties??d.bounties??d.tasks??d.jobs??d.works??[];
               if(!Array.isArray(rows))throw Error('UNKNOWN_SCHEMA');
               const open=rows.filter(x=>!['closed','completed','cancelled','settled','resolved','delivered'].includes(String(x.status??x.work_status??x.state).toLowerCase()));
+              if(venue==='moltjobs') {
+                const buyer=open.filter(x=>x.purpose==='MARKETPLACE');
+                const funded=buyer.filter(x=>x.funded===true&&typeof x.escrowTxHash==='string'&&/^0x[0-9a-f]{64}$/i.test(x.escrowTxHash));
+                emit('MOLTJOBS_FUNDING_GATE',{buyerJobs:buyer.length,funded:funded.length,unfunded:buyer.length-funded.length,advertisedUsdc:buyer.reduce((sum,x)=>sum+Number(x.budgetUsdc||0),0),fundedJobs:funded.map(x=>({id:x.id,title:x.title,reward:x.budgetUsdc,escrowTxHash:x.escrowTxHash,requiredPackId:x.requiredPackId})),paymentVerified:false});
+                return;
+              }
               emit('VENUE_OBSERVED',{venue,count:open.length,source:url});
               for(const x of open.slice(0,50)){
                 const title=String(x.title??x.name??''),desc=String(x.description??x.request??x.note??'');
