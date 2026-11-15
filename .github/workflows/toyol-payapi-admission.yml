@@ -1,0 +1,43 @@
+name: Toyol — PayAPI catalog admission and revenue check
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-payapi-admission.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Discover free listing schema and independently check Base receipts
+        run: |
+          node --input-type=module <<'JS'
+          const url='https://payapi.market/mcp';
+          let session,version='2025-03-26';
+          async function call(method,params,id){
+            const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json',accept:'application/json, text/event-stream',...(session?{'mcp-session-id':session}:{}),'mcp-protocol-version':version},body:JSON.stringify({jsonrpc:'2.0',...(id===undefined?{}:{id}),method,params}),redirect:'error',signal:AbortSignal.timeout(20000)});
+            session=r.headers.get('mcp-session-id')??session;
+            if(!r.ok)throw Error('MCP_HTTP_'+r.status);
+            if(r.status===202||r.status===204)return {};
+            const raw=await r.text();
+            const j=r.headers.get('content-type')?.includes('text/event-stream')?raw.split('\n').filter(x=>x.startsWith('data:')).map(x=>JSON.parse(x.slice(5))).find(x=>x.id===id):JSON.parse(raw);
+            if(j?.error)throw Error(JSON.stringify(j.error));return j?.result??{};
+          }
+          try{
+            const init=await call('initialize',{protocolVersion:version,capabilities:{},clientInfo:{name:'toyol-digital',version:'1.0'}},1);version=init.protocolVersion??version;
+            await call('notifications/initialized',{},undefined);
+            const list=await call('tools/list',{},2);
+            console.log('PAYAPI_TOOLS '+JSON.stringify(list.tools?.filter(t=>/submit|list|search/.test(t.name))??[]).slice(0,18000));
+          }catch(e){console.log('PAYAPI_ADMISSION_UNAVAILABLE '+JSON.stringify({reason:String(e.message).slice(0,500)}));}
+          try{
+            const wallet='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431',token='0x833589fcd6edb6e08f4c7c32d4f71b54bdA02913';
+            const u='https://base.blockscout.com/api/v2/addresses/'+wallet+'/token-transfers?type=ERC-20&token='+token;
+            const r=await fetch(u,{headers:{accept:'application/json'},signal:AbortSignal.timeout(20000)});
+            if(!r.ok)throw Error('EXPLORER_'+r.status);
+            const j=await r.json();
+            const inbound=(j.items??[]).filter(x=>x.to?.hash?.toLowerCase()===wallet&&x.token?.address_hash?.toLowerCase()===token.toLowerCase());
+            console.log('TOYOL_BASE_RECEIPTS '+JSON.stringify(inbound.slice(0,30).map(x=>({hash:x.transaction_hash,from:x.from?.hash,to:x.to?.hash,value:x.total?.value,decimals:x.total?.decimals,timestamp:x.timestamp}))));
+          }catch(e){console.log('RECEIPT_CHECK_UNAVAILABLE '+JSON.stringify({reason:String(e.message).slice(0,150)}));}
+          JS
