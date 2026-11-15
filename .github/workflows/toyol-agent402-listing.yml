@@ -1,0 +1,38 @@
+name: Toyol — Register public service with Agent402
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-agent402-listing.yml']
+permissions:
+  contents: read
+jobs:
+  list:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Validate deployed manifest and register public origin once
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const origin='https://toyol-csv-evidence.ilhamraduan-bis.workers.dev',url=origin+'/v1/csv/audit';
+          async function req(u,o={}){return fetch(u,{...o,redirect:'error',signal:AbortSignal.timeout(20000)})}
+          let manifest;
+          for(let i=0;i<9;i++){
+            const r=await req(origin+'/.well-known/x402');
+            if(r.ok){manifest=await r.json();break;}
+            if(i<8)await new Promise(r=>setTimeout(r,10000));
+          }
+          assert.ok(manifest?.resources?.includes(url));
+          const spec=await req(origin+'/openapi.json');assert.equal(spec.status,200);assert.equal((await spec.json()).paths['/v1/csv/audit'].post['x-payment-info'].price.amount,'0.01');
+          const sample=await req(origin+'/sample');assert.equal(sample.status,200);const demo=await sample.json();assert.equal(demo.result.totalFindings,3);
+          const quote=await req(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(demo.input)});
+          assert.equal(quote.status,402);
+          const q=JSON.parse(Buffer.from(quote.headers.get('payment-required'),'base64').toString('utf8'));
+          const a=q.accepts.find(x=>x.network==='eip155:8453');assert.equal(a.amount,'10000');assert.equal(a.payTo.toLowerCase(),'0xac57ad3c3f233e5865c3cd652f67ffc82a7af431');
+          console.log('TOYOL_PUBLIC_MANIFEST_PASS '+JSON.stringify({origin,resources:manifest.resources,sampleFindings:demo.result.totalFindings,price:a.amount,paid:false}));
+          const r=await req('https://agent402.tools/api/index/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({origin})});
+          console.log('TOYOL_AGENT402_REGISTRATION '+JSON.stringify({status:r.status,body:(await r.text()).slice(0,10000),ownerSpend:0}));
+          const index=await req('https://agent402.tools/api/index?seller='+encodeURIComponent(new URL(origin).hostname));
+          console.log('TOYOL_AGENT402_INDEX '+JSON.stringify({status:index.status,body:(await index.text()).slice(0,15000)}));
+          JS
