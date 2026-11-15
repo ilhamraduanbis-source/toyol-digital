@@ -59,7 +59,7 @@ jobs:
           p=pathlib.Path(sys.argv[1])
           a=set(re.findall(r'opencode/[A-Za-z0-9_.-]+',(p/'models.txt').read_text()))
           d=json.loads((p/'models.json').read_text())['opencode']['models']
-          for k in ['big-pickle','mai-code-1.1-flash-free','glm-5.3-flash-free','deepseek-v4.1-flash-free']:
+          for k in ['mai-code-1.1-flash-free','big-pickle','glm-5.3-flash-free','deepseek-v4.1-flash-free']:
               v=d.get(k,{}).get('cost',{})
               if 'opencode/'+k in a and v.get('input')==0 and v.get('output')==0:
                   print('opencode/'+k);break
@@ -73,19 +73,24 @@ jobs:
           import json,sys
           json.dump({"model":sys.argv[1],"small_model":sys.argv[1],"share":"disabled","autoupdate":False,"permission":{"edit":"allow","read":"allow","bash":"allow","webfetch":"deny","websearch":"deny","external_directory":"allow"}},open('opencode.json','w'))
           PY
-          prompt="First run the official anchor command in this repository: node $kit/cli/makefun.mjs init --competition btc-cent-forecast-01 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT. Read the official $kit/RULES.txt and public schema/sample input, not hidden future data. Build main.py using Python standard library only, deterministically reading each official /input/<id>.in and writing ONE numerical USD forecast to /output/<id>.out, exact schema/format as rules specify. No networking, external model, trading, random draws, or other files at runtime. Implement a small robust forecast that estimates 240-minute-ahead returns from the preceding 72 hours, with conservative shrinkage toward persistence, time-ordered historical backtests within each case, robust volatility and bounded trend or mean-reversion, avoiding lookahead. Do not hard-code practice labels or cases. Write working main.py and explain design. Finish promptly."
+          prompt="First run this exact anchor command: node $kit/cli/makefun.mjs init --competition btc-cent-forecast-01 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT. Read the official rules and one sample input to determine the actual format. Immediately write main.py: a short, offline Python standard-library program for each /input/<id>.in writing one USD price number to /output/<id>.out. Use the last price plus a conservatively shrunken recent trend (for example 0.15 times the difference between the last price and the price 240 minutes earlier, bounded to a small fraction of price). No hidden data, networking or hardcoded case answers. Write the working file before further analysis. Finish with a brief explanation."
           set +e
           timeout --kill-after=5s 360s opencode run --standalone --model "$model" --format json "$prompt" </dev/null > "$root/session.jsonl" 2> "$root/session.stderr"
           rc=$?
           set -e
           echo "BTC_FORECAST_AGENT_EXIT $rc"
+          if ! test -s main.py; then
+            echo "NO_SOURCE_FROM_AGENT"
+            exit 1
+          fi
           test -s main.py
+          python3 -m py_compile main.py
           cp main.py "$root/draft.py"
           for revision in 1 2; do
             if [ "$revision" = 1 ]; then
-              review="Read your actual main.py and official input/output schema again. Critique the forecasting method for lookahead, overfitting and price scaling. Make a genuine focused edit to improve robust historical validation and input handling; preserve other code. Test using public sample or synthetic series, and explain the result. No network or hidden data. Finish."
+              review="Read main.py. Make one focused improvement to shrink the forecast based on historical volatility and robust recent returns, with no lookahead. Preserve the working input/output format and other code. Test syntax and a synthetic example, explain the change, and finish promptly."
             else
-              review="Review the revised main.py. Make a further genuine focused edit improving determinism, bounded finite numeric predictions or edge cases. Run python3 -m py_compile main.py and any public sample check available. Do not fit to practice answer labels; no external calls, no trading. Explain the test results and finish."
+              review="Make one further focused edit to handle malformed or short inputs and finite numeric output correctly. Preserve the algorithm and other code. Run python3 -m py_compile main.py. Explain the result and finish promptly."
             fi
             set +e
             timeout --kill-after=5s 140s opencode run --standalone --continue --model "$model" --format json "$review" </dev/null > "$root/revision-$revision.jsonl" 2> "$root/revision-$revision.stderr"
