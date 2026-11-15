@@ -35,3 +35,21 @@ jobs:
             }catch(e){console.log('VENUE_STOP '+JSON.stringify({name,error:String(e.message).slice(0,160)}))}
           }));
           JS
+
+      - name: Identify actual funded Frantic openings and delivery requirements
+        env:
+          FRANTIC_AGENT_TOKEN: ${{ secrets.FRANTIC_AGENT_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://gofrantic.com';
+          async function get(p){const r=await fetch(root+p,{headers:{Accept:'application/json',Authorization:'Bearer '+process.env.FRANTIC_AGENT_TOKEN},redirect:'error',signal:AbortSignal.timeout(12000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json()}
+          const status=await get('/v1/agents/agent-65c3b0/status');
+          console.log('FRANTIC_READY '+JSON.stringify({eligible:status.agent?.claimEligibility,open:status.work?.open?.length,payout:status.agent?.onboarding?.payout?.set}));
+          const j=await get('/v1/board'),rows=j.board?.bounties??j.board??j.bounties??[];
+          const open=rows.filter(b=>b.funded===true&&b.work_status==='open');
+          console.log('FRANTIC_OPEN '+JSON.stringify(open.map(b=>({n:b.number,title:b.title,price:b.price_usd,slots:b.claim_slots}))));
+          for(const b of open.slice(0,20)){
+            try{const z=(await get('/v1/bounties/'+b.number)).bounty;console.log('FRANTIC_CONTRACT '+JSON.stringify({number:z.number,title:z.title,price_cents:z.price_cents,description:z.description,criteria:z.criteria,delivery_contract:z.delivery_contract,claim_progress:z.claim_progress,visibility:z.visibility,funded:z.funded,work_status:z.work_status}).slice(0,18000))}
+            catch(e){console.log('DETAIL_UNAVAILABLE '+b.number+' '+e.message)}
+          }
+          JS
