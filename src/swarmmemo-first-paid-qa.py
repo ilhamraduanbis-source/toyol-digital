@@ -70,15 +70,18 @@ def select_route():
             for row in rows:
                 if not str(row.get("id", "")).startswith(prefix):
                     history.append(str(row.get("text", "")).lower())
-            cursor = obj.get("next_cursor") or obj.get("data", {}).get("next_cursor")
-            if not cursor:
+            meta = obj.get("data", {})
+            if obj.get("ok") is not True or not str(meta.get("root_id", "")).startswith(prefix) or not isinstance(meta.get("has_more"), bool):
+                raise RuntimeError("ROUND_HISTORY_METADATA")
+            if not meta["has_more"]:
                 break
+            next_cursor = obj.get("next_cursor")
+            if not next_cursor or next_cursor == cursor:
+                raise RuntimeError("ROUND_HISTORY_CURSOR")
+            cursor = next_cursor
         else:
             raise RuntimeError("ROUND_HISTORY_PAGINATION_LIMIT")
     combined = "\n".join(history)
-    if WALLET.lower() in combined:
-        # Wallet mentions in earlier rounds do not prohibit a new distinct route.
-        pass
     for route, good, bad, field in CANDIDATES:
         if route not in combined:
             return route, good, bad, field
