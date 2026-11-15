@@ -1,0 +1,164 @@
+name: Toyol — Tiny Chess build
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-tiny-chess-build.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-tiny-chess-build
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Download official public contest kit
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/tiny-chess" out
+          cd "$RUNNER_TEMP/tiny-chess"
+          curl --fail --silent --show-error --retry 3 --retry-delay 5 --retry-max-time 75 --max-time 25 https://make.fun/api/competitions/tiny-chess-01/requirements -o requirements.json
+          python3 - <<'PY'
+          import json,datetime as d
+          x=json.load(open('requirements.json')); x=x.get('data',x)
+          assert isinstance(x,dict) and isinstance(x.get('how_to_submit'),dict),'REQUIREMENTS_SCHEMA'
+          assert not any(p.get('required',True) for p in (x.get('prerequisites') or [])),'REQUIRED_PREREQUISITE_REVIEW'
+          assert not x['how_to_submit'].get('strict_transcripts'),'WITNESSED_HARNESS_REQUIRED'
+          assert d.datetime.now(d.timezone.utc)<d.datetime(2026,11,24,15,0,tzinfo=d.timezone.utc),'DEADLINE_GUARD'
+          print('CHESS_PREREQUISITES_VERIFIED')
+          PY
+          curl --fail --silent --show-error --location --retry 3 --retry-delay 5 --retry-max-time 100 --max-time 35 https://make.fun/c/tiny-chess-01/kit -o kit.tgz
+          python3 - <<'PY'
+          import tarfile,pathlib
+          with tarfile.open('kit.tgz') as z:
+              a=z.getmembers()
+              if sum(x.size for x in a)>100000000 or any(x.name.startswith('/') or '..' in pathlib.PurePosixPath(x.name).parts or not(x.isfile() or x.isdir()) for x in a): raise SystemExit('UNSAFE_KIT')
+              z.extractall('.',filter='data')
+          PY
+          npm install --prefix "$RUNNER_TEMP/tiny-chess/tools" --no-audit --no-fund @opencode/cli@2.3.0
+          echo "$RUNNER_TEMP/tiny-chess/tools/node_modules/.bin" >> "$GITHUB_PATH"
+      - name: Build original deterministic chess engine with native agent records
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/tiny-chess"
+          kit="$root/tiny-chess-01-kit"
+          export OPENCODE_DISABLE_AUTOSHARE=true
+          export HOME="$root/home"
+          export XDG_DATA_HOME="$HOME/.local/share"
+          export XDG_CONFIG_HOME="$HOME/.config"
+          export XDG_STATE_HOME="$HOME/.local/state"
+          export XDG_CACHE_HOME="$HOME/.cache"
+          mkdir -p "$HOME" "$root/entry" "$GITHUB_WORKSPACE/out"
+          out="$GITHUB_WORKSPACE/out"
+          timeout 60s opencode models --standalone > "$root/models.txt"
+          curl --fail --silent --show-error --max-time 20 https://models.dev/api.json -o "$root/models.json"
+          model=$(python3 - "$root" <<'PY'
+          import json,sys,re,pathlib
+          p=pathlib.Path(sys.argv[1])
+          a=set(re.findall(r'opencode/[A-Za-z0-9_.-]+',(p/'models.txt').read_text()))
+          d=json.loads((p/'models.json').read_text())['opencode']['models']
+          for k in ['big-pickle','mai-code-1.1-flash-free','glm-5.3-flash-free','deepseek-v4.1-flash-free']:
+              v=d.get(k,{}).get('cost',{})
+              if 'opencode/'+k in a and v.get('input')==0 and v.get('output')==0:
+                  print('opencode/'+k);break
+          else: raise SystemExit('NO_VERIFIED_FREE_MODEL')
+          PY
+          )
+          echo "CHESS_MODEL $model"
+          cd "$root/entry"
+          node "$kit/cli/makefun.mjs" init --competition tiny-chess-01 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT
+          python3 - "$model" <<'PY'
+          import json,sys
+          json.dump({"model":sys.argv[1],"small_model":sys.argv[1],"share":"disabled","autoupdate":False,"permission":{"edit":"allow","read":"allow","bash":"allow","webfetch":"deny","websearch":"deny","external_directory":"allow"}},open('opencode.json','w'))
+          PY
+          prompt="First run the official anchor command in this repository: node $kit/cli/makefun.mjs init --competition tiny-chess-01 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT. Read the official $kit/RULES.txt and public environment protocol, not hidden data. Build a genuinely original deterministic chess engine main.py in Python standard library, max 4096 bytes as committed, no other runtime files. Follow the exact game-state and UCI-move protocol via MAKEFUN_ENV_URL only. No model calls, outside network, clocks as search budgets, or unseeded randomness. Use a compact board representation, correct legal moves (including promotion, castling, en passant, check), deterministic alpha-beta with capture ordering and a sensible positional evaluation. Aim for fixed node/depth budget fast enough for 10 seconds per move. Do not copy a competing entry or house engine, hard-code opening/fixture-specific solutions or exploit the grader. Read actual protocol before writing. Produce main.py and explain design."
+          set +e
+          timeout --kill-after=5s 420s opencode run --standalone --model "$model" --format json "$prompt" </dev/null > "$root/session.jsonl" 2> "$root/session.stderr"
+          rc=$?
+          set -e
+          echo "CHESS_AGENT_EXIT $rc"
+          test -s main.py
+          cp main.py "$root/draft.py"
+          for revision in 1 2; do
+            if [ "$revision" = 1 ]; then
+              review="Review your existing main.py against the actual kit protocol and chess rules. Make a substantive focused edit improving move legality, check detection, or deterministic search. Check syntax and byte count, test a synthetic position using your code without external services, and explain actual results. Keep main.py at most 4096 bytes. Do not copy competitors or house engines."
+            else
+              review="Review the actual main.py once more. Make a genuine focused improvement to evaluation, search efficiency, or terminal positions while preserving move legality. Verify Python syntax, deterministic behavior and maximum 4096 bytes. Test a legal position or public protocol sample and explain the result. No outside network, model calls, clock-based budget, or hidden data. Keep the single-file runtime and exact official protocol."
+            fi
+            set +e
+            timeout --kill-after=5s 220s opencode run --standalone --continue --model "$model" --format json "$review" </dev/null > "$root/revision-$revision.jsonl" 2> "$root/revision-$revision.stderr"
+            revrc=$?
+            set -e
+            echo "CHESS_REVISION_EXIT $revision $revrc"
+            test "$revrc" = 0
+          done
+          if cmp -s "$root/draft.py" main.py; then echo 'NO_REAL_REVISION'; exit 1; fi
+          python3 -m py_compile main.py
+          test "$(wc -c < main.py)" -le 4096
+          echo "CHESS_SOURCE_BYTES $(wc -c < main.py)"
+          git add main.py
+          git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm 'Recorded original chess engine and genuine revisions'
+          python3 - <<'PY'
+          import subprocess
+          rows=subprocess.check_output(["git","ls-tree","-rl","HEAD"],text=True).splitlines()
+          sizes=[int(r.split()[3]) for r in rows]
+          assert max(sizes)<=4096 and sum(sizes)<=8192,"CHESS_REPOSITORY_SIZE_LIMIT"
+          print("CHESS_COMMITTED_BYTES",sum(sizes))
+          PY
+          node "$kit/cli/makefun.mjs" bundle --repo "$root/entry" --out "$root/transcripts.tar.gz" --opencode-dir "$XDG_DATA_HOME/opencode" --harness opencode --harness-version 2.3.0 --model "$model" --provider opencode
+          set +e
+          node "$kit/cli/makefun.mjs" check --kit "$kit" --repo "$root/entry" --transcripts "$root/transcripts.tar.gz" --json > "$out/check.json" 2> "$root/check.stderr"
+          check_rc=$?
+          set -e
+          python3 - "$out/check.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1]))
+          def scan(v):
+              if isinstance(v,dict):
+                  if 'status' in v and any(k in v for k in ('check','id','name')): print('OFFICIAL_CHESS_CHECK',json.dumps({k:v[k] for k in ('check','id','name','status','reason','fix') if k in v}))
+                  for w in v.values():scan(w)
+              elif isinstance(v,list):
+                  for w in v:scan(w)
+          scan(x)
+          PY
+          test "$check_rc" = 0
+          # Run the official local grader if supported, with no model keys.
+          unset OPENAI_API_KEY ANTHROPIC_API_KEY OPENROUTER_API_KEY GEMINI_API_KEY
+          timeout --kill-after=10s 2000s node "$kit/cli/makefun.mjs" grade-local --kit "$kit" --bot "$root/entry" --driver docker --instances 1 --json > "$out/grade.json" 2> "$root/grade.stderr"
+          python3 - "$out/grade.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1])); assert isinstance(x,(dict,list))
+          print('CHESS_OFFICIAL_GRADE',json.dumps(x)[:5000])
+          PY
+          cp main.py "$out/main.py"
+          echo 'CHESS_OFFICIAL_CHECK_AND_LOCAL_GRADE_COMPLETED'
+          git bundle create "$root/source.bundle" HEAD
+          printf '%s\n' "$(git rev-parse HEAD)" > "$root/commit.txt"
+          python3 -m pip install --disable-pip-version-check --target "$root/crypto" 'PyNaCl==1.5.0'
+          PYTHONPATH="$root/crypto" python3 - "$root" "$out" <<'PY'
+          import pathlib,sys,tarfile,io
+          from nacl.signing import VerifyKey
+          from nacl.public import SealedBox
+          p=pathlib.Path(sys.argv[1]); out=pathlib.Path(sys.argv[2])
+          alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+          n=0
+          for ch in 'At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ':
+              n=n*58+alphabet.index(ch)
+          box=SealedBox(VerifyKey(n.to_bytes(32,'big')).to_curve25519_public_key())
+          b=io.BytesIO()
+          with tarfile.open(fileobj=b,mode='w:gz') as t:
+              for name in ('source.bundle','transcripts.tar.gz','commit.txt'):
+                  t.add(p/name,arcname=name)
+          (out/'entry.sealed').write_bytes(box.encrypt(b.getvalue()))
+          print('CHESS_SOURCE_AND_NATIVE_TRANSCRIPTS_PRESERVED')
+          PY
+      - name: Preserve review evidence (not a submission)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-tiny-chess-entry
+          path: out/
+          retention-days: 7
+          if-no-files-found: ignore
