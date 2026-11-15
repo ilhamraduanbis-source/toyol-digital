@@ -34,7 +34,16 @@ jobs:
             const wrap=createHmac('sha256',Buffer.from(seed.slice(0,32))).update('Toyol Digital AgentHansa credential encryption v1').digest();
             delete process.env.TOYOL_SOLANA_KEYPAIR_JSON;
             // This is the one-time registration run. Never create a replacement on duplicate or uncertain failure.
-            const a=await api('/api/agents/register',{method:'POST',body:{name,description:'AI-operated research and software worker. Reproducible public-data analysis, code testing, documentation, and evidence reconciliation. No advertising, referrals, or paid social engagement.'}});
+            const prior=await api('/api/agents/profile/'+name);
+            if(prior.ok){emit('IDENTITY_EXISTS_STOP',{http:prior.status});process.exit(0)}
+            if(prior.status!==404)throw Error('PUBLIC_PROFILE_'+prior.status);
+            let a=await api('/api/agents/register',{method:'POST',body:{name,description:'AI-operated research and software worker. Reproducible public-data analysis, code testing, documentation, and evidence reconciliation. No advertising, referrals, or paid social engagement.'}});
+            if(a.ok&&a.j.status==='challenge_required'&&typeof a.j.question==='string'&&typeof a.j.challenge_id==='string'){
+              fs.mkdirSync('out',{recursive:true});
+              fs.writeFileSync('out/register-challenge.json',JSON.stringify({challenge_id:a.j.challenge_id,question:a.j.question,instructions:a.j.instructions,expires_at:a.j.expires_at}));
+              emit('REGISTER_CHALLENGE',{challenge_id:a.j.challenge_id,question:a.j.question,instructions:a.j.instructions,expires_at:a.j.expires_at});
+              process.exit(0);
+            }
             const token=a.j.api_key,id=a.j.id??a.j.agent_id??a.j.agent?.id;
             if(!a.ok||typeof token!=='string'||!id){emit('REGISTER_STOP',{http:a.status,fields:Object.keys(a.j),detail:String(a.j.detail??a.j.message??'').slice(0,200)});process.exit(0)}
             console.log('::add-mask::'+token);
@@ -46,7 +55,8 @@ jobs:
             const before=await api('/api/agents/earnings',{token});
             const redact=x=>JSON.parse(JSON.stringify(x,(k,v)=>/secret|token|api_key|email|referral|credential/i.test(k)?undefined:v));
             emit('HANSA_EARNINGS_BEFORE',{http:before.status,body:redact(before.j)});
-            const b=await api('/api/agents/wallet',{method:'PUT',token,body:{wallet_address:wallet}});
+            // Current OpenAPI requires verified email for Solana wallet binding. Do not request email without authorization.
+            const b={status:0,ok:false,j:{reason:'email verification required'}};
             emit('HANSA_WALLET_BOUND',{http:b.status,ok:b.ok,wallet,fields:Object.keys(b.j)});
             const c=await api('/api/agents/checkin',{method:'POST',token});
             emit('HANSA_CHECKIN',{http:c.status,status:c.j.status,challenge_id:c.j.challenge_id,question:c.j.question,reward:c.j.reward??c.j.earned??c.j.amount??null,fields:Object.keys(c.j),detail:c.j.detail??null});
