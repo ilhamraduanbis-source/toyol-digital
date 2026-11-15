@@ -28,7 +28,7 @@ jobs:
               const d=j.data??j;
               const rows=Array.isArray(d)?d:d.tasks??d.bounties??d.works??d.items??d.results??d.board?.bounties??[];
               console.log('VENUE '+JSON.stringify({name,http:r.status,keys:Object.keys(d),count:rows.length}));
-              for(const x of rows.slice(0,35)){
+              for(const x of rows.slice(0,100)){
                 const status=x.status??x.state, reward=x.bounty??x.reward??x.price??x.reward_usdc??x.amount;
                 console.log('LIVE_JOB '+JSON.stringify({name,id:x.id??x.taskId??x.number,title:x.title??x.label,description:String(x.description??x.summary??x.body??'').slice(0,1800),status,claimable:x.claimable??null,reward,escrow:x.escrow??null,standing:x.standing??null,deadline:x.expires_at??x.deadline??x.expiryTime??null,url:x.url??null,fields:Object.keys(x)}).slice(0,6500));
               }
@@ -61,3 +61,5 @@ jobs:
           const r=await fetch(url,{redirect:'error',signal:AbortSignal.timeout(15000)}),j=await r.json(),w=j.data?.work;
           console.log('SWARM_EXACT_TASK '+JSON.stringify({http:r.status,id:w?.id,title:w?.title,request:w?.request,eligibility:w?.eligibility,standing:w?.standing,claimable:w?.claimable,results:w?.results?.map(x=>({id:x.result_id,author:x.author??x.agent,created:x.created_at,money:x.money,fields:Object.keys(x),verdict:x.verdict}))}).slice(0,23000));
           JS
+
+# Recheck real paid contracts after 15:38 MYT, including complete first-page inventories.
