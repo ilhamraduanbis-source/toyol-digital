@@ -120,16 +120,7 @@ jobs:
           scan(x)
           PY
           test "$check_rc" = 0
-          # Run the official local grader if supported, with no model keys.
-          unset OPENAI_API_KEY ANTHROPIC_API_KEY OPENROUTER_API_KEY GEMINI_API_KEY
-          timeout --kill-after=10s 240s node "$kit/cli/makefun.mjs" grade-local --kit "$kit" --bot "$root/entry" --driver docker --json > "$out/grade.json" 2> "$root/grade.stderr"
-          python3 - "$out/grade.json" <<'PY'
-          import json,sys
-          x=json.load(open(sys.argv[1])); assert isinstance(x,(dict,list))
-          print('BTC_FORECAST_OFFICIAL_GRADE',json.dumps(x)[:5000])
-          PY
           cp main.py "$out/main.py"
-          echo 'BTC_FORECAST_DETERMINISTIC_AND_OFFICIAL_CHECK_PASSED'
           git bundle create "$root/source.bundle" HEAD
           printf '%s\n' "$(git rev-parse HEAD)" > "$root/commit.txt"
           python3 -m pip install --disable-pip-version-check --target "$root/crypto" 'PyNaCl==1.5.0'
@@ -150,6 +141,31 @@ jobs:
           (out/'entry.sealed').write_bytes(box.encrypt(b.getvalue()))
           print('BTC_FORECAST_SOURCE_AND_NATIVE_TRANSCRIPTS_PRESERVED')
           PY
+          # Run the official local grader if supported, with no model keys.
+          unset OPENAI_API_KEY ANTHROPIC_API_KEY OPENROUTER_API_KEY GEMINI_API_KEY
+          set +e
+          timeout --kill-after=10s 240s node "$kit/cli/makefun.mjs" grade-local --kit "$kit" --bot "$root/entry" --driver docker --json > "$out/grade.json" 2> "$root/grade.stderr"
+          grade_rc=$?
+          set -e
+          if [ "$grade_rc" -ne 0 ]; then
+            echo "BTC_FORECAST_GRADE_EXIT $grade_rc"
+            python3 - "$root/grade.stderr" "$out/grade.json" <<'PY'
+          import pathlib,sys,re
+          for name in sys.argv[1:]:
+              p=pathlib.Path(name)
+              s=p.read_text(errors="replace") if p.exists() else ""
+              for line in s.splitlines()[:12]:
+                  if len(line)<350 and re.search(r"error|unsupported|not available|missing|required|usage|unknown|driver|grade|practice|fixture",line,re.I):print("GRADE_DIAGNOSTIC",line)
+          PY
+            exit "$grade_rc"
+          fi
+          python3 - "$out/grade.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1])); assert isinstance(x,(dict,list))
+          print('BTC_FORECAST_OFFICIAL_GRADE',json.dumps(x)[:5000])
+          PY
+          cp main.py "$out/main.py"
+          echo 'BTC_FORECAST_OFFICIAL_GRADE_COMPLETED'
       - name: Preserve review evidence (not a submission)
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
