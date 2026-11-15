@@ -143,4 +143,99 @@ contract ToyolReferenceAccountingTest is Test {
         vm.prank(POSTER);hub.claim(0);
         assertBalance(0);
     }
+
+    function testDeadlineEdgesAndPermissionlessSettlement() public {
+        fund(20e6);
+        bytes32 roster=hub.guardianRosterHash();
+        vm.warp(deadline-1);
+        vm.prank(WINNER);hub.submit(0,SUB,roster,"");
+        vm.warp(deadline);
+        vm.prank(OTHER);vm.expectRevert(ElgoraHub.DeadlinePassed.selector);hub.submit(0,SUB,roster,"");
+        vote(0,true);
+        vm.warp(deadline+129599);
+        vm.prank(COORD);vm.expectRevert(ElgoraHub.DeadlineNotPassed.selector);hub.settle(0);
+        vm.warp(deadline+129600);
+        vm.prank(G1);vm.expectRevert(ElgoraHub.JudgingDeadlinePassed.selector);
+        hub.commitVerdict(0,ElgoraHub.Outcome.Awarded,WINNER,SUB,REPORT,"");
+        vm.prank(OTHER);vm.expectRevert(ElgoraHub.NotCoordinator.selector);hub.settle(0);
+        vm.warp(deadline+129600+3599);
+        vm.prank(OTHER);vm.expectRevert(ElgoraHub.NotCoordinator.selector);hub.settle(0);
+        vm.warp(deadline+129600+3600);
+        vm.prank(OTHER);hub.settle(0);
+        assertEq(uint8(hub.status(0)),uint8(ElgoraHub.Status.Awarded));
+        assertEq(hub.winner(0),WINNER);
+        assertEq(hub.guardianFeeClaimable(),2e6);
+        assertBalance(20e6);
+        vm.prank(WINNER);hub.claimAward(0,"");
+        assertBalance(2e6);
+        vm.prank(TRUSTED);hub.claimFees();
+        assertBalance(0);
+    }
+    function testTimeoutBoundaryCannotPayBothAwardAndRefund() public {
+        fund(36e6);
+        bytes32 roster=hub.guardianRosterHash();
+        vm.prank(WINNER);hub.submit(0,SUB,roster,"");
+        vm.warp(deadline);vote(0,true);
+        vm.warp(deadline+259199);
+        vm.expectRevert(ElgoraHub.DeadlineNotPassed.selector);hub.timeoutSettlement(0);
+        // No settlement was made; documented full poster refund after timeout.
+        vm.warp(deadline+259200);
+        vm.prank(COORD);vm.expectRevert(ElgoraHub.SettlementWindowExpired.selector);hub.settle(0);
+        vm.prank(OTHER);hub.timeoutSettlement(0);
+        assertEq(hub.claimable(0,POSTER),36e6);
+        assertEq(hub.guardianFeeClaimable(),0);
+        vm.prank(WINNER);vm.expectRevert(ElgoraHub.InvalidStatus.selector);hub.claimAward(0,"");
+        vm.expectRevert(ElgoraHub.InvalidStatus.selector);hub.timeoutSettlement(0);
+        vm.prank(POSTER);hub.claim(0);
+        assertEq(token.balanceOf(POSTER),36e6);
+        assertBalance(0);
+    }
+    function testOrdinaryActorCannotAlterRolesOrVerdicts() public {
+        fund(25e6);
+        bytes32 roster=hub.guardianRosterHash();
+        vm.startPrank(OTHER);
+        // Check rejection without assuming a particular Ownable version's error encoding.
+        vm.expectRevert();hub.setCoordinator(OTHER);
+        vm.expectRevert();hub.setSubmissionGuard(OTHER);
+        vm.expectRevert();hub.setPayoutScheme(OTHER);
+        vm.expectRevert();hub.setGuardianRosterAdmin(OTHER);
+        vm.expectRevert();hub.pause();
+        vm.expectRevert();hub.disablePauseAuthority();
+        vm.expectRevert();guard.setDefaultMaximumSubmissions(100);
+        vm.expectRevert();guard.setBountyMaximumSubmissions(0,100);
+        vm.expectRevert();guard.bindHub(address(hub));
+        vm.expectRevert(ElgoraHub.NotGuardianRosterAdmin.selector);hub.removeGuardian(G1);
+        vm.expectRevert(ElgoraHub.NotRosterGuardian.selector);
+        hub.commitVerdict(0,ElgoraHub.Outcome.Awarded,OTHER,SUB,REPORT,"");
+        vm.expectRevert(ElgoraHub.StaleGuardianRoster.selector);hub.submit(0,SUB,bytes32(uint256(1)),"");
+        vm.stopPrank();
+        assertEq(hub.guardianRosterHash(),roster);
+        assertEq(hub.owner(),TRUSTED);
+        assertEq(hub.coordinator(),COORD);
+        assertEq(address(hub.payoutScheme()),address(scheme));
+        assertEq(address(hub.submissionGuard()),address(guard));
+        assertEq(guard.submissionSeatsUsed(0),0);
+        assertEq(hub.activeSubmissionCommitment(0,OTHER),bytes32(0));
+        assertFalse(hub.paused());
+        assertBalance(25e6);
+    }
+    function testFundingBoundsAndRejectedFundingLeavesNoLiability() public {
+        token.mint(POSTER,251e6);
+        vm.startPrank(POSTER);
+        token.approve(address(hub),251e6);
+        vm.expectRevert(ElgoraHub.InvalidEscrowAmount.selector);hub.createBounty(SPEC,20e6-1,deadline);
+        vm.expectRevert(ElgoraHub.InvalidEscrowAmount.selector);hub.createBounty(SPEC,250e6+1,deadline);
+        vm.expectRevert(ElgoraHub.InvalidCommitment.selector);hub.createBounty(bytes32(0),20e6,deadline);
+        vm.expectRevert(ElgoraHub.InvalidDeadline.selector);hub.createBounty(SPEC,20e6,deadline-1);
+        vm.expectRevert(ElgoraHub.InvalidDeadline.selector);hub.createBounty(SPEC,20e6,uint64(block.timestamp+5184001));
+        token.approve(address(hub),19e6);
+        vm.expectRevert();hub.createBounty(SPEC,20e6,deadline);
+        vm.stopPrank();
+        assertEq(hub.bountyCount(),0);
+        assertEq(token.balanceOf(POSTER),251e6);
+        assertBalance(0);
+        fund(20e6);
+        assertBalance(20e6);
+    }
+
 }
