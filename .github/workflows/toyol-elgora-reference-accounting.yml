@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['.github/workflows/toyol-elgora-reference-accounting.yml']
+    paths: ['.github/workflows/toyol-elgora-reference-accounting.yml', 'skills/elgora-reference-audit/**']
 permissions:
   contents: read
 jobs:
