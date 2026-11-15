@@ -14,10 +14,11 @@ jobs:
       - name: Verify public wallet funds and free withdrawal challenge independently
         run: |
           node --input-type=module <<'JS'
-          const wallet='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ',mint='EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGkZwyTDt1v';
+          const wallet='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ',mint='EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
           const endpoints=['https://api.mainnet-beta.solana.com','https://api.mainnet.solana.com','https://solana-rpc.publicnode.com'];
           const queries=[
             ['getBalance',[wallet,{commitment:'finalized'}]],
+            ['getAccountInfo',[mint,{encoding:'jsonParsed',commitment:'finalized'}]],
             ['getTokenAccountsByOwner',[wallet,{mint},{encoding:'jsonParsed',commitment:'finalized'}]],
             ['getMinimumBalanceForRentExemption',[165]]
           ];
@@ -27,7 +28,11 @@ jobs:
                 const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(10000),redirect:'error'});
                 if(!r.ok){console.log('RPC_HTTP '+method+' '+url+' '+r.status);continue}
                 const j=await r.json();if(j.error||j.result===undefined){console.log('RPC_ERROR '+method+' '+JSON.stringify(j.error??null).slice(0,500));continue}
-                if(method==='getTokenAccountsByOwner'){
+                if(method==='getAccountInfo'){
+                  const a=j.result.value,info=a?.data?.parsed?.info;
+                  if(a?.owner!=='TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'||a?.data?.parsed?.type!=='mint'||info?.decimals!==6||info?.isInitialized!==true)throw Error('USDC_MINT_NOT_VERIFIED');
+                  console.log('USDC_MINT_VERIFIED '+JSON.stringify({mint,decimals:info.decimals,rpc:url}));
+                }else if(method==='getTokenAccountsByOwner'){
                   const rows=j.result.value.map(x=>{const i=x.account?.data?.parsed?.info;if(i?.owner!==wallet||i?.mint!==mint||i.tokenAmount?.decimals!==6||!/^\d+$/.test(i.tokenAmount.amount))throw Error('ACCOUNT_MISMATCH');return {address:x.pubkey,state:i.state,amountMicros:i.tokenAmount.amount};});
                   console.log('SOLANA_USDC_ACCOUNTS '+JSON.stringify({rpc:url,rows,totalMicros:String(rows.reduce((sum,x)=>sum+BigInt(x.amountMicros),0n))}));
                 }else console.log('SOLANA_RPC_RESULT '+JSON.stringify({rpc:url,method,result:j.result}));
@@ -71,7 +76,26 @@ jobs:
             const proof={...i,chainId:chain,type:'ed25519',...(supported.signatureScheme?{signatureScheme:supported.signatureScheme}:{}),address,signature:b58(sig)};
             const out=await post(Buffer.from(JSON.stringify(proof)).toString('base64url'));
             const q=out.j.quote??out.j.data?.quote??out.j.data??out.j;
-            console.log('WURK_WITHDRAWAL_QUOTE '+JSON.stringify({http:out.r.status,ok:out.j.ok,code:out.j.errorCode??out.j.code??null,network:q.network,asset:q.asset,walletAddress:q.walletAddress,amountGross:q.amountGross,feeAmount:q.feeAmount,amountNet:q.amountNet,requiresAta:q.requiresAta,mint:q.mint,ata:q.ata??q.associatedTokenAccount,expiresAt:q.expiresAt,fields:Object.keys(q),message:typeof out.j.message==='string'?out.j.message.slice(0,200):null}));
+            console.log('WURK_WITHDRAWAL_QUOTE '+JSON.stringify({http:out.r.status,ok:out.j.ok,code:out.j.errorCode??out.j.code??null,network:q.network,asset:q.asset,walletAddress:q.walletAddress,amountGross:q.amountGross,feeAmount:q.feeAmount,amountNet:q.amountNet,requiresAta:q.requiresAta,ataCreationSponsored:q.ataCreationSponsored,withdrawalMode:q.withdrawalMode,mint:q.mint,ata:q.ata??q.associatedTokenAccount,expiresAt:q.expiresAt,fields:Object.keys(q),message:typeof out.j.message==='string'?out.j.message.slice(0,200):null}));
             console.log('QUOTE_ONLY. No withdrawal confirmation or payment was sent.');
           }catch(e){console.log('QUOTE_UNAVAILABLE_NO_PAYMENT '+String(e.message).slice(0,160));}
+          JS
+
+      - name: Inspect existing Base funds and a capped SOL funding quote (no signing)
+        run: |
+          node --input-type=module <<'JS'
+          const base='0xaC57AD3c3F233E5865c3cd652f67Ffc82a7Af431',sol='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ',usdc='0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+          async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(15000)});return {status:r.status,j:await r.json()};}
+          for(const [method,params] of [['eth_getBalance',[base,'latest']],['eth_call',[{to:usdc,data:'0x70a08231'+base.slice(2).toLowerCase().padStart(64,'0')},'latest']]]){
+            for(const endpoint of ['https://mainnet.base.org','https://base-rpc.publicnode.com'])try{
+              const {status,j}=await post(endpoint,{jsonrpc:'2.0',id:1,method,params});
+              if(status!==200||!/^0x[0-9a-f]+$/i.test(j.result??''))continue;
+              console.log('BASE_FUNDS '+JSON.stringify({method,raw:String(BigInt(j.result))}));break;
+            }catch(e){console.log('BASE_RPC_UNAVAILABLE '+String(e.message).slice(0,120));}
+          }
+          try{
+            const {status,j}=await post('https://api.relay.link/quote/v2',{user:base,recipient:sol,originChainId:8453,destinationChainId:792703809,originCurrency:usdc,destinationCurrency:'11111111111111111111111111111111',amount:'130000',tradeType:'EXACT_INPUT'});
+            const d=j.details??{};console.log('SOL_FUNDING_QUOTE '+JSON.stringify({status,code:j.errorCode??j.code??null,message:String(j.message??'').slice(0,200),input:d.currencyIn?.amount,output:d.currencyOut?.amount,minOutput:d.currencyOut?.minimumAmount,gasFeeUsd:j.fees?.gas?.amountUsd,steps:j.steps?.map(s=>({id:s.id,kind:s.kind}))}));
+          }catch(e){console.log('FUNDING_QUOTE_UNAVAILABLE '+String(e.message).slice(0,120));}
+          console.log('NO_TRANSACTION_NO_PAYMENT');
           JS
