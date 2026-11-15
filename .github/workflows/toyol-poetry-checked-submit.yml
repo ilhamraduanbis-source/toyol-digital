@@ -1,0 +1,127 @@
+name: Toyol — Submit checked poetry entry
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ['Toyol — Recorded poetry practice']
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: toyol-poetry-official-submit
+  cancel-in-progress: false
+jobs:
+  submit:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && (github.event_name == 'workflow_dispatch' || (github.event.workflow_run.id == 43677248192 && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Verify exact successful build and entry deadline
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import datetime as dt,os,json,urllib.request
+          assert dt.datetime.now(dt.timezone.utc)<dt.datetime(2026,11,15,8,55,tzinfo=dt.timezone.utc),'DEADLINE_GUARD'
+          u='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/43677248192'
+          req=urllib.request.Request(u,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'ToyolPoetry'})
+          with urllib.request.urlopen(req,timeout=20) as r: x=json.load(r)
+          assert x['conclusion']=='success' and x['head_sha']=='adddfa77065c03b6c93445bd1c4f2e791c04c923' and x['head_branch']=='main','CHECKED_BUILD_REQUIRED'
+          print('VERIFIED_CHECKED_BUILD',x['id'])
+          PY
+      - name: Download official contest kit and encryption dependency
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/makefun"
+          mkdir -p "$root"
+          cd "$root"
+          curl --fail --silent --show-error --location --max-time 45 https://make.fun/c/agency-poem-01/kit -o kit.tgz
+          python3 - <<'PY'
+          import tarfile,pathlib
+          with tarfile.open('kit.tgz') as z:
+              a=z.getmembers()
+              if sum(x.size for x in a)>100000000 or any(x.name.startswith('/') or '..' in pathlib.PurePosixPath(x.name).parts or not(x.isfile() or x.isdir()) for x in a): raise SystemExit('UNSAFE_KIT')
+              z.extractall('.',filter='data')
+          PY
+          python3 -m pip install --disable-pip-version-check --target "$root/crypto" 'PyNaCl==1.5.0'
+      - name: Retrieve encrypted checked entry from the exact run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: toyol-poetry-practice
+          run-id: '43677248192'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/makefun/restore
+      - name: Decrypt checkpoint and reconstruct exact Git commit without running entry
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/makefun"
+          PYTHONPATH="$root/crypto" python3 - "$root" <<'PY'
+          import os,sys,json,pathlib,tarfile,io
+          from nacl.signing import SigningKey
+          from nacl.public import SealedBox
+          p=pathlib.Path(sys.argv[1]); key=bytes(json.loads(os.environ['TOYOL_SOLANA_KEYPAIR_JSON']))
+          if len(key)!=64: raise SystemExit('INVALID_WALLET_KEY')
+          sk=SigningKey(key[:32])
+          if bytes(sk.verify_key)!=key[32:]: raise SystemExit('WALLET_KEY_MISMATCH')
+          data=SealedBox(sk.to_curve25519_private_key()).decrypt((p/'restore'/'entry.sealed').read_bytes())
+          dest=p/'selected'; dest.mkdir()
+          with tarfile.open(fileobj=io.BytesIO(data),mode='r:gz') as t:
+              members=t.getmembers()
+              if set(x.name for x in members)!={'source.bundle','transcripts.tar.gz','commit.txt'} or any(not x.isfile() for x in members) or sum(x.size for x in members)>210000000: raise SystemExit('UNSAFE_CHECKPOINT')
+              t.extractall(dest,filter='data')
+          PY
+          unset TOYOL_SOLANA_KEYPAIR_JSON
+          git -c core.hooksPath=/dev/null clone --no-checkout "$root/selected/source.bundle" "$root/entry"
+          expected=$(cat "$root/selected/commit.txt")
+          [[ "$expected" =~ ^[0-9a-f]{40}$ ]]
+          git -C "$root/entry" -c core.hooksPath=/dev/null checkout --detach "$expected"
+          git -C "$root/entry" ls-tree -r HEAD
+          test -f "$root/entry/main.py"
+          test "$(git -C "$root/entry" rev-parse HEAD)" = "$expected"
+          cp "$root/selected/transcripts.tar.gz" "$root/transcripts.tar.gz"
+      - name: Submit once to official contest only after local checks pass
+        shell: bash
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/makefun"
+          kit="$root/agency-poem-01-kit"
+          test "$(date -u +%Y%m%d%H%M)" -lt 202611150855 || { echo "ENTRY_DEADLINE_GUARD"; exit 1; }
+          export HOME="$root/submission-home"
+          mkdir -p "$HOME"
+          chmod 700 "$HOME"
+          # Only the official CLI receives a key. The entrant code and coding agent are never executed in this step.
+          key="$HOME/wallet.json"
+          umask 077
+          trap 'rm -f "$key"; rm -rf "$HOME/.makefun"' EXIT
+          printf '%s' "$TOYOL_SOLANA_KEYPAIR_JSON" > "$key"
+          unset TOYOL_SOLANA_KEYPAIR_JSON
+          node "$kit/cli/makefun.mjs" register --keypair "$key" --origin https://make.fun --name Toyol-Digital --json > "$HOME/auth.json"
+          # Confirm no duplicate entry before sending. Read the stored key from the official credentials file without logging it.
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const raw=JSON.parse(fs.readFileSync(process.env.HOME+'/.makefun/credentials','utf8'));
+          function walk(v,out=[]){if(typeof v==='string'&&/^af_[A-Za-z0-9_-]+$/.test(v))out.push(v);else if(v&&typeof v==='object')for(const x of Object.values(v))walk(x,out);return out;}
+          const keys=[...new Set(walk(raw))];
+          if(keys.length!==1)throw Error('AUTH_SCHEMA_REVIEW');
+          const r=await fetch('https://make.fun/api/agents/me',{headers:{'x-api-key':keys[0],Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(15000)});
+          if(!r.ok)throw Error('ACCOUNT_HTTP_'+r.status);
+          const j=await r.json();
+          if(!Array.isArray(j.entries))throw Error('ACCOUNT_ENTRIES_SCHEMA');
+          if(j.entries.some(x=>JSON.stringify(x).includes('agency-poem-01')))throw Error('ENTRY_ALREADY_PRESENT');
+          console.log('ACCOUNT_DUPLICATE_CHECK_PASSED');
+          JS
+          cd "$root/entry"
+          node "$kit/cli/makefun.mjs" submit --competition agency-poem-01 --source "$root/entry" --commit "$(git rev-parse HEAD)" --bundle "$root/transcripts.tar.gz" --keypair "$key" --origin https://make.fun --title 'Toyol Digital — Agency' --json > "$HOME/submission.json"
+          python3 - "$HOME/submission.json" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          if not isinstance(d,dict):raise SystemExit("RECEIPT_SCHEMA")
+          # Output only the public identifier and status; never print private claim codes or credentials.
+          print("MAKEFUN_SUBMISSION_RESPONSE",json.dumps({k:d[k] for k in ("id","submission_id","entry_id","status","stage","receipt") if k in d and k!="receipt"}))
+          PY
