@@ -1,0 +1,52 @@
+name: Toyol — Elgora reference accounting audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-elgora-reference-accounting.yml']
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Obtain pinned audit target and compiler toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/foundry" out
+          curl -fsSL --max-time 90 https://github.com/foundry-rs/foundry/releases/download/v1.9.0/foundry_v1.9.0_linux_amd64.tar.gz -o "$RUNNER_TEMP/foundry.tar.gz"
+          echo "8d17599b42e3139f1a9c171be3798c4ed8e743ae17b84cc3435e57bf2a51ae99  $RUNNER_TEMP/foundry.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/foundry.tar.gz" -C "$RUNNER_TEMP/foundry"
+          echo "$RUNNER_TEMP/foundry" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/foundry/forge" --version | tee out/forge-version.txt
+          git clone --quiet --no-checkout https://github.com/moleculeprotocol/elgora-contracts.git "$RUNNER_TEMP/elgora"
+          cd "$RUNNER_TEMP/elgora"
+          git checkout --quiet --detach 9990996658c31b11e4fe9c125371553bbbe7e360
+          git submodule update --init --recursive
+          test "$(git -C lib/forge-std rev-parse HEAD)" = 77041d2ce690e692d6e03cc812b57d1ddaa4d505
+          test "$(git -C lib/openzeppelin-contracts rev-parse HEAD)" = 5fd1781b1454fd1ef8e722282f86f9293cacf256
+          printf '%s\n' '7465c2421fc942e473ce166369d3ac3bb3c00b9efe33cae837470a05a0aa0b6b  src/ElgoraHub.sol' '0149aee8f04e5e4cb15c89d1b96f4822cd3ae9222e5aa3d406e26479380331c2  src/WinnerTakesAllPayoutScheme.sol' '70ad6cf85833a6024bc023d103f016b54d8f698826eca0f0800badaa31fd373e  src/CappedSubmissionGuard.sol' | sha256sum -c -
+          git diff --exit-code -- src
+          cp "$GITHUB_WORKSPACE/skills/elgora-reference-audit/ToyolReferenceAccounting.t.sol" test/
+          cp test/ToyolReferenceAccounting.t.sol "$GITHUB_WORKSPACE/out/"
+          "$RUNNER_TEMP/foundry/forge" build --skip 'test/fork/*'
+      - name: Run bounded offline local accounting checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/elgora"
+          unset ETH_RPC_URL ELGORA_BASE_SEPOLIA_RPC_URL BASE_RPC_URL
+          forge test --offline --match-contract ToyolReferenceAccountingTest --fuzz-runs 256 --fuzz-seed 0x42 -vv | tee "$GITHUB_WORKSPACE/out/test-results.txt"
+          git diff --exit-code -- src
+          echo 'REFERENCE_ACCOUNTING_TESTS_PASS; NO_VULNERABILITY_CLAIM; NO_SUBMISSION' | tee "$GITHUB_WORKSPACE/out/status.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: elgora-reference-accounting-evidence
+          path: out/
+          retention-days: 14
