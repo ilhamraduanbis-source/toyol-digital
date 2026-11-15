@@ -11,21 +11,34 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
-      - name: Read exact public Solana wallet, USDC account and ATA rent
+      - name: Verify public wallet funds and free withdrawal challenge independently
         run: |
           node --input-type=module <<'JS'
           const wallet='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ',mint='EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGkZwyTDt1v';
-          const endpoints=['https://api.mainnet-beta.solana.com','https://solana-rpc.publicnode.com'];
-          let ok=false;
-          for(const url of endpoints){
-            try{
-              async function rpc(method,params){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(14000),redirect:'error'});if(!r.ok)throw Error('HTTP_'+r.status);const j=await r.json();if(j.error||j.result===undefined)throw Error('RPC_ERROR');return j.result;}
-              const [balance,accounts,rent]=await Promise.all([rpc('getBalance',[wallet,{commitment:'finalized'}]),rpc('getTokenAccountsByOwner',[wallet,{mint},{encoding:'jsonParsed',commitment:'finalized'}]),rpc('getMinimumBalanceForRentExemption',[165,{commitment:'finalized'}])]);
-              if(!Number.isSafeInteger(balance.value)||!Array.isArray(accounts.value)||!Number.isSafeInteger(rent))throw Error('SCHEMA');
-              const rows=accounts.value.map(x=>{const i=x.account?.data?.parsed?.info;if(i?.owner!==wallet||i?.mint!==mint||i.tokenAmount?.decimals!==6||!/^\d+$/.test(i.tokenAmount.amount))throw Error('ACCOUNT_MISMATCH');return {address:x.pubkey,state:i.state,amountMicros:i.tokenAmount.amount};});
-              console.log('SOLANA_FUNDING_PREFLIGHT '+JSON.stringify({rpc:url,wallet,lamports:balance.value,usdcAccounts:rows,usdcTotalMicros:String(rows.reduce((sum,x)=>sum+BigInt(x.amountMicros),0n)),tokenAccountRentLamports:rent,transactionSent:false,feeSpent:false}));
-              ok=true;break;
-            }catch(e){console.log('PUBLIC_RPC_UNAVAILABLE '+url+' '+String(e.message).slice(0,120));}
+          const endpoints=['https://api.mainnet-beta.solana.com','https://api.mainnet.solana.com','https://solana-rpc.publicnode.com'];
+          const queries=[
+            ['getBalance',[wallet,{commitment:'finalized'}]],
+            ['getTokenAccountsByOwner',[wallet,{mint},{encoding:'jsonParsed',commitment:'finalized'}]],
+            ['getMinimumBalanceForRentExemption',[165]]
+          ];
+          for(const [method,params] of queries){
+            for(const url of endpoints){
+              try{
+                const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(10000),redirect:'error'});
+                if(!r.ok){console.log('RPC_HTTP '+method+' '+url+' '+r.status);continue}
+                const j=await r.json();if(j.error||j.result===undefined){console.log('RPC_ERROR '+method+' '+JSON.stringify(j.error??null).slice(0,500));continue}
+                if(method==='getTokenAccountsByOwner'){
+                  const rows=j.result.value.map(x=>{const i=x.account?.data?.parsed?.info;if(i?.owner!==wallet||i?.mint!==mint||i.tokenAmount?.decimals!==6||!/^\d+$/.test(i.tokenAmount.amount))throw Error('ACCOUNT_MISMATCH');return {address:x.pubkey,state:i.state,amountMicros:i.tokenAmount.amount};});
+                  console.log('SOLANA_USDC_ACCOUNTS '+JSON.stringify({rpc:url,rows,totalMicros:String(rows.reduce((sum,x)=>sum+BigInt(x.amountMicros),0n))}));
+                }else console.log('SOLANA_RPC_RESULT '+JSON.stringify({rpc:url,method,result:j.result}));
+                break;
+              }catch(e){console.log('RPC_UNAVAILABLE '+method+' '+url+' '+String(e.message).slice(0,160));}
+            }
           }
-          if(!ok){console.log('FUNDING_UNVERIFIED_NO_PAYMENT');}
+          try{
+            const url='https://api.wurk.fun/withdraw/quote',body=JSON.stringify({network:'solana',asset:'USDC'});
+            const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body,redirect:'error',signal:AbortSignal.timeout(15000)}),j=await r.json(),x=j.extensions?.['sign-in-with-x'];
+            console.log('WURK_QUOTE_CHALLENGE '+JSON.stringify({status:r.status,version:j.x402Version,accepts:j.accepts?.length,statement:x?.info?.statement,domain:x?.info?.domain,uri:x?.info?.uri,resources:x?.info?.resources,fields:Object.keys(x?.info??{}),chains:x?.supportedChains,code:j.errorCode??null}));
+          }catch(e){console.log('WURK_QUOTE_CHALLENGE_UNAVAILABLE '+String(e.message).slice(0,100));}
+          console.log('READ_ONLY_PREFLIGHT_COMPLETE. No signing, withdrawals, payment or transfer.');
           JS
