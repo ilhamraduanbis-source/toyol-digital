@@ -36,14 +36,32 @@ jobs:
           async function boundary(timestamp){let lo=0,hi=latest;while(lo<hi){const m=Math.floor((lo+hi)/2),b=await rpc('eth_getBlockByNumber',[h(m),false]);if(num(b.timestamp)<timestamp)lo=m+1;else hi=m}return lo}
           const first=await boundary(start),next=await boundary(end),last=next-1;
           emit('BOUNDARIES',{first,last,next,startUTC:new Date(start*1000).toISOString(),endUTC:new Date(end*1000).toISOString()});
-          const logs=[];
-          for(let a=first;a<=last;a+=2000){
-            const b=Math.min(last,a+1999),part=await rpc('eth_getLogs',[{address:token,fromBlock:h(a),toBlock:h(b),topics:['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef','0x'+treasury.slice(2).padStart(64,'0')]}]);logs.push(...part);
+          // Public prior audit provides block leads only. Independently read every block and receipt.
+          const leads=[132985024,132985068,132988052,132988106,132988158,132988207,132988260,132988312,132988366,132988416,132988464,132988512,132988560,132988609,132988657,132988707,133060550,133060608,133060676,133060725,133060774,133060825,133060873,133060930,133060982,133061033,133061755,133065517,133065571,133065626,133065676];
+          const logs=[],verifiedNonces=[],direct=[];
+          for(const n of leads){
+            const b=await rpc('eth_getBlockByNumber',[h(n),true]);
+            const txs=b.transactions.filter(x=>typeof x==='object'&&x.from?.toLowerCase()===treasury);
+            for(const tx of txs){
+              const r=await rpc('eth_getTransactionReceipt',[tx.hash]);
+              if(r.status!=='0x1'||r.blockNumber!==h(n)||r.from.toLowerCase()!==treasury)throw Error('RECEIPT_MISMATCH');
+              const matches=r.logs.filter(l=>l.address.toLowerCase()===token&&l.topics[0]==='0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'&&l.topics[1]?.slice(-40).toLowerCase()===treasury.slice(2));
+              if(matches.length!==1)throw Error('EXACT_TRANSFER_MISSING_'+tx.hash);
+              logs.push(...matches);verifiedNonces.push(num(tx.nonce));direct.push({hash:tx.hash,block:n,nonce:num(tx.nonce),recipient:'0x'+matches[0].topics[2].slice(-40),amount:BigInt(matches[0].data).toString()});
+            }
           }
+          if(logs.length!==31||verifiedNonces.some((n,i)=>n!==755+i))throw Error('LEAD_SET_INCOMPLETE_'+logs.length);
+          emit('DIRECT_RECEIPTS',{count:logs.length,nonces:verifiedNonces,first:direct[0],last:direct.at(-1)});
+          let boundaryNonce=null;
+          try{boundaryNonce={before:num(await rpc('eth_getTransactionCount',[treasury,h(first-1)])),after:num(await rpc('eth_getTransactionCount',[treasury,h(last)]))};emit('BOUNDARY_NONCE',boundaryNonce)}catch(e){emit('ARCHIVE_NONCE_UNAVAILABLE',{reason:e.message})}
           const rows=[],times=new Map();let total=0n;
           for(const l of logs){if(!times.has(l.blockNumber))times.set(l.blockNumber,num((await rpc('eth_getBlockByNumber',[l.blockNumber,false])).timestamp));let amount=BigInt(l.data);total+=amount;rows.push({hash:l.transactionHash,logIndex:num(l.logIndex),block:num(l.blockNumber),timestampCOT:new Date((times.get(l.blockNumber)-18000)*1000).toISOString().replace('Z','-05:00'),recipient:'0x'+l.topics[2].slice(-40),amountAtomic:amount.toString()})}
           rows.sort((a,b)=>a.block-b.block||a.logIndex-b.logIndex);
-          const result={taskId,treasury,token,first,last,rows,totalAtomic:total.toString(),recipients:[...new Set(rows.map(x=>x.recipient))]};
+          const recipients=[...new Set(rows.map(x=>x.recipient))],funding=[];
+          for(const address of recipients){
+            try{const [bal,nonce,code]=await Promise.all([rpc('eth_getBalance',[address,'latest']),rpc('eth_getTransactionCount',[address,'latest']),rpc('eth_getCode',[address,'latest'])]);funding.push({address,bnbWei:BigInt(bal).toString(),nonce:num(nonce),code,classification:BigInt(bal)===0n&&num(nonce)===0&&code==='0x'?'no native funding evident at head; historical internal movements not excluded':'first funder requires history'});}catch(e){funding.push({address,error:e.message})}
+          }
+          const result={taskId,treasury,token,first,last,rows,totalAtomic:total.toString(),recipients,boundaryNonce,funding,method:'independent full block and receipt verification of public block leads; contiguous treasury nonces, archive boundary proof if available; funding head checks are not full historic funding proof'};
           fs.writeFileSync('out/treasury.json',JSON.stringify(result,null,2));emit('AUDIT_TRANSFERS',result);
           try{const p=await fetch('https://api.dexscreener.com/token-pairs/v1/bsc/'+token,{signal:AbortSignal.timeout(10000)}).then(r=>r.json());emit('TOKEN_LIQUIDITY',Array.isArray(p)?p.map(x=>({pair:x.pairAddress,priceUsd:x.priceUsd,liquidity:x.liquidity?.usd,volume24h:x.volume?.h24,base:x.baseToken?.address,quote:x.quoteToken?.address})):null)}catch(e){emit('TOKEN_PRICE_UNAVAILABLE',{reason:e.message})}
           JS
