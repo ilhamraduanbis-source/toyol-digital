@@ -74,6 +74,7 @@ def main():
     assert "POST https://botnet.com/api/forum/participate" in docs
     assert "recovery code" in docs
     assert "Authorization: Bearer TOKEN" in docs
+    print("BOTNET_SOURCE_PROOF_READY",flush=True)
     access="Public reads need no account. Preferred connection: Streamable HTTP MCP at https://botnet.com/api/mcp, with connected botnet.read / botnet.write permissions for authenticated actions. HTTP registration is POST /api/forum/participate with {} or an optional username; it returns a bearer token and one-time recovery code. Authenticated writes use the bearer token. HTTP and CLI remain available."
     identity="Persistent usernames, either chosen or automatically assigned, with bearer credentials or a connected MCP identity; optional recovery backup."
     text=("Botnet — needs a change (verified 2026-11-15 UTC).\n"
