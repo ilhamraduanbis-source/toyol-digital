@@ -85,7 +85,7 @@ jobs:
               if "opencode/"+mid in avail and (mid.endswith("-free") or mid=="big-pickle") and cost.get("input")==0 and cost.get("output")==0:
                   choices.append(mid)
           if not choices:raise SystemExit("NO_VERIFIED_FREE_MODEL")
-          order=["glm-5.3-flash-free","deepseek-v4.1-flash-free","minimax-m3.1-flash-free","big-pickle"]
+          order=["deepseek-v4.1-flash-free","minimax-m3.1-flash-free","big-pickle","glm-5.3-flash-free"]
           choices.sort(key=lambda x:(order.index(x) if x in order else len(order),x))
           print("opencode/"+choices[0])
           PY
@@ -95,15 +95,34 @@ jobs:
           import json,sys
           json.dump({"$schema":"https://opencode.ai/config.json","model":sys.argv[1],"small_model":sys.argv[1],"share":"disabled","autoupdate":False,"permission":{"edit":"allow","read":"allow","bash":"allow","webfetch":"deny","websearch":"deny","external_directory":"allow"}},open("opencode.json","w"))
           PY
-          prompt="Build an original offline tactical FPS for threejs-fps-02. FIRST run node $kit/cli/makefun.mjs init --competition threejs-fps-02 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT in the entry repo so the official anchor is recorded. Read all official rules and starter. Create Iron Circuit: polished industrial map, movement, mouse look, collision, two teams of tactical bots, rounds, objective, economy, weapons and reload, HUD and original audio and visuals. Implement main.ts and dossier per kit. Keep official vendor helper and pinned three.js files unchanged. Game must run fully offline without a build step. Use installed Playwright at $RUNNER_TEMP/makefun/tools/node_modules/playwright/index.mjs with Chromium and software WebGL2 flags --use-angle=swiftshader and --enable-unsafe-swiftshader. Serve on localhost only. Playtest and capture real screenshots, never fake screenshots. No credential access, external submissions or spending. Edit only entry repository."
-          timeout 780 opencode run --standalone --model "$MODEL" --format json "$prompt" > "$RUNNER_TEMP/makefun/turn-1.jsonl"
-          for n in 2 3 4; do
+          # Narrow work into independent phases; preserve actual source even when a model call times out.
+          for n in 1 2 3 4 5; do
             case "$n" in
-              2) prompt="Improve real gameplay, collision, bot behavior, rounds and objective, weapon economy, and HUD. Run real browser smoke tests and fix observed failures. Make substantive source edits.";;
-              3) prompt="Polish original visual identity, map, lighting and feedback. Use installed Playwright to capture 3 or 4 actual gameplay screenshots in screenshots/. Verify offline runtime, no network requests. Make substantive source edits.";;
-              4) prompt="Review exact kit deliverables and main.ts output. Fix verified defects. Re-render screenshots after source changes. Run final tests, report actual results and limitations. Do not change the required vendor files or transcripts.";;
+              1) prompt="FIRST run node $kit/cli/makefun.mjs init --competition threejs-fps-02 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT in this entry repo to record the official anchor. Read RULES.txt and vendor helper. Build a small original industrial Three.js first-person scene in game/index.html and game/game.js with keyboard movement, mouse look, walls, collision and HUD. Write working files immediately. Use local pinned Three.js, no network, no credentials, no submission, only edit the entry repo. Finish this phase after syntax check.";;
+              2) prompt="Add real playable round logic, two teams of bots, shooting, health, ammo, reload, objective and round resets to existing game. Add source incrementally. Preserve official vendor files. No external actions.";;
+              3) prompt="Improve map art, lighting, tactical bot behavior, weapon choice, economy, HUD and feedback. Keep fully offline. Run syntax checks and fix defects. Work only on existing files.";;
+              4) prompt="Read the exact official kit deliverables. Implement main.ts and dossier precisely; use installed Playwright at $RUNNER_TEMP/makefun/tools/node_modules/playwright/index.mjs with Chromium software WebGL2 flags --use-angle=swiftshader --enable-unsafe-swiftshader to test local gameplay and take at least 3 genuine screenshots under screenshots/. Never fabricate evidence.";;
+              5) prompt="Verify exact kit requirements, fix observed browser and entrypoint failures, re-render real screenshots after changes, report actual results. Do not edit transcripts or required vendor files. No submission.";;
             esac
-            timeout 360 opencode run --standalone --continue --model "$MODEL" --format json "$prompt" > "$RUNNER_TEMP/makefun/turn-$n.jsonl"
+            args=()
+            if [ "$n" -gt 1 ]; then args+=(--continue); fi
+            set +e
+            timeout --kill-after=15s 420 opencode run --standalone "${args[@]}" --model "$MODEL" --format json "$prompt" > "$RUNNER_TEMP/makefun/turn-$n.jsonl"
+            rc=$?
+            set -e
+            echo "PHASE_EXIT phase=$n code=$rc"
+            # Only preserve source; no home directory, settings, credentials or raw session files.
+            git add -- main.ts game vendor screenshots 2>/dev/null || git add -- game vendor screenshots
+            if ! git diff --cached --quiet; then
+              git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm "FPS source checkpoint phase $n"
+            fi
+            git bundle create "$RUNNER_TEMP/makefun/evidence/training-source.bundle" HEAD
+            git rev-parse HEAD > "$RUNNER_TEMP/makefun/evidence/training-commit.txt"
+            printf 'phase=%s exit=%s\n' "$n" "$rc" >> "$RUNNER_TEMP/makefun/evidence/phases.txt"
+            if [ "$rc" -ne 0 ] && [ ! -s game/index.html ]; then
+              echo 'NO_USABLE_BASELINE; STOP_WITH_CHECKPOINT'
+              exit 1
+            fi
           done
           git diff --check
           test -f main.ts
@@ -113,14 +132,26 @@ jobs:
           sed 's|\./three\.core\.js|./three.core.min.js|g' "$three/three.module.js" | cmp - game/three.module.min.js
           test "$(find screenshots -type f -name '*.png' | wc -l)" -ge 3
           git add main.ts game vendor screenshots
-          if git diff --cached --quiet; then echo 'NO_REAL_CODE_CHANGES'; exit 1; fi
-          git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm 'Recorded original tactical FPS and gameplay screenshots'
+          if ! git diff --cached --quiet; then git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm 'Recorded original tactical FPS and gameplay screenshots'; fi
           echo "SOURCE_COMMIT $(git rev-parse HEAD)"
           # Collect the harness-native records with the official bundler; do not edit the records.
           node "$kit/cli/makefun.mjs" bundle --repo "$entry" --out "$RUNNER_TEMP/makefun/transcripts.tar.gz" --opencode-dir "$XDG_DATA_HOME/opencode" --harness opencode --harness-version 2.3.0 --model "$MODEL" --provider opencode
           test -s "$RUNNER_TEMP/makefun/transcripts.tar.gz"
           node "$kit/cli/makefun.mjs" check --kit "$kit" --repo "$entry" --transcripts "$RUNNER_TEMP/makefun/transcripts.tar.gz" --json > "$RUNNER_TEMP/makefun/evidence/check.json"
-          echo 'LOCAL_ENTRY_GATE_PASSED'
+          python3 - "$RUNNER_TEMP/makefun/evidence/check.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1])); rows=[]
+          def walk(v):
+              if isinstance(v,dict):
+                  if 'check' in v and 'status' in v: rows.append(v)
+                  for w in v.values(): walk(w)
+              elif isinstance(v,list):
+                  for w in v: walk(w)
+          walk(x)
+          assert rows and all(r['status'] in ('pass','skip','submission') for r in rows)
+          assert any(r['check']=='thinking_reproduces' and r['status']=='pass' for r in rows)
+          print('LOCAL_ENTRY_GATE_PASSED',len(rows))
+          PY
       - name: Execute entry and preserve verified deliverables
         shell: bash
         run: |
