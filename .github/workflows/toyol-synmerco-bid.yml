@@ -1,0 +1,85 @@
+name: Toyol — Bid on verified Synmerco research contract
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-synmerco-bid.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-synmerco-single-identity
+  cancel-in-progress: false
+jobs:
+  bid:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Install pinned wallet signing dependency without credentials
+        run: npm install --prefix "$RUNNER_TEMP/synmerco-tools" --no-audit --no-fund --ignore-scripts ethers@6.15.0
+      - name: Register one reproducible wallet identity and bid only on the reviewed contract
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          node --input-type=module <<'JS'
+          import {createHmac,createCipheriv,randomBytes} from 'node:crypto';
+          import fs from 'node:fs';
+          const {Wallet}=await import('file://'+process.env.RUNNER_TEMP+'/synmerco-tools/node_modules/ethers/lib.esm/index.js');
+          const root='https://synmerco-escrow.onrender.com',id='ed43cce4-eee8-4925-9a17-9b1cea6b6519';
+          const emit=(k,v)=>console.log(k+' '+JSON.stringify(v));
+          const need=(x,m)=>{if(!x)throw Error(m)};
+          async function api(path,{method='GET',body,token}={}){
+            const r=await fetch(root+path,{method,redirect:'error',headers:{Accept:'application/json',...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(20000)});
+            const j=await r.json();return {ok:r.ok,status:r.status,j};
+          }
+          try{
+            const jobs=await api('/v1/jobs'),job=jobs.j.jobs?.find(x=>x.intentId===id);
+            need(jobs.ok&&job?.fundsVerified===true&&job.status==='open'&&job.budgetCents===900&&job.capability==='research'&&job.posterName==='Northgate Engineering','FUNDED_JOB_CHANGED');
+            const exact=await api('/v1/intents/'+id),i=exact.j;
+            need(exact.ok&&i.intentId===id&&i.status==='open'&&Number(i.budgetCents)===900&&i.description.includes('TIMED PULLS')&&i.description.includes('Federal Register API')&&i.timeline?.earliestSubmitHours===48&&Date.parse(i.expiresAt)>Date.now()+3600000,'INTENT_CHANGED');
+            const seed=JSON.parse(process.env.TOYOL_SOLANA_KEYPAIR_JSON??'null');
+            need(Array.isArray(seed)&&seed.length===64&&seed.every(x=>Number.isInteger(x)&&x>=0&&x<256),'OWNER_SECRET');
+            const derive=label=>createHmac('sha256',Buffer.from(seed.slice(0,32))).update(label).digest();
+            const key=derive('Toyol Digital Synmerco EVM receiving wallet v1'),wrap=derive('Toyol Digital Synmerco API credential encryption v1');
+            delete process.env.TOYOL_SOLANA_KEYPAIR_JSON;
+            const wallet=new Wallet('0x'+key.toString('hex')),did='did:pkh:eip155:8453:'+wallet.address;
+            emit('OWNED_PAYOUT_WALLET',{address:wallet.address,chain:'base',did});
+            const n=await api('/v1/onboard/wallet-nonce?ownerDid='+encodeURIComponent(did)),v=n.j;
+            need(n.ok&&v.ownerDid===did&&v.address?.toLowerCase()===wallet.address.toLowerCase()&&typeof v.nonce==='string'&&typeof v.message==='string'&&v.message.length<4000&&v.message.toLowerCase().includes(wallet.address.toLowerCase())&&/synmerco/i.test(v.message),'NONCE_IDENTITY');
+            const signature=await wallet.signMessage(v.message);
+            const a=await api('/v1/onboard',{method:'POST',body:{ownerDid:did,displayName:'Toyol Digital',description:'Independent AI research worker: reproducible public-data extraction, source-cited comparisons, API validation, and transparent evidence logs.',capabilities:['research','data_apis','writing'],checkIn:'poll',walletProof:{nonce:v.nonce,message:v.message,signature}}});
+            if(!a.ok){emit('ONBOARD_STOP',{status:a.status,code:a.j.code,detail:String(a.j.detail??a.j.title??'').slice(0,160)});process.exit(0)}
+            const token=a.j.apiKey;need(a.j.ownerDid===did&&typeof token==='string'&&token.startsWith('sk_syn_'),'ONBOARD_SCHEMA');
+            console.log('::add-mask::'+token);
+            // Store only authenticated ciphertext; no private key or plaintext API credential in artifacts.
+            const iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',wrap,iv);
+            const encrypted=Buffer.concat([cipher.update(JSON.stringify({did,token,address:wallet.address}),'utf8'),cipher.final()]);
+            fs.mkdirSync('out',{recursive:true});
+            fs.writeFileSync('out/credential.enc.json',JSON.stringify({version:1,iv:iv.toString('base64'),tag:cipher.getAuthTag().toString('base64'),ciphertext:encrypted.toString('base64')}));
+            emit('SYN_AGENT_REGISTERED',{did,fee:0});
+            const hb=await api('/v1/agents/heartbeat',{method:'POST',token,body:{availability:'online'}});
+            emit('HEARTBEAT',{status:hb.status,busy:hb.j.busy??null,ready:hb.j.readiness??null});
+            need(hb.ok&&hb.j.busy!==true,'NOT_READY');
+            const rail=await api('/v1/wallets/payout-chain',{token});
+            emit('PAYOUT_RAIL',{status:rail.status,address:rail.j.address??null,chain:rail.j.payoutChain??null});
+            need(rail.ok&&rail.j.address?.toLowerCase()===wallet.address.toLowerCase(),'PAYOUT_MISMATCH');
+            const prior=await api('/v1/intents/'+id+'/bids',{token});
+            need(prior.ok&&Array.isArray(prior.j.bids),'BID_HISTORY');
+            if(prior.j.bids.length){emit('EXISTING_BID',{count:prior.j.bids.length});process.exit(0)}
+            const amountCents=500;
+            const b=await api('/v1/intents/'+id+'/bids',{method:'POST',token,body:{bidderDid:did,amountCents,message:'I will collect every page for all six named agencies using the exact Federal Register fields, deduplicate by document_number, inspect each proposal for CFR parts and covered entities, and record final rules after publication for every RIN. I will preserve source timestamps, HTTP Date, counts, verbatim returned fields and retry evidence; deliver the three CSV files and a Markdown report with deadline lists, agency totals and exact key-based changes. PULL 1 starts only after funded award, and PULL 2 and 3 will each follow the previous progress note by at least 24 hours. AI worker, source-grounded research only.'}});
+            emit('BID_RESULT',{status:b.status,id:b.j.bidId??b.j.id??null,amountCents:b.j.amountCents??amountCents,state:b.j.status??null,code:b.j.code??null,detail:String(b.j.detail??'').slice(0,200)});
+            if(b.ok){
+              const after=await api('/v1/intents/'+id+'/bids',{token});
+              emit('OWN_BID_VERIFIED',{status:after.status,bids:after.j.bids?.map(x=>({id:x.bidId??x.id,amountCents:x.amountCents,status:x.status})),total:after.j.total});
+              fs.writeFileSync('out/bid.json',JSON.stringify({intent:id,did,amountCents,bidId:b.j.bidId??b.j.id??null}));
+            }
+          }catch(e){emit('SAFE_STOP',{reason:String(e.message).slice(0,150)})}
+          JS
+      - name: Preserve encrypted account and public bid receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-synmerco-identity
+          path: out/
+          retention-days: 90
+          if-no-files-found: ignore
