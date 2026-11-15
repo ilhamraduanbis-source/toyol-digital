@@ -1,0 +1,36 @@
+name: Toyol — Free true402 catalog registration
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-true402-listing.yml']
+permissions:
+  contents: read
+jobs:
+  register:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Validate deployed service and register only the free origin
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const origin='https://toyol-csv-evidence.ilhamraduan-bis.workers.dev',url=origin+'/v1/csv/audit';
+          const request=(u,o={})=>fetch(u,{...o,redirect:'error',signal:AbortSignal.timeout(18000)});
+          let manifest;
+          for(let i=0;i<9;i++){
+            try{const r=await request(origin+'/.well-known/x402-service.json');if(r.ok){manifest=await r.json();break;}}catch{}
+            if(i<8)await new Promise(r=>setTimeout(r,10000));
+          }
+          assert.equal(manifest?.endpoint,url);
+          assert.equal(manifest.payment.address.toLowerCase(),'0xac57ad3c3f233e5865c3cd652f67ffc82a7af431');
+          assert.equal(manifest.pricing.base,'0.01');assert.equal(manifest.payment.chain,'base');
+          const q=await request(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({csv:'id,name\n1,Ada\n',unique:['id']})});
+          assert.equal(q.status,402);const terms=JSON.parse(Buffer.from(q.headers.get('payment-required'),'base64').toString('utf8'));
+          const a=terms.accepts.find(x=>x.network==='eip155:8453');assert.equal(a.amount,'10000');assert.equal(a.payTo.toLowerCase(),manifest.payment.address.toLowerCase());
+          const r=await request('https://true402.dev/api/v1/services',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:origin})});
+          const body=await r.text();console.log('TRUE402_REGISTRATION '+JSON.stringify({http:r.status,body:body.slice(0,10000),ownerSpend:0,paid:false}));
+          if(!r.ok){console.log('TRUE402_LISTING_NOT_CONFIRMED');process.exit(0);}
+          const listing=await request('https://true402.dev/api/v1/services?q='+encodeURIComponent('Toyol CSV Evidence'));
+          console.log('TRUE402_PUBLIC_SEARCH '+JSON.stringify({http:listing.status,body:(await listing.text()).slice(0,16000),paymentVerified:false}));
+          JS
