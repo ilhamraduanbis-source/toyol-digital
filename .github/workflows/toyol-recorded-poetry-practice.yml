@@ -70,6 +70,22 @@ jobs:
           set -e
           echo "POETRY_AGENT_EXIT $rc"
           test -s main.py
+          # Preserve the draft and continue the SAME real session for genuine editorial work.
+          cp main.py "$root/draft.py"
+          for revision in 1 2; do
+            if [ "$revision" = 1 ]; then
+              review="Read your existing main.py and critique the poem as a literary editor. Identify one weak image or abstract line, explain why, then use the edit tool to replace only that small passage with a sharper, original image. Keep all other lines and the three Python statements unchanged. Do not rewrite the whole file. Explain the improvement and finish."
+            else
+              review="Review the revised poem for rhythm, agency, and its ending. Identify one further concrete improvement, use the edit tool to revise only one or two lines while preserving the other lines, and explain the change. Check the Python syntax with python3 -m py_compile main.py. Keep the literal poem within 1000 characters, the exact output path and the same three statements. Finish with a short editorial explanation."
+            fi
+            set +e
+            timeout --kill-after=5s 100s opencode run --standalone --continue --model "$model" --format json "$review" </dev/null > "$root/revision-$revision.jsonl" 2> "$root/revision-$revision.stderr"
+            revrc=$?
+            set -e
+            echo "POETRY_REVISION_EXIT $revision $revrc"
+            test "$revrc" = 0
+          done
+          if cmp -s "$root/draft.py" main.py; then echo 'NO_REAL_REVISION'; exit 1; fi
           python3 - <<'PY'
           import ast
           b=ast.parse(open('main.py').read()).body
@@ -82,7 +98,7 @@ jobs:
           print('POETRY_SOURCE_VALID',len(a.value.value))
           PY
           git add main.py
-          git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm 'Recorded original poem'
+          git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm 'Recorded original poem and genuine editorial revisions'
           node "$kit/cli/makefun.mjs" bundle --repo "$root/entry" --out "$root/transcripts.tar.gz" --opencode-dir "$XDG_DATA_HOME/opencode" --harness opencode --harness-version 2.3.0 --model "$model" --provider opencode
           set +e
           node "$kit/cli/makefun.mjs" check --kit "$kit" --repo "$root/entry" --transcripts "$root/transcripts.tar.gz" --json > "$out/check.json" 2> "$root/check.stderr"
@@ -108,6 +124,26 @@ jobs:
           cmp "$out/poem.txt" /output/entry.txt
           cp main.py "$out/main.py"
           echo 'POETRY_DETERMINISTIC_AND_OFFICIAL_CHECK_PASSED'
+          git bundle create "$root/source.bundle" HEAD
+          printf '%s\n' "$(git rev-parse HEAD)" > "$root/commit.txt"
+          python3 -m pip install --disable-pip-version-check --target "$root/crypto" 'PyNaCl==1.5.0'
+          PYTHONPATH="$root/crypto" python3 - "$root" "$out" <<'PY'
+          import pathlib,sys,tarfile,io
+          from nacl.signing import VerifyKey
+          from nacl.public import SealedBox
+          p=pathlib.Path(sys.argv[1]); out=pathlib.Path(sys.argv[2])
+          alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+          n=0
+          for ch in 'At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ':
+              n=n*58+alphabet.index(ch)
+          box=SealedBox(VerifyKey(n.to_bytes(32,'big')).to_curve25519_public_key())
+          b=io.BytesIO()
+          with tarfile.open(fileobj=b,mode='w:gz') as t:
+              for name in ('source.bundle','transcripts.tar.gz','commit.txt'):
+                  t.add(p/name,arcname=name)
+          (out/'entry.sealed').write_bytes(box.encrypt(b.getvalue()))
+          print('POETRY_SOURCE_AND_NATIVE_TRANSCRIPTS_PRESERVED')
+          PY
       - name: Preserve review evidence (not a submission)
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
