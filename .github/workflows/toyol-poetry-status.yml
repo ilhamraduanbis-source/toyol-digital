@@ -1,0 +1,55 @@
+name: Toyol — Poetry entry status
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-poetry-status.yml']
+permissions:
+  contents: read
+jobs:
+  status:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Read official status for existing submission (no submission or payment)
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, urllib.request, urllib.error, pathlib
+          from datetime import datetime, timezone
+          sid='01a1dd7d-d4b4-7128-b552-7bb0be3d3034'
+          url='https://make.fun/api/submissions/'+sid+'/status'
+          req=urllib.request.Request(url,headers={'Accept':'application/json','User-Agent':'ToyolEntryStatus/1.0'})
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*a,**kw): return None
+          opener=urllib.request.build_opener(NoRedirect())
+          report={'submission_id':sid,'checked_at':datetime.now(timezone.utc).isoformat(),'income_verified':False}
+          try:
+              with opener.open(req,timeout=20) as r:
+                  b=r.read(1000001)
+                  if len(b)>1000000: raise ValueError('RESPONSE_LIMIT')
+                  data=json.loads(b)
+              if not isinstance(data,dict): raise ValueError('SCHEMA')
+              x=data.get('data',data)
+              if not isinstance(x,dict): raise ValueError('SCHEMA')
+              report['stage']=x.get('stage')
+              report['status']=x.get('status')
+              report['outcome']=x.get('outcome')
+              report['checks']=[{k:c.get(k) for k in ('check','status','reason','fix')} for c in x.get('checks',[]) if isinstance(c,dict)] if isinstance(x.get('checks'),list) else []
+              report['notice']=x.get('notice',{}).get('kind') if isinstance(x.get('notice'),dict) else None
+              report['source_status']='OFFICIAL_RESPONSE'
+              if not report['stage'] and not report['status']: report['source_status']='STATUS_NOT_PUBLIC'
+          except urllib.error.HTTPError as e:
+              report.update(source_status='HTTP_'+str(e.code))
+          except Exception as e:
+              report.update(source_status='UNAVAILABLE',error=type(e).__name__)
+          print('POETRY_ENTRY_STATUS',json.dumps(report,ensure_ascii=True))
+          pathlib.Path('out').mkdir(exist_ok=True)
+          pathlib.Path('out/entry-status.json').write_text(json.dumps(report,indent=2))
+          PY
+      - name: Preserve status evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-poetry-entry-status
+          path: out/entry-status.json
+          retention-days: 7
