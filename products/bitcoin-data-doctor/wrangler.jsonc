@@ -1,0 +1,15 @@
+{
+  "name": "toyol-bitcoin-data-doctor",
+  "main": "src/server.mjs",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "vars": {
+    "STACKS_NETWORK": "testnet",
+    "PAY_TO": "REPLACE_WITH_OWN_TESTNET_ADDRESS"
+  }
+}
