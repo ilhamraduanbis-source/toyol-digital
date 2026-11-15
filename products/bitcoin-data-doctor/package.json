@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test.mjs",
+    "test": "esbuild test.mjs --bundle --platform=node --format=cjs --outfile=.test.cjs && node --test .test.cjs",
     "build": "wrangler deploy --dry-run --outdir dist"
   },
   "dependencies": {
@@ -12,6 +12,7 @@
     "hono": "^4.0.0"
   },
   "devDependencies": {
-    "wrangler": "^4.0.0"
+    "wrangler": "^4.0.0",
+    "esbuild": "0.25.12"
   }
 }
