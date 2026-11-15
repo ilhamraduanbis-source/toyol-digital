@@ -1,0 +1,60 @@
+name: Toyol — Battle Training Armor Cup
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-battle-training-cup.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-battle-training-one-account
+  cancel-in-progress: false
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.18.0'
+      - name: Benchmark original controller with official local simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/battle"
+          mkdir -p "$dir" out
+          cp skills/battle-training/armor-controller.js "$dir/controller.js"
+          curl --fail --silent --show-error --max-time 30 https://api.battle.training/sdk/arena-sim.mjs -o "$dir/arena-sim.mjs"
+          curl --fail --silent --show-error --max-time 30 https://api.battle.training/sdk/local-test.mjs -o "$dir/local-test.mjs"
+          sha256sum "$dir/"*.mjs "$dir/controller.js" > out/input-sha256.txt
+          node --check "$dir/controller.js"
+          cd "$dir"
+          node local-test.mjs controller.js --rules s2 --seeds 8 --vs brawler,holder,random,hunter --profile 2>&1 | tee "$GITHUB_WORKSPACE/out/benchmark.txt"
+          cd "$GITHUB_WORKSPACE"
+          python3 - <<'PY'
+          import pathlib,re,json
+          p=pathlib.Path("out/benchmark.txt"); s=p.read_text()
+          m=re.search(r"games (\d+) W-L-D (\d+)-(\d+)-(\d+)",s)
+          assert m and int(m[1])==64
+          assert "tick errors 0 in 0/64 games matches aborted 0" in s
+          assert "replays verified 64/64" in s
+          assert "rules s2.0.0" in s
+          rows={}
+          for n in ("brawler","hunter","holder","random"):
+              r=re.search(r"vs "+n+r"\s+(\d+)-(\d+)-(\d+)",s)
+              assert r and sum(map(int,r.groups()))==16
+              rows[n]=list(map(int,r.groups()))
+          eligible=rows["brawler"][0]>=10 and rows["hunter"][0]>=8
+          out={"games":64,"wins":int(m[2]),"losses":int(m[3]),"draws":int(m[4]),"opponents":rows,"replays_verified":64,"competitive_gate":eligible,"income_verified":False}
+          pathlib.Path("out/benchmark.json").write_text(json.dumps(out,indent=2))
+          print("BATTLE_BENCHMARK",json.dumps(out))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: toyol-armor-cup-benchmark
+          path: out/
+          retention-days: 14
