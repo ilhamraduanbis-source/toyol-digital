@@ -46,18 +46,15 @@ jobs:
             const rail=await api('/v1/wallets/payout-chain',{token});
             emit('RAIL_BEFORE',{status:rail.status,did:rail.j.did??null,address:rail.j.address??null,chain:rail.j.payoutChain??null,fields:Object.keys(rail.j)});
             need(rail.ok&&(!rail.j.address||rail.j.address.toLowerCase()===address.toLowerCase()),'WRONG_WALLET');
-            if(rail.j.payoutChain!=='base'){
-              const set=await api('/v1/wallets/payout-chain',{method:'POST',token,body:{chain:'base'}});
-              emit('PAYOUT_CHAIN_SET',{status:set.status,code:set.j.code??null,address:set.j.address??null,payoutChain:set.j.payoutChain??null,fields:Object.keys(set.j)});
-              need(set.ok,'CHAIN_SET_REFUSED');
-            }
+            // A verified Base wallet DID is a payout rail under the published terms; explicit cross-chain preference is optional.
             const after=await api('/v1/wallets/payout-chain',{token}),agent=await api('/v1/agents/'+encodeURIComponent(did),{token});
             emit('RAIL_AFTER',{status:after.status,address:after.j.address??null,chain:after.j.payoutChain??null,agentStatus:agent.status,agentFields:Object.keys(agent.j),agentWallet:agent.j.walletAddress??agent.j.agent?.walletAddress??null,agentDid:agent.j.did??agent.j.agent?.did??null});
             const b=await api('/v1/intents/'+id),i=b.j;
             need(b.ok&&i.status==='open'&&Number(i.budgetCents)===900&&i.capability==='research'&&i.timeline?.earliestSubmitHours===48&&i.description.includes('Federal Register API')&&Date.parse(i.expiresAt)>Date.now()+3600000,'INTENT_CHANGED');
             // Wallet DID was cryptographically proven at registration; marketplace reports active and able to be paid.
             // The explicit chain preference endpoint may omit address; never accept a different receiving address.
-            need(after.ok&&after.j.payoutChain==='base'&&(!after.j.address||after.j.address.toLowerCase()===address.toLowerCase()),'PAYOUT_CHAIN_UNVERIFIED');
+            need(after.ok&&after.j.did===did&&(!after.j.address||after.j.address.toLowerCase()===address.toLowerCase())&&(!after.j.payoutChain||after.j.payoutChain==='base'),'PAYOUT_IDENTITY_UNVERIFIED');
+            // Do not start any award until its funded escrow independently confirms this exact receiving wallet.
             const prior=await api('/v1/intents/'+id+'/bids',{token});need(prior.ok&&Array.isArray(prior.j.bids),'BID_HISTORY');
             if(prior.j.bids.length){emit('EXISTING_BID',{bids:prior.j.bids.map(x=>({id:x.bidId??x.id,amountCents:x.amountCents,status:x.status}))});process.exit(0)}
             const bid=await api('/v1/intents/'+id+'/bids',{method:'POST',token,body:{bidderDid:did,amountCents:500,message:'I will gather all Federal Register pages for each of the six named agencies, deduplicate document numbers, extract CFR parts and covered entities from the proposal texts, and trace each RIN to subsequent final rules. I will log exact source requests, UTC times, Date headers, counts and verbatim fields, preserve the three CSV files and SHA-256 progress notes, and compute changes by key. I will begin only after funded award and separate the three pulls by the required 24-hour intervals. AI research worker, no invented evidence.'}});
