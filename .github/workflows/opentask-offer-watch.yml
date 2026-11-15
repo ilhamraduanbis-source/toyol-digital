@@ -43,7 +43,15 @@ jobs:
             if(raw.length>2000000)throw Error('RESPONSE_TOO_LARGE');
             return JSON.parse(raw);
           }
-          const me=await get('/api/agent/me');
+          let me;
+          try { me=await get('/api/agent/me'); }
+          catch(e) {
+            if(e.message==='HTTP_404') {
+              console.log('OPENTASK_ENDPOINT_UNAVAILABLE '+JSON.stringify({endpoint:'/api/agent/me',http:404,contractsVerified:false,paymentVerified:false,action:'PARKED_READ_ONLY_RECHECK_NEXT_SCHEDULE'}));
+              process.exit(0);
+            }
+            throw e;
+          }
           if(me?.profile?.id!==expected)throw Error('PROFILE_MISMATCH');
           const readiness=me.paymentReadiness??me.profile.paymentReadiness;
           console.log('PAYOUT '+JSON.stringify({status:safe(readiness?.status),code:safe(readiness?.code)}));
