@@ -1,0 +1,60 @@
+name: Toyol — Elgora live admission gate
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-elgora-admission.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-elgora-admission
+  cancel-in-progress: false
+jobs:
+  read:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Read current guard and solver admission directly from Base
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/elgora-admission"
+          mkdir -p "$root" out
+          npm install --prefix "$root" --no-audit --no-fund ethers@6.15.0
+          cat > "$root/check.mjs" <<'JS'
+          import {Interface} from 'ethers';
+          import {writeFileSync} from 'node:fs';
+          const hub='0x8f80d1183cd983b01b0c9ac6777cc732ec9800de';
+          const expectedGuard='0xe0d404c22228b03d5b8a715cb569c4944bc5a27a';
+          const solver='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431';
+          const rpc='https://mainnet.base.org';
+          let id=0;
+          async function req(method,params){
+            const r=await fetch(rpc,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:++id,method,params}),signal:AbortSignal.timeout(12000)});
+            if(!r.ok)throw Error('RPC_HTTP_'+r.status);
+            const j=await r.json();if(j.error||j.result==null)throw Error('RPC_ERROR_'+method);return j.result;
+          }
+          if(await req('eth_chainId',[])!=='0x2105')throw Error('CHAIN');
+          const block=await req('eth_getBlockByNumber',['latest',false]);
+          const h=new Interface(['function submissionGuard() view returns(address)']);
+          async function call(to,abi,name,args=[]){
+            const d=abi.encodeFunctionData(name,args);
+            return abi.decodeFunctionResult(name,await req('eth_call',[{to,data:d},block.number]))[0];
+          }
+          const guard=String(await call(hub,h,'submissionGuard')).toLowerCase();
+          if(guard!==expectedGuard)throw Error('GUARD_CHANGED');
+          const a=new Interface(['function maximumSubmissions(uint256) view returns(uint256)','function remainingSubmissions(uint256) view returns(uint256)','function submissionSeatsUsed(uint256) view returns(uint256)','function holdsSubmissionSeat(uint256,address) view returns(bool)']);
+          const rows=[];
+          for(const n of [2,3,4,5,6,7,8]){
+            const [max,left,used,held]=await Promise.all(['maximumSubmissions','remainingSubmissions','submissionSeatsUsed','holdsSubmissionSeat'].map(name=>call(guard,a,name,name==='holdsSubmissionSeat'?[n,solver]:[n])));
+            const row={id:n,capacity:Number(max),remaining:Number(left),used:Number(used),ownSeat:held,admitted:held||left>0n};
+            rows.push(row);console.log('ELGORA_ADMISSION '+JSON.stringify(row));
+          }
+          writeFileSync(process.env.GITHUB_WORKSPACE+'/out/elgora-admission.json',JSON.stringify({block:block.number,guard,solver,rows,at:new Date().toISOString()},null,2));
+          JS
+          node "$root/check.mjs"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: elgora-admission-evidence
+          path: out/elgora-admission.json
+          retention-days: 7
