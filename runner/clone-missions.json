@@ -8,13 +8,7 @@
       "workflow": "toyol-makefun-aggregator-build.yml",
       "mode": "adopt",
       "deadlineUtc": "2026-11-16T02:30:00Z",
-      "purpose": "One original aggregator competition entry; existing duplicate and official grade gates."
-    },
-    {
-      "id": "raptorx",
-      "workflow": "toyol-raptorx-research.yml",
-      "mode": "adopt",
-      "purpose": "Genuine research evidence only; no entry or payment inferred."
+      "purpose": "Review-only until the current official requirements, native session attribution and exact model pricing pass. Failed build recorded; no automatic repeat."
     },
     {
       "id": "frantic-delivery",
@@ -39,6 +33,24 @@
       "workflow": "toyol-usdc-receipt-watch.yml",
       "mode": "scheduled",
       "purpose": "Verify and deduplicate real settlement, never count advertised prizes."
+    },
+    {
+      "id": "go-hybrid-4488",
+      "workflow": "toyol-go-hybrid-4488-watch.yml",
+      "mode": "scheduled",
+      "purpose": "Observe original proposal, maintainer decision and ledger; evidence V2 submitted. No duplicate claim or unverified award."
+    },
+    {
+      "id": "wurk-markdown-sales",
+      "workflow": "toyol-wurk-markdown-toc.yml",
+      "mode": "scheduled",
+      "purpose": "Serve confirmed funded orders for existing public Markdown TOC service; buyer-facing README promotion already published."
+    },
+    {
+      "id": "tiny-chess-training",
+      "workflow": "toyol-tiny-chess-round2.yml",
+      "mode": "adopt",
+      "purpose": "Observe previous competition attempt. Compact standalone practice core tested at 4073 bytes, not a contest entry; official harness and score still required."
     }
   ]
 }
