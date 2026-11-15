@@ -102,3 +102,5 @@ jobs:
           }
           emit('FINANCIAL_BOUNDARY',{transactions:0,fees:0,note:'Submission is not approval or income; the job sponsor funds the reward and the worker pays nothing.'});
           JS
+
+# Owner requested fresh no-fee work inventory, 15 November 2026.
