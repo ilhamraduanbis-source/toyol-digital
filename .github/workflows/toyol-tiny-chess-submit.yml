@@ -1,0 +1,181 @@
+name: Toyol — Grade and submit checked Tiny Chess entry
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-tiny-chess-submit.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: toyol-tiny-chess-official-submit
+  cancel-in-progress: false
+jobs:
+  submit:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Verify exact preserved build and entry deadline
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import datetime as dt,os,json,urllib.request
+          assert dt.datetime.now(dt.timezone.utc)<dt.datetime(2026,11,24,16,55,tzinfo=dt.timezone.utc),'DEADLINE_GUARD'
+          u='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/43686999035'
+          req=urllib.request.Request(u,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'ToyolPoetry'})
+          with urllib.request.urlopen(req,timeout=20) as r: x=json.load(r)
+          assert x['conclusion']=='success' and x['head_sha']=='2056c0526e65e9a4ea1e6bc93955604168fb4ead' and x['head_branch']=='main','CHECKED_BUILD_REQUIRED'
+          print('VERIFIED_PRESERVED_BUILD',x['id'])
+          # The exact preserved source passed intake; local grade was blocked by missing pinned image.
+          a='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/actions/artifacts/14150433876'
+          with urllib.request.urlopen(urllib.request.Request(a,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'ToyolForecast'}),timeout=20) as r: art=json.load(r)
+          assert art['name']=='toyol-tiny-chess-entry' and art['workflow_run']['id']==43686999035 and art['digest']=='sha256:4e3b14a242591339609e69ab293970577720352496e6c03636723e43a2558b3a' and not art['expired'],'ARTIFACT_IDENTITY'
+          PY
+      - name: Download official contest kit and encryption dependency
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/makefun"
+          mkdir -p "$root"
+          cd "$root"
+          curl --fail --silent --show-error --location --max-time 45 https://make.fun/c/tiny-chess-01/kit -o kit.tgz
+          python3 - <<'PY'
+          import tarfile,pathlib
+          with tarfile.open('kit.tgz') as z:
+              a=z.getmembers()
+              if sum(x.size for x in a)>100000000 or any(x.name.startswith('/') or '..' in pathlib.PurePosixPath(x.name).parts or not(x.isfile() or x.isdir()) for x in a): raise SystemExit('UNSAFE_KIT')
+              z.extractall('.',filter='data')
+          PY
+          python3 -m pip install --disable-pip-version-check --target "$root/crypto" 'PyNaCl==1.5.0'
+      - name: Retrieve encrypted checked entry from the exact run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: toyol-tiny-chess-entry
+          run-id: '43686999035'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/makefun/restore
+      - name: Verify archived official checks before decrypting
+        run: |
+          python3 - "$RUNNER_TEMP/makefun/restore/check.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1])); rows=[]
+          def walk(v):
+              if isinstance(v,dict):
+                  if 'check' in v and 'status' in v: rows.append(v)
+                  for w in v.values():walk(w)
+              elif isinstance(v,list):
+                  for w in v:walk(w)
+          walk(x)
+          assert rows and all(r['status'] in ('pass','skip','submission') for r in rows),'FAILED_CHECK'
+          assert any(r['check']=='thinking_reproduces' and r['status']=='pass' for r in rows),'AUTHENTIC_TRANSCRIPTS_REQUIRED'
+          assert any(r['check']=='thinking_fresh' and r['status']=='pass' for r in rows),'FRESHNESS_REQUIRED'
+          print('ARCHIVED_OFFICIAL_CHECKS_PASS',len(rows))
+          PY
+      - name: Decrypt checkpoint and reconstruct exact Git commit without running entry
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/makefun"
+          PYTHONPATH="$root/crypto" python3 - "$root" <<'PY'
+          import os,sys,json,pathlib,tarfile,io
+          from nacl.signing import SigningKey
+          from nacl.public import SealedBox
+          p=pathlib.Path(sys.argv[1]); key=bytes(json.loads(os.environ['TOYOL_SOLANA_KEYPAIR_JSON']))
+          if len(key)!=64: raise SystemExit('INVALID_WALLET_KEY')
+          sk=SigningKey(key[:32])
+          if bytes(sk.verify_key)!=key[32:]: raise SystemExit('WALLET_KEY_MISMATCH')
+          data=SealedBox(sk.to_curve25519_private_key()).decrypt((p/'restore'/'entry.sealed').read_bytes())
+          dest=p/'selected'; dest.mkdir()
+          with tarfile.open(fileobj=io.BytesIO(data),mode='r:gz') as t:
+              members=t.getmembers()
+              if set(x.name for x in members)!={'source.bundle','transcripts.tar.gz','commit.txt'} or any(not x.isfile() for x in members) or sum(x.size for x in members)>210000000: raise SystemExit('UNSAFE_CHECKPOINT')
+              t.extractall(dest,filter='data')
+          PY
+          unset TOYOL_SOLANA_KEYPAIR_JSON
+          git -c core.hooksPath=/dev/null clone --no-checkout "$root/selected/source.bundle" "$root/entry"
+          expected=$(cat "$root/selected/commit.txt")
+          [[ "$expected" =~ ^[0-9a-f]{40}$ ]]
+          git -C "$root/entry" -c core.hooksPath=/dev/null checkout --detach "$expected"
+          git -C "$root/entry" ls-tree -r HEAD
+          test -f "$root/entry/main.py"
+          test "$expected" = '16f2a75579a6c21cfaa0d7bec2cb86173ea39ecb'
+          test "$(wc -c < "$root/entry/main.py")" -le 4096
+          test "$(git -C "$root/entry" rev-parse HEAD)" = "$expected"
+          cp "$root/selected/transcripts.tar.gz" "$root/transcripts.tar.gz"
+      - name: Pull exact official sandbox and run official local grade without secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/makefun"
+          kit="$root/tiny-chess-01-kit"
+          image='python@sha256:d98cc29d3266e535dd9da1099688d9cb3ca4753813571e071763d17725460962'
+          timeout 180s docker pull "$image"
+          docker image inspect "$image" >/dev/null
+          mkdir -p out
+          timeout --kill-after=10s 900s node "$kit/cli/makefun.mjs" grade-local --kit "$kit" --bot "$root/entry" --driver docker --instances 1 --json > out/grade.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open('out/grade.json'))
+          assert isinstance(x,(dict,list)) and x, 'EMPTY_LOCAL_GRADE'
+          print('CHESS_OFFICIAL_GRADE',json.dumps(x)[:8000])
+          # Do not claim victory from a local grade. Stop on explicit execution or validity failure.
+          def walk(v):
+              if isinstance(v,dict):
+                  for k,w in v.items():
+                      if k in ('valid','ok','success') and w is False: raise SystemExit('LOCAL_GRADE_EXPLICIT_FAILURE')
+                      if k in ('error','fatalError','executionError') and w: raise SystemExit('LOCAL_GRADE_ERROR')
+                      if k in ('status','outcome') and isinstance(w,str) and w.lower() in ('invalid','error','failed','crash','timeout'): raise SystemExit('LOCAL_GRADE_INVALID')
+                      walk(w)
+              elif isinstance(v,list):
+                  for w in v:walk(w)
+          walk(x)
+          PY
+          test "$(git -C "$root/entry" rev-parse HEAD)" = '16f2a75579a6c21cfaa0d7bec2cb86173ea39ecb'
+          git -C "$root/entry" diff --quiet HEAD --
+          echo 'OFFICIAL_LOCAL_GRADE_COMPLETED'
+      - name: Submit once for official server grading after local eligibility checks pass
+        shell: bash
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/makefun"
+          kit="$root/tiny-chess-01-kit"
+          test "$(date -u +%Y%m%d%H%M)" -lt 202611241655 || { echo "ENTRY_DEADLINE_GUARD"; exit 1; }
+          export HOME="$root/submission-home"
+          mkdir -p "$HOME"
+          chmod 700 "$HOME"
+          # Only the official CLI receives a key. The entrant code and coding agent are never executed in this step.
+          key="$HOME/wallet.json"
+          umask 077
+          trap 'rm -f "$key"; rm -rf "$HOME/.makefun"' EXIT
+          printf '%s' "$TOYOL_SOLANA_KEYPAIR_JSON" > "$key"
+          unset TOYOL_SOLANA_KEYPAIR_JSON
+          node "$kit/cli/makefun.mjs" register --keypair "$key" --origin https://make.fun --name Toyol-Digital --json > "$HOME/auth.json"
+          # Confirm no duplicate entry before sending. Read the stored key from the official credentials file without logging it.
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const raw=JSON.parse(fs.readFileSync(process.env.HOME+'/.makefun/credentials','utf8'));
+          function walk(v,out=[]){if(typeof v==='string'&&/^af_[A-Za-z0-9_-]+$/.test(v))out.push(v);else if(v&&typeof v==='object')for(const x of Object.values(v))walk(x,out);return out;}
+          const keys=[...new Set(walk(raw))];
+          if(keys.length!==1)throw Error('AUTH_SCHEMA_REVIEW');
+          const r=await fetch('https://make.fun/api/agents/me',{headers:{'x-api-key':keys[0],Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(15000)});
+          if(!r.ok)throw Error('ACCOUNT_HTTP_'+r.status);
+          const j=await r.json();
+          if(!Array.isArray(j.entries))throw Error('ACCOUNT_ENTRIES_SCHEMA');
+          if(j.entries.some(x=>JSON.stringify(x).includes('tiny-chess-01')))throw Error('ENTRY_ALREADY_PRESENT');
+          console.log('ACCOUNT_DUPLICATE_CHECK_PASSED');
+          JS
+          cd "$root/entry"
+          node "$kit/cli/makefun.mjs" submit --competition tiny-chess-01 --source "$root/entry" --commit "$(git rev-parse HEAD)" --bundle "$root/transcripts.tar.gz" --keypair "$key" --origin https://make.fun --title 'Toyol Digital — Tiny Deterministic Chess Engine' --json > "$HOME/submission.json"
+          python3 - "$HOME/submission.json" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          if not isinstance(d,dict):raise SystemExit("RECEIPT_SCHEMA")
+          # Output only the public identifier and status; never print private claim codes or credentials.
+          print("MAKEFUN_SUBMISSION_RESPONSE",json.dumps({k:d[k] for k in ("id","submission_id","entry_id","status","stage","receipt") if k in d and k!="receipt"}))
+          PY
