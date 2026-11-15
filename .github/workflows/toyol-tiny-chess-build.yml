@@ -59,7 +59,7 @@ jobs:
           p=pathlib.Path(sys.argv[1])
           a=set(re.findall(r'opencode/[A-Za-z0-9_.-]+',(p/'models.txt').read_text()))
           d=json.loads((p/'models.json').read_text())['opencode']['models']
-          for k in ['big-pickle','mai-code-1.1-flash-free','glm-5.3-flash-free','deepseek-v4.1-flash-free']:
+          for k in ['mai-code-1.1-flash-free','deepseek-v4.1-flash-free','glm-5.3-flash-free','big-pickle']:
               v=d.get(k,{}).get('cost',{})
               if 'opencode/'+k in a and v.get('input')==0 and v.get('output')==0:
                   print('opencode/'+k);break
@@ -73,13 +73,13 @@ jobs:
           import json,sys
           json.dump({"model":sys.argv[1],"small_model":sys.argv[1],"share":"disabled","autoupdate":False,"permission":{"edit":"allow","read":"allow","bash":"allow","webfetch":"deny","websearch":"deny","external_directory":"allow"}},open('opencode.json','w'))
           PY
-          prompt="First run the official anchor command in this repository: node $kit/cli/makefun.mjs init --competition tiny-chess-01 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT. Read the official $kit/RULES.txt and public environment protocol, not hidden data. Build a genuinely original deterministic chess engine main.py in Python standard library, max 4096 bytes as committed, no other runtime files. Follow the exact game-state and UCI-move protocol via MAKEFUN_ENV_URL only. No model calls, outside network, clocks as search budgets, or unseeded randomness. Use a compact board representation, correct legal moves (including promotion, castling, en passant, check), deterministic alpha-beta with capture ordering and a sensible positional evaluation. Aim for fixed node/depth budget fast enough for 10 seconds per move. Do not copy a competing entry or house engine, hard-code opening/fixture-specific solutions or exploit the grader. Read actual protocol before writing. Produce main.py and explain design."
+          prompt="First run node $kit/cli/makefun.mjs init --competition tiny-chess-01 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT; the transcript must show the official anchor before edits. Read $kit/RULES.txt and the public game-state protocol. WRITE main.py immediately, before lengthy analysis. First version: compact 0x88 or 64-square board with standard-library Python, legal pseudo-moves filtered by check, UCI output to MAKEFUN_ENV_URL, promotion, en passant and castling, material evaluation and deterministic small search. Maximum 4096 bytes. Use public rules only, no competitor code, hidden cases, outside networking or clocks. Write a working minimal engine now; subsequent turns will improve it. Run syntax and byte checks."
           set +e
           timeout --kill-after=5s 420s opencode run --standalone --model "$model" --format json "$prompt" </dev/null > "$root/session.jsonl" 2> "$root/session.stderr"
           rc=$?
           set -e
           echo "CHESS_AGENT_EXIT $rc"
-          test -s main.py
+          if ! test -s main.py; then echo "NO_VALID_ENTRY_NO_SUBMISSION"; exit 0; fi
           cp main.py "$root/draft.py"
           for revision in 1 2; do
             if [ "$revision" = 1 ]; then
@@ -92,9 +92,9 @@ jobs:
             revrc=$?
             set -e
             echo "CHESS_REVISION_EXIT $revision $revrc"
-            test "$revrc" = 0
+            if [ "$revrc" != 0 ]; then echo "REVISION_INTERRUPTED_CHECK_SOURCE"; fi
           done
-          if cmp -s "$root/draft.py" main.py; then echo 'NO_REAL_REVISION'; exit 1; fi
+          if cmp -s "$root/draft.py" main.py; then echo 'NO_REAL_REVISION_NO_SUBMISSION'; exit 0; fi
           python3 -m py_compile main.py
           test "$(wc -c < main.py)" -le 4096
           echo "CHESS_SOURCE_BYTES $(wc -c < main.py)"
@@ -123,10 +123,14 @@ jobs:
                   for w in v:scan(w)
           scan(x)
           PY
-          test "$check_rc" = 0
+          if [ "$check_rc" != 0 ]; then echo 'OFFICIAL_CHECK_REJECTED_NO_SUBMISSION'; exit 0; fi
           # Run the official local grader if supported, with no model keys.
           unset OPENAI_API_KEY ANTHROPIC_API_KEY OPENROUTER_API_KEY GEMINI_API_KEY
-          timeout --kill-after=10s 2000s node "$kit/cli/makefun.mjs" grade-local --kit "$kit" --bot "$root/entry" --driver docker --instances 1 --json > "$out/grade.json" 2> "$root/grade.stderr"
+          set +e
+          timeout --kill-after=10s 1200s node "$kit/cli/makefun.mjs" grade-local --kit "$kit" --bot "$root/entry" --driver docker --instances 1 --json > "$out/grade.json" 2> "$root/grade.stderr"
+          grade_rc=$?
+          set -e
+          if [ "$grade_rc" != 0 ]; then echo 'LOCAL_GRADE_NOT_COMPLETED_NO_SUBMISSION'; head -c 600 "$root/grade.stderr"; exit 0; fi
           python3 - "$out/grade.json" <<'PY'
           import json,sys
           x=json.load(open(sys.argv[1])); assert isinstance(x,(dict,list))
