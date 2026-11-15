@@ -259,6 +259,23 @@
       "skippedSteps": [],
       "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
       "incomeInferred": false
+    },
+    {
+      "worker": "aggregator",
+      "runId": 43714680301,
+      "attempt": 1,
+      "completedAt": "2026-11-15T12:54:25Z",
+      "sourceCommit": "ad922860590d1c6b8a17b0021ac49847c48eed9b",
+      "conclusion": "failure",
+      "failedSteps": [
+        "Record actual free coding-agent sessions in a fresh anchored source repository"
+      ],
+      "skippedSteps": [
+        "Run official practice grade and replay at zero model spend",
+        "Submit once to official contest only after local checks pass"
+      ],
+      "lesson": "Check real free-provider response and native session evidence before another build. Never fabricate transcripts or repeat paid requests.",
+      "incomeInferred": false
     }
   ]
 }
