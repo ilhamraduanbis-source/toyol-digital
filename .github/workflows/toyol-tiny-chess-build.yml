@@ -99,7 +99,13 @@ jobs:
           test "$(wc -c < main.py)" -le 4096
           echo "CHESS_SOURCE_BYTES $(wc -c < main.py)"
           git add main.py
-          git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm 'Recorded original chess engine and genuine revisions'
+          # The coding agent may already have committed its final source. Preserve that exact commit.
+          if ! git diff --cached --quiet; then
+            git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm 'Recorded original chess engine and genuine revisions'
+          fi
+          git ls-files --error-unmatch main.py >/dev/null
+          git diff --quiet HEAD -- main.py
+          echo "CHESS_FINAL_COMMIT $(git rev-parse HEAD)"
           python3 - <<'PY'
           import subprocess
           rows=subprocess.check_output(["git","ls-tree","-rl","HEAD"],text=True).splitlines()
@@ -124,20 +130,7 @@ jobs:
           scan(x)
           PY
           if [ "$check_rc" != 0 ]; then echo 'OFFICIAL_CHECK_REJECTED_NO_SUBMISSION'; exit 0; fi
-          # Run the official local grader if supported, with no model keys.
-          unset OPENAI_API_KEY ANTHROPIC_API_KEY OPENROUTER_API_KEY GEMINI_API_KEY
-          set +e
-          timeout --kill-after=10s 1200s node "$kit/cli/makefun.mjs" grade-local --kit "$kit" --bot "$root/entry" --driver docker --instances 1 --json > "$out/grade.json" 2> "$root/grade.stderr"
-          grade_rc=$?
-          set -e
-          if [ "$grade_rc" != 0 ]; then echo 'LOCAL_GRADE_NOT_COMPLETED_NO_SUBMISSION'; head -c 600 "$root/grade.stderr"; exit 0; fi
-          python3 - "$out/grade.json" <<'PY'
-          import json,sys
-          x=json.load(open(sys.argv[1])); assert isinstance(x,(dict,list))
-          print('CHESS_OFFICIAL_GRADE',json.dumps(x)[:5000])
-          PY
           cp main.py "$out/main.py"
-          echo 'CHESS_OFFICIAL_CHECK_AND_LOCAL_GRADE_COMPLETED'
           git bundle create "$root/source.bundle" HEAD
           printf '%s\n' "$(git rev-parse HEAD)" > "$root/commit.txt"
           python3 -m pip install --disable-pip-version-check --target "$root/crypto" 'PyNaCl==1.5.0'
@@ -158,6 +151,19 @@ jobs:
           (out/'entry.sealed').write_bytes(box.encrypt(b.getvalue()))
           print('CHESS_SOURCE_AND_NATIVE_TRANSCRIPTS_PRESERVED')
           PY
+          # Run the official local grader if supported, with no model keys.
+          unset OPENAI_API_KEY ANTHROPIC_API_KEY OPENROUTER_API_KEY GEMINI_API_KEY
+          set +e
+          timeout --kill-after=10s 1200s node "$kit/cli/makefun.mjs" grade-local --kit "$kit" --bot "$root/entry" --driver docker --instances 1 --json > "$out/grade.json" 2> "$root/grade.stderr"
+          grade_rc=$?
+          set -e
+          if [ "$grade_rc" != 0 ]; then echo 'LOCAL_GRADE_NOT_COMPLETED_NO_SUBMISSION'; head -c 600 "$root/grade.stderr"; exit 0; fi
+          python3 - "$out/grade.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1])); assert isinstance(x,(dict,list))
+          print('CHESS_OFFICIAL_GRADE',json.dumps(x)[:5000])
+          PY
+          echo 'CHESS_OFFICIAL_CHECK_AND_LOCAL_GRADE_COMPLETED'
       - name: Preserve review evidence (not a submission)
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
