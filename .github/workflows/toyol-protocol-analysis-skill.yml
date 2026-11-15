@@ -19,7 +19,8 @@ jobs:
       - name: Test reusable offline analysis with synthetic fixtures
         run: |
           node --check src/protocol-analysis-skill.mjs
-          node src/protocol-analysis-skill.mjs --self-test
+          node src/shared-skill-cloud.mjs context protocol-analysis 'defi valuation research' > "$RUNNER_TEMP/shared-context.json"
+          node src/shared-skill-cloud.mjs run protocol-analysis --self-test
       - name: Validate on actual public frozen snapshot
         run: |
           set -euo pipefail
@@ -33,7 +34,7 @@ jobs:
               assert len(rows)==1 and rows[0].size<10000000
               (root/'snapshot.json').write_bytes(t.extractfile(rows[0]).read())
           PY
-          node src/protocol-analysis-skill.mjs "$RUNNER_TEMP/skill-test/snapshot.json" > out/analysis.json
+          node src/shared-skill-cloud.mjs run protocol-analysis "$RUNNER_TEMP/skill-test/snapshot.json" > out/analysis.json
           node --input-type=module <<'JS'
           import fs from 'node:fs';import assert from 'node:assert/strict';
           const x=JSON.parse(fs.readFileSync('out/analysis.json','utf8'));
