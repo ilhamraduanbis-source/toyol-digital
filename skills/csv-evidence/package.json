@@ -1,0 +1,17 @@
+{
+  "name": "toyol-csv-evidence",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@x402/core": "2.31.0",
+    "@x402/hono": "2.31.0",
+    "@x402/evm": "2.31.0",
+    "@x402/extensions": "2.31.0",
+    "hono": "4.10.7"
+  },
+  "scripts": {
+    "test": "node --test audit.test.mjs",
+    "test:quote": "node quote.test.mjs"
+  }
+}
