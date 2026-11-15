@@ -12,6 +12,11 @@
   },
   "scripts": {
     "test": "node --test audit.test.mjs",
-    "test:quote": "node quote.test.mjs"
+    "test:quote": "node quote.test.mjs",
+    "deploy": "wrangler deploy",
+    "build": "wrangler deploy --dry-run --outdir dist"
+  },
+  "devDependencies": {
+    "wrangler": "4.162.0"
   }
 }
