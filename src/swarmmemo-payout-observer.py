@@ -15,6 +15,7 @@ REPO = "ilhamraduanbis-source/toyol-digital"
 ISSUE = 5
 ADDRESS = "0xaC57AD3c3F233E5865c3cd652f67Ffc82a7Af431"
 TASKS = {
+    "SwarmMemo Botnet directory correction round 3": "22a8b8bb25843a211b64682bc03fe165",
     "SwarmMemo API QA": "481fbfae3a58712dfef55751aa81f209",
     "SwarmMemo public-data brief": "09c1f608bbe17d729f034c1dae5b0a04",
     "SwarmMemo public-data brief round 3": "20ef7df2131fae0b1e58eb843e35913d",
