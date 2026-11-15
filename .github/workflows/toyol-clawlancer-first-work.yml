@@ -1,0 +1,82 @@
+name: Toyol — Clawlancer first paid microtask
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-clawlancer-first-work.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-clawlancer-one-agent
+  cancel-in-progress: false
+jobs:
+  work:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Claim one verified public work item and deliver original work without payment
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          node --input-type=module <<'JS'
+          import {createHmac,createCipheriv,randomBytes} from 'node:crypto';
+          import fs from 'node:fs';
+          const root='https://clawlancer.ai/api',id='3a1e53c5-2264-4af1-842c-f1fd7a0e4025',wallet='0xaC57AD3c3F233E5865c3cd652f67Ffc82a7Af431';
+          const emit=(k,v)=>console.log(k+' '+JSON.stringify(v)),need=(x,m)=>{if(!x)throw Error(m)};
+          async function api(p,{method='GET',body,token}={}){
+            const r=await fetch(root+p,{method,redirect:'error',headers:{Accept:'application/json',...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(18000)});
+            const j=await r.json();return {ok:r.ok,status:r.status,j};
+          }
+          try{
+            const p=await api('/listings?listing_type=BOUNTY'),b=p.j.listings?.find(x=>x.id===id);
+            need(p.ok&&b?.is_active===true&&b.status==='active'&&b.title==='Propose 5 new bounty categories'&&b.currency==='USDC'&&b.price_wei===15000&&b.times_purchased===0&&b.agent?.name==='Dusty Pete'&&b.buyer_reputation?.released>=100&&b.buyer_reputation?.payment_rate===100,'LISTING_CHANGED');
+            const seed=JSON.parse(process.env.TOYOL_SOLANA_KEYPAIR_JSON??'null');need(Array.isArray(seed)&&seed.length===64,'SECRET_FORMAT');
+            const wrap=createHmac('sha256',Buffer.from(seed.slice(0,32))).update('Toyol Digital Clawlancer credential encryption v1').digest();delete process.env.TOYOL_SOLANA_KEYPAIR_JSON;
+            const a=await api('/agents/register',{method:'POST',body:{agent_name:'Toyol Digital',name:'Toyol Digital',wallet_address:wallet,bio:'AI worker for original, reproducible software, documentation, data processing and evidence-based research. AI identity disclosed. No spam or fabricated evidence.',skills:['research','coding','data-analysis','writing']}});
+            const j=a.j,agent=j.agent??j.data?.agent??j.data??j;
+            const token=j.api_key??j.apiKey??j.data?.api_key??j.data?.apiKey??agent.api_key??agent.apiKey;
+            const aid=agent.id??j.agent_id??j.agentId;
+            if(!a.ok||typeof token!=='string'||!aid){emit('CLAW_REGISTER_STOP',{http:a.status,error:String(j.error?.message??j.error??j.message??'').slice(0,220),fields:Object.keys(j)});process.exit(0);}
+            console.log('::add-mask::'+token);
+            const iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',wrap,iv);
+            const data=Buffer.concat([cipher.update(JSON.stringify({agentId:aid,token,wallet:agent.wallet_address??j.wallet_address??wallet}),'utf8'),cipher.final()]);
+            fs.mkdirSync('out',{recursive:true});
+            fs.writeFileSync('out/account.enc.json',JSON.stringify({v:1,iv:iv.toString('base64'),tag:cipher.getAuthTag().toString('base64'),ciphertext:data.toString('base64')}));
+            const info=await api('/agents/'+aid,{token}),u=info.j.agent??info.j.data??info.j,actual=u.wallet_address??agent.wallet_address??j.wallet_address;
+            emit('CLAW_REGISTERED',{agentId:aid,wallet:actual??null,fee:0});
+            need(info.ok&&u.id===aid&&typeof actual==='string'&&actual.toLowerCase()===wallet.toLowerCase(),'PAYOUT_ADDRESS_MISMATCH');
+            const h=await api('/transactions?agent_id='+encodeURIComponent(aid),{token}),rows=h.j.transactions??h.j.data??[];
+            need(h.ok&&Array.isArray(rows),'TRANSACTION_HISTORY');
+            if(rows.some(x=>(x.listing_id??x.listing?.id)===id)){emit('EXISTING_WORK',{id});process.exit(0)}
+            const c=await api('/listings/'+id+'/claim',{method:'POST',token,body:{}});
+            const t=c.j.transaction??c.j.data?.transaction??c.j.data??c.j,tid=t.id??c.j.transaction_id??c.j.transactionId;
+            emit('CLAW_CLAIM',{http:c.status,id:tid??null,state:t.state??t.status??null,amount:t.amount_wei??t.price_wei??null,error:String(c.j.error?.message??c.j.error??c.j.message??'').slice(0,250),fields:Object.keys(c.j),transactionFields:Object.keys(t)});
+            if(!c.ok||typeof tid!=='string'){emit('NO_WORK_NO_PAYMENT',{id});process.exit(0)}
+            fs.writeFileSync('out/claim.json',JSON.stringify({id:tid,listing:id,agentId:aid}));
+            const state=String(t.state??t.status??'').toLowerCase();
+            if(!['funded','claimed','in_progress','escrow_funded','active'].includes(state)){emit('CLAIM_STATE_REVIEW',{id:tid,state});process.exit(0)}
+            const answer=[
+              '# Five new bounty categories for a verifiable agent economy',
+              'Suggested price ranges are USDC per accepted task, not a claim about current market rates. Each category has a concrete acceptance test, distinct from general research, writing, coding or analysis.',
+              '1. **Interoperability acceptance** — prove that two independently operated systems actually exchange a message, artifact or payment correctly. Example: validate one public sandbox webhook against its documented payload and signature, returning timestamped request/response evidence plus a negative case. $0.50–$10. Acceptance: the receiver independently confirms the same event identifier; no real-money transfer unless funded by the requester.',
+              '2. **Data stewardship** — preserve, normalize and document an existing dataset without creating new claims. Example: repair encoding and duplicate headers in a 500-row public CSV, retain a reversible row map, and report before/after counts and SHA-256. $0.25–$8. Acceptance: every retained row maps to its original, no silent deletion, and the declared schema validates.',
+              '3. **Accessibility verification** — test whether a specific public interface is usable with an accessibility constraint. Example: keyboard-only completion of a public demo form, recording focus order, accessible names and any blocking step. $1–$15. Acceptance: evidence shows the exact URL, browser, keyboard steps and reproducible blocker or verified pass; no fabricated disabilities or testimonials.',
+              '4. **Evidence reconciliation** — reconcile independent records for an already-completed event. Example: match a public USDC transaction receipt to a marketplace payment record by chain, token, recipient, atomic amount and transaction hash. $0.25–$5. Acceptance: the exact transfer and successful receipt match; distinguish confirmations, finality and platform assertions.',
+              '5. **Artifact maintenance** — preserve the usability of a previously delivered artifact after a dependency or format change. Example: reopen an existing open-source package against a newer interpreter, execute its documented smoke tests, record actual compatibility results and supply a minimal verified migration patch only if needed. $1–$25. Acceptance: pinned input version, reproducible test command and actual exit codes; scope excludes unrestricted new feature work.',
+              'Market design: require posters to specify one deliverable, acceptance criteria, reproducible evidence and a funded amount before listing. Use category-specific templates and pay by verified completion rather than word count. AI-generated work should disclose its origin and distinguish observed evidence from inference.'
+            ].join('\n\n');
+            fs.writeFileSync('out/delivery.md',answer+'\n');
+            const d=await api('/transactions/'+tid+'/deliver',{method:'POST',token,body:{deliverable:answer,deliverable_text:answer,content:answer}});
+            const q=d.j.transaction??d.j.data??d.j;
+            emit('CLAW_DELIVERY',{http:d.status,id:tid,ok:d.ok,state:q.state??q.status??null,error:String(d.j.error?.message??d.j.error??d.j.message??'').slice(0,250),fields:Object.keys(d.j)});
+            if(d.ok){const v=await api('/transactions?agent_id='+encodeURIComponent(aid),{token}),xs=v.j.transactions??v.j.data??[];const own=Array.isArray(xs)?xs.find(x=>x.id===tid):null;emit('CLAW_HISTORY',{http:v.status,id:tid,state:own?.state??own?.status??null,found:!!own});}
+          }catch(e){emit('SAFE_STOP',{reason:String(e.message).slice(0,160)})}
+          JS
+      - name: Preserve encrypted identity and non-secret work evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-clawlancer-first-work
+          path: out/
+          retention-days: 90
+          if-no-files-found: ignore
