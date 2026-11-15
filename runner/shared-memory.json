@@ -276,6 +276,18 @@
       ],
       "lesson": "Check real free-provider response and native session evidence before another build. Never fabricate transcripts or repeat paid requests.",
       "incomeInferred": false
+    },
+    {
+      "worker": "raptorx",
+      "runId": 43716127640,
+      "attempt": 1,
+      "completedAt": "2026-11-15T12:54:41Z",
+      "sourceCommit": "7b8933f949c718e5953cea3222325013c6f8fe03",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Verify actual platform report controls and report output, not browser exit code. Stop on ambiguous controls or cost gates.",
+      "incomeInferred": false
     }
   ]
 }
