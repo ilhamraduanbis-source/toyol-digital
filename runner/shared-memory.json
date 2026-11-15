@@ -1,4 +1,252 @@
 {
   "version": 1,
-  "observations": []
+  "observations": [
+    {
+      "worker": "swarmmemo-data",
+      "runId": 43604714353,
+      "attempt": 1,
+      "completedAt": "2026-11-14T14:24:48Z",
+      "sourceCommit": "1b7df87bba0a788a3cebdb3aefd113796c84403c",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [
+        "Perform real bounded public-data job when USDC seat opens"
+      ],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-data",
+      "runId": 43604769867,
+      "attempt": 1,
+      "completedAt": "2026-11-14T14:25:27Z",
+      "sourceCommit": "94d13cc4ede2cfc7988412533a03c79fb72a087d",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [
+        "Perform real bounded public-data job when USDC seat opens"
+      ],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "aggregator",
+      "runId": 43619040329,
+      "attempt": 2,
+      "completedAt": "2026-11-14T17:31:46Z",
+      "sourceCommit": "267d9846512018234c5a1d8926f1490e2cab982c",
+      "conclusion": "failure",
+      "failedSteps": [
+        "Record actual free coding-agent sessions in a fresh anchored source repository"
+      ],
+      "skippedSteps": [
+        "Run official practice grade and replay at zero model spend",
+        "Submit once to official contest only after local checks pass"
+      ],
+      "lesson": "Check real free-provider response and native session evidence before another build. Never fabricate transcripts or repeat paid requests.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "frantic-delivery",
+      "runId": 43647576601,
+      "attempt": 1,
+      "completedAt": "2026-11-14T22:20:38Z",
+      "sourceCommit": "da4976c4d2b403042ca02b1e1b3fccc0f843eb3b",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "frantic-delivery",
+      "runId": 43668675168,
+      "attempt": 1,
+      "completedAt": "2026-11-15T02:37:51Z",
+      "sourceCommit": "da4976c4d2b403042ca02b1e1b3fccc0f843eb3b",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-qa",
+      "runId": 43669857292,
+      "attempt": 1,
+      "completedAt": "2026-11-15T02:53:41Z",
+      "sourceCommit": "da4976c4d2b403042ca02b1e1b3fccc0f843eb3b",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [
+        "Read-only live availability probe (push and manual only)"
+      ],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-data",
+      "runId": 43670080512,
+      "attempt": 1,
+      "completedAt": "2026-11-15T02:56:47Z",
+      "sourceCommit": "da4976c4d2b403042ca02b1e1b3fccc0f843eb3b",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [
+        "Prepare actual data and notary evidence on code change (no claim)"
+      ],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "frantic-delivery",
+      "runId": 43705791433,
+      "attempt": 1,
+      "completedAt": "2026-11-15T10:47:53Z",
+      "sourceCommit": "fc7d31f0daa062c3a39544f99a9a96a18bccce12",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "payment-reconciliation",
+      "runId": 43709472646,
+      "attempt": 1,
+      "completedAt": "2026-11-15T11:33:26Z",
+      "sourceCommit": "cdcc8055810d84a44583d502d76c50c83a25ed36",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "payment-reconciliation",
+      "runId": 43711686542,
+      "attempt": 1,
+      "completedAt": "2026-11-15T12:01:16Z",
+      "sourceCommit": "a5fcd9b187d5e7d92f57ac517710726b94457df8",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-qa",
+      "runId": 43712853879,
+      "attempt": 1,
+      "completedAt": "2026-11-15T12:15:08Z",
+      "sourceCommit": "9a2ab9df5668384959516ec8e0ca0672eed9bbf6",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [
+        "Try ONE genuine USDC work submission at live daily seat opening"
+      ],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "payment-reconciliation",
+      "runId": 43712875771,
+      "attempt": 1,
+      "completedAt": "2026-11-15T12:15:27Z",
+      "sourceCommit": "a375d45ec3b27feeee0aa1ee5600d61a7e522363",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-qa",
+      "runId": 43712905691,
+      "attempt": 1,
+      "completedAt": "2026-11-15T12:15:43Z",
+      "sourceCommit": "b4ab387a7e62bec9b2b1975f42e226e685244ee3",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [
+        "Try ONE genuine USDC work submission at live daily seat opening"
+      ],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "aggregator",
+      "runId": 43712398741,
+      "attempt": 1,
+      "completedAt": "2026-11-15T12:27:49Z",
+      "sourceCommit": "95497a0031d441fb08ff8a4ac530faa3faab0685",
+      "conclusion": "failure",
+      "failedSteps": [
+        "Record actual free coding-agent sessions in a fresh anchored source repository"
+      ],
+      "skippedSteps": [
+        "Run official practice grade and replay at zero model spend",
+        "Submit once to official contest only after local checks pass"
+      ],
+      "lesson": "Check real free-provider response and native session evidence before another build. Never fabricate transcripts or repeat paid requests.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "protocol-analysis",
+      "runId": 43713970753,
+      "attempt": 1,
+      "completedAt": "2026-11-15T12:28:09Z",
+      "sourceCommit": "70bc5a0ca9e81afaa59cca098526b5af4dff1f63",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "aggregator",
+      "runId": 43714405742,
+      "attempt": 1,
+      "completedAt": "2026-11-15T12:33:30Z",
+      "sourceCommit": "c8bf1dabe25ec76d40512eb22271b92187a2e23d",
+      "conclusion": "failure",
+      "failedSteps": [
+        "Record actual free coding-agent sessions in a fresh anchored source repository"
+      ],
+      "skippedSteps": [
+        "Run official practice grade and replay at zero model spend",
+        "Submit once to official contest only after local checks pass"
+      ],
+      "lesson": "Check real free-provider response and native session evidence before another build. Never fabricate transcripts or repeat paid requests.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "raptorx",
+      "runId": 43715011265,
+      "attempt": 1,
+      "completedAt": "2026-11-15T12:40:36Z",
+      "sourceCommit": "0b29e207ce3cc1b526bd64597776194092cb9b81",
+      "conclusion": "failure",
+      "failedSteps": [
+        "Generate genuine public Solana research evidence if free and available"
+      ],
+      "skippedSteps": [
+        "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"
+      ],
+      "lesson": "Verify actual platform report controls and report output, not browser exit code. Stop on ambiguous controls or cost gates.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "raptorx",
+      "runId": 43715084874,
+      "attempt": 1,
+      "completedAt": "2026-11-15T12:41:51Z",
+      "sourceCommit": "8697ba3c88125e5b000a82e6576efff6e4030730",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Verify actual platform report controls and report output, not browser exit code. Stop on ambiguous controls or cost gates.",
+      "incomeInferred": false
+    }
+  ]
 }
