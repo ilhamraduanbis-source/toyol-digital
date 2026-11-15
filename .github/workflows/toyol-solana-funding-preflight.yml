@@ -118,12 +118,12 @@ jobs:
         run: |
           node --input-type=module <<'JS'
           const root='https://agentgas.madebydevx.com/v1/gas',a='0xaC57AD3c3F233E5865c3cd652f67Ffc82a7Af431';
-          for(const qs of ['to='+a+'&amount=0.000011077&chain=base&payer='+a.toLowerCase(),'chain=base&amount=0.000011077&to='+a,'chain=base&usd=0.02&to='+a]){
-            const u=root+'?'+qs;
+          for(const qs of ['', 'to='+a+'&amount=0.000011077&chain=base&payer='+a.toLowerCase()]){
+            const u=qs?root+'?'+qs:root;
             try{
               const r=await fetch(u,{redirect:'error',signal:AbortSignal.timeout(10000)}),s=await r.text();
               const raw=r.headers.get('payment-required');let header=null;try{header=JSON.parse(Buffer.from(raw,'base64').toString())}catch{}
-              console.log('AGENTGAS_CHALLENGE '+JSON.stringify({url:u,status:r.status,header,body:s.slice(0,5000)}));
+              const b=JSON.parse(s);console.log('AGENTGAS_CHALLENGE '+JSON.stringify({url:u,status:r.status,resource:header?.resource?.url,accepts:header?.accepts,quote:b.quote,bodyVersion:b.x402Version}));
             }catch(e){console.log('CHALLENGE_ERROR '+String(e.message))}
           }
           JS
