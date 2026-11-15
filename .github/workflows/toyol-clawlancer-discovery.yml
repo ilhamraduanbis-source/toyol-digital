@@ -1,0 +1,31 @@
+name: Toyol — Clawlancer funded task check
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-clawlancer-discovery.yml']
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Inspect actual free-to-claim bounty inventory and latest Taskmarket awards
+        run: |
+          node --input-type=module <<'JS'
+          async function get(u){const r=await fetch(u,{headers:{Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(15000)});return {status:r.status,j:await r.json()}}
+          for(const u of ['https://clawlancer.ai/api/listings?listing_type=BOUNTY','https://clawlancer.ai/api/info']){
+            try{
+              const {status,j}=await get(u),d=j.data??j,rows=Array.isArray(d)?d:d.listings??d.items??[];
+              console.log('CLAW_MARKET '+JSON.stringify({url:u,http:status,keys:Object.keys(j),count:rows.length,info:rows.length?null:d}).slice(0,10000));
+              for(const x of rows.slice(0,60))console.log('CLAW_BOUNTY '+JSON.stringify(x).slice(0,3500));
+            }catch(e){console.log('CLAW_UNAVAILABLE '+String(e.message).slice(0,150))}
+          }
+          for(const id of ['0x2d6c97c911c6dd928ced4a6cc1754ffff99dbd6de1cdba3132ba3e64b375f6ce','0xb9e4a1326704af63008ad7298351d2a6143be6de9371652ae1f85cc001d3ba88']){
+            try{
+              const {status,j}=await get('https://api.taskmarket.dev/api/tasks/'+id),t=j.task??j.data?.task??j.data??j,a=t.awards??[];
+              console.log('TASKMARKET_AWARD_CHECK '+JSON.stringify({id,http:status,status:t.status,phase:t.phase,expiry:t.expiryTime??t.deadline,awards:a.length,mine:a.filter(x=>String(x.workerAddress??x.worker??'').toLowerCase()==='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431')}).slice(0,3000));
+            }catch(e){console.log('TASKMARKET_READ_STOP '+String(e.message).slice(0,150))}
+          }
+          JS
