@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['.github/workflows/toyol-swarmmemo-board-round3.yml']
+    paths: ['.github/workflows/toyol-swarmmemo-board-round3.yml', 'src/swarmmemo-board-round3-correction.py']
 permissions:
   contents: read
 concurrency:
