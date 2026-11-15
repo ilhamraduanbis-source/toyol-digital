@@ -1,0 +1,42 @@
+name: Toyol — AgentGas payment reconciliation
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-agentgas-reconcile.yml']
+permissions:
+  contents: read
+jobs:
+  read:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Check exact EIP-3009 authorization, transfer logs and native balance
+        run: |
+          node --input-type=module <<'JS'
+          const wallet='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431',token='0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',nonce='0xb787523fbe52ee02d674732a6d8a7736e8eaf49e969d575963ef6da85f383613', expiry=Date.parse('2026-11-15T06:04:56.000Z');
+          if(!/^0x[0-9a-f]{64}$/.test(nonce))throw Error('NONCE_LENGTH');
+          const pad=a=>a.slice(2).padStart(64,'0');
+          const endpoints=['https://mainnet.base.org','https://base-rpc.publicnode.com'];
+          async function rpc(method,params){
+            for(const url of endpoints)try{
+              const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),redirect:'error',signal:AbortSignal.timeout(8000)}),j=await r.json();
+              if(r.ok&&j.result!==undefined&&!j.error)return j.result;
+            }catch{}
+            throw Error('RPC_'+method);
+          }
+          const chain=await rpc('eth_chainId',[]);if(chain!=='0x2105')throw Error('CHAIN');
+          const latest=await rpc('eth_getBlockByNumber',['latest',false]),block=BigInt(latest.number),ts=Number(BigInt(latest.timestamp))*1000;
+          const tag=latest.number;
+          const used=await rpc('eth_call',[{to:token,data:'0xe94a0102'+pad(wallet)+nonce.slice(2)},tag]);
+          const balance=await rpc('eth_call',[{to:token,data:'0x70a08231'+pad(wallet)},tag]);
+          const eth=await rpc('eth_getBalance',[wallet,tag]);
+          console.log('PAYMENT_STATE '+JSON.stringify({block:String(block),chainTime:new Date(ts).toISOString(),expired:ts>=expiry,authorizationUsed:BigInt(used)!==0n,usdcMicros:String(BigInt(balance)),ethWei:String(BigInt(eth))}));
+          const topics=['0x98de503528ee59b575ef0c0a2576a82497bfc029a5685b209e9ec333479b10a5','0x1cdd46ff242716cdaa72d159d339a485b3438398348d68f09d7c8c0a59353d81'];
+          try{
+            const logs=await rpc('eth_getLogs',[{address:token,fromBlock:'0x'+(block-500n).toString(16),toBlock:tag,topics:[topics,'0x'+pad(wallet),nonce]}]);
+            console.log('AUTHORIZATION_EVENTS '+JSON.stringify(logs.map(l=>({tx:l.transactionHash,block:l.blockNumber,type:l.topics[0]===topics[0]?'used':'canceled'}))));
+            for(const l of logs){const receipt=await rpc('eth_getTransactionReceipt',[l.transactionHash]);console.log('SETTLEMENT_RECEIPT '+JSON.stringify({tx:l.transactionHash,status:receipt.status,transfers:receipt.logs.filter(v=>v.address.toLowerCase()===token&&v.topics[0]==='0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef').map(v=>({from:v.topics[1],to:v.topics[2],micros:String(BigInt(v.data))}))}));}
+          }catch(e){console.log('EVENT_LOOKUP_UNAVAILABLE '+e.message)}
+          console.log('READ_ONLY_NO_PAYMENT');
+          JS
