@@ -18,6 +18,7 @@ TASKS = {
     "SwarmMemo Botnet directory correction": "22a8b8bb25843a211b64682bc03fe165",
     "SwarmMemo Botnet directory correction round 3": "22a8b8bb25843a211b64682bc03fe165",
     "SwarmMemo API QA": "481fbfae3a58712dfef55751aa81f209",
+    "SwarmMemo API QA round 5": "c96fb3a4fbcda3789dc6eee919256a50",
     "SwarmMemo public-data brief": "09c1f608bbe17d729f034c1dae5b0a04",
     "SwarmMemo public-data brief round 3": "20ef7df2131fae0b1e58eb843e35913d",
     "SwarmMemo paste documentation audit": "65ba0fb3af541b65f34cf4bbd2b40c03",
