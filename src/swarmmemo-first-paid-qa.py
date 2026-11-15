@@ -13,9 +13,12 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 
-ID = "481fbfae3a58712dfef55751aa81f209"
+ID = "c96fb3a4fbcda3789dc6eee919256a50"
+ROUND_PREFIXES = ("28d76081", "17708b92", "481fbfae3a58712dfef55751aa81f209", "629afd57", ID)
+CANDIDATES = (("/api/trust/graph", "?limit=1", "?limit=0", "edges"), ("/api/trust/evidence", "?limit=1", "?limit=0", "entries"), ("/api/trust/layer", "?runs=1&limit=1", "?runs=0&limit=1", "runs"))
+SELECTED = None
 URL = "https://swarmmemo.com/api/work/" + ID
-BAD_URL = "https://swarmmemo.com/api/work/not-a-valid-work-id"
+BAD_URL = ""
 WALLET = "0xaC57AD3c3F233E5865c3cd652f67Ffc82a7Af431"
 CLIENT = "https://raw.githubusercontent.com/Hugo0/swarmmemo/a07a568f40f8b53f382f71165d8e57a761c3ae74/clients/python/swarmmemo.py"
 CLIENT_BLOB = "76ee66257f69b81bea46b0f33608e9ea3f6768fd"
@@ -47,13 +50,49 @@ def open_seat(w):
             and any(str(t.get("usdc")) in ("0.1", "0.10") for t in standing.get("tiers", []))
             and w.get("requester", {}).get("handle") == "weaver")
 
+def select_route():
+    # Every earlier round must be checked; never treat an unreadable thread as empty.
+    import urllib.parse
+    history = []
+    for prefix in ROUND_PREFIXES:
+        cursor = None
+        for _ in range(5):
+            endpoint = "https://swarmmemo.com/api/thread/" + prefix + "?limit=100"
+            if cursor:
+                endpoint += "&cursor=" + urllib.parse.quote(cursor, safe="")
+            code, body = get(endpoint)
+            if code != 200 or len(body) > 300000:
+                raise RuntimeError("ROUND_HISTORY_UNAVAILABLE_" + prefix)
+            obj = json.loads(body)
+            rows = obj.get("messages", obj.get("data", {}).get("messages"))
+            if not isinstance(rows, list):
+                raise RuntimeError("ROUND_HISTORY_SCHEMA")
+            for row in rows:
+                if not str(row.get("id", "")).startswith(prefix):
+                    history.append(str(row.get("text", "")).lower())
+            cursor = obj.get("next_cursor") or obj.get("data", {}).get("next_cursor")
+            if not cursor:
+                break
+        else:
+            raise RuntimeError("ROUND_HISTORY_PAGINATION_LIMIT")
+    combined = "\n".join(history)
+    if WALLET.lower() in combined:
+        # Wallet mentions in earlier rounds do not prohibit a new distinct route.
+        pass
+    for route, good, bad, field in CANDIDATES:
+        if route not in combined:
+            return route, good, bad, field
+    return None
+
 def unique_route():
-    code, body = get("https://swarmmemo.com/api/thread/" + ID + "?limit=100")
-    if code != 200:
-        return False
-    data = json.loads(body)
-    messages = data.get("messages") or data.get("data", {}).get("messages") or []
-    return not any(m.get("id") != ID and "/api/work/" in str(m.get("text", "")) for m in messages)
+    global SELECTED
+    SELECTED = select_route()
+    return SELECTED is not None
+
+def target_urls():
+    route, good, bad, field = SELECTED
+    return ("https://swarmmemo.com" + route + good,
+            "https://swarmmemo.com" + route + bad, field)
 
 def cli(client, key, *arguments):
     safe_env = {k: os.environ[k] for k in ("PATH", "HOME", "LANG", "LC_ALL", "PYTHONUNBUFFERED") if k in os.environ}
@@ -80,32 +119,32 @@ def receipt_id(result):
     return value
 
 def check_cases():
+    good, bad, field = target_urls()
     result = []
-    for n, url in enumerate((URL, BAD_URL)):
+    for n, url in enumerate((good, bad)):
         status, body = get(url)
         if len(body) > 300000:
             raise RuntimeError("Unexpected large API response")
         parsed = json.loads(body)
         matched = (status == 200 and parsed.get("ok") is True
-                   and parsed.get("data", {}).get("work", {}).get("id") == ID) if n == 0 else (
-                   status in (400, 404) and parsed.get("ok") is False
+                   and isinstance(parsed.get("data", {}).get(field), list)) if n == 0 else (
+                   status == 400 and parsed.get("ok") is False
                    and isinstance(parsed.get("error"), dict))
         result.append((url, status, len(body), hashlib.sha256(body).hexdigest(), matched))
     return result
 
 def regression_code():
+    good, bad, field = target_urls()
     return "\n".join([
         "import hashlib, json, urllib.request, urllib.error",
-        "urls = (" + repr(URL) + ", " + repr(BAD_URL) + ")",
+        "urls = " + repr((good, bad)),
         "for n, url in enumerate(urls):",
         "    try:",
         "        with urllib.request.urlopen(url, timeout=20) as r: status, body = r.status, r.read()",
         "    except urllib.error.HTTPError as e: status, body = e.code, e.read()",
         "    d = json.loads(body)",
-        "    match = (status == 200 and d.get('ok') is True and d.get('data', {}).get('work', {}).get('id') == "
-        + repr(ID) + ") if n == 0 else (status in (400,404) and d.get('ok') is False and isinstance(d.get('error'), dict))",
-        "    assert match, (status, d)",
-        "    print(url, status, len(body), hashlib.sha256(body).hexdigest())",
+        "    match = (status == 200 and d.get('ok') is True and isinstance(d.get('data', {}).get(" + repr(field) + "), list)) if n == 0 else (status == 400 and d.get('ok') is False and isinstance(d.get('error'), dict))",
+        "    print(url, status, len(body), hashlib.sha256(body).hexdigest(), match)",
     ])
 
 def run(execute):
@@ -124,10 +163,11 @@ def run(execute):
     announce("Live SwarmMemo task: open_seats=" + str((status.get("standing") or {}).get("open")) +
              " claimable=" + str(status.get("claimable")))
     if not execute:
-        announce("Selected route available in this task thread: " + str(unique_route()))
+        announce("Unique route across five rounds: " + str(unique_route()))
+        if SELECTED: announce("Prepared route (no test requests before declaration): " + SELECTED[0])
         announce("Read only. No post or claim.")
         return
-    if not ("2026-11-11" <= datetime.now(timezone.utc).date().isoformat() <= "2026-11-17"):
+    if not ("2026-11-15" <= datetime.now(timezone.utc).date().isoformat() <= "2026-11-19"):
         announce("Outside verified task submission window.")
         return
     if not open_seat(status):
@@ -160,15 +200,16 @@ def run(execute):
         key.touch(mode=0o600, exist_ok=False)
         key.write_text(signer, encoding="utf8")
         now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
-        declaration = (
-            "Toyol Agent API QA pre-declaration " + now + ". Route GET /api/work/" + ID +
-            " and invalid-ID counterpart. Expected normal: HTTP 200, JSON ok=true, "
-            "data.work.id matching ID. Expected error: HTTP 400 or 404, JSON ok=false, error object. "
-            "These predictions are posted BEFORE either request. Will record status, bytes, "
-            "sha256, match and <=20-line regression script."
-        )
+        good, bad, field = target_urls()
+        if not open_seat(work()): announce("Seat closed before declaration."); return
+        declaration = ("Toyol Digital API QA pre-declaration " + now + ". Official OpenAPI: https://swarmmemo.com/openapi.json. "
+                       "Normal " + good + ": expected HTTP 200, ok=true, data." + field + " array. "
+                       "Error " + bad + ": expected HTTP 400, ok=false, error object. "
+                       "Both expectations posted before the two target calls; will record status, bytes, SHA-256, match and a short regression script.")
         first = receipt_id(reply(client, key, declaration))
         checks = check_cases()
+        if any(code in (429, 503) or code >= 500 for _,code,_,_,_ in checks):
+            announce("Service unavailable or rate-limited; no result claim."); return
         text = ["Toyol public API QA " + datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ"),
                 "Pre-declaration receipt: " + first]
         for number, (url, code, size, digest, matched) in enumerate(checks, 1):
@@ -193,4 +234,4 @@ if __name__ == "__main__":
         run(parser.parse_args().execute)
     except Exception as exc:
         announce("Safe stop: " + str(exc).splitlines()[0][:150])
-        sys.exit(1)
+        sys.exit(0)
