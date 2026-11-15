@@ -1,0 +1,47 @@
+name: Toyol — Bitcoin Data Doctor build
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'products/bitcoin-data-doctor/**'
+      - '.github/workflows/toyol-bitcoin-data-doctor.yml'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-bitcoin-data-doctor
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: products/bitcoin-data-doctor
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install official x402 library without owner credentials
+        run: npm install --no-audit --no-fund
+      - name: Test input, model adapter, paywall and no-spend controls
+        run: npm test
+      - name: Build Cloudflare Worker locally (no deployment)
+        run: npm run build
+        env:
+          CI: 'true'
+          WRANGLER_SEND_METRICS: 'false'
+      - name: Preserve deployable source and local build
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-bitcoin-data-doctor
+          path: |
+            products/bitcoin-data-doctor/src/
+            products/bitcoin-data-doctor/package.json
+            products/bitcoin-data-doctor/package-lock.json
+            products/bitcoin-data-doctor/wrangler.jsonc
+            products/bitcoin-data-doctor/test.mjs
+            products/bitcoin-data-doctor/README.md
+            products/bitcoin-data-doctor/dist/
+          retention-days: 30
+          if-no-files-found: error
