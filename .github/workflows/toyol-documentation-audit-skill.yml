@@ -1,0 +1,42 @@
+name: Toyol — Documentation audit skill readiness
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/documentation-audit/**'
+      - '.github/workflows/toyol-documentation-audit-skill.yml'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-documentation-audit-skill
+  cancel-in-progress: true
+jobs:
+  readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run offline skill regression tests
+        run: python3 skills/documentation-audit/audit.py selftest
+      - name: Exercise deterministic index on real pinned public training corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/molecule-training"
+          mkdir -p out
+          git clone --quiet --no-checkout --filter=blob:none https://github.com/moleculeprotocol/docs.git "$root"
+          python3 skills/documentation-audit/audit.py scan --repo "$root" --commit 35dcdb821518ca5ed447388379740c0e01d1e77d --out out/candidates.json
+          python3 - <<'PY'
+          import json
+          j=json.load(open('out/candidates.json'))
+          assert j['files']==78 and j['candidate_groups'] and j['status']=='CANDIDATES_NOT_FINDINGS'
+          print('TRAINING_CORPUS_INDEXED',j['files'],'CANDIDATE_GROUPS',len(j['candidate_groups']))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-documentation-audit-training
+          path: out/candidates.json
+          retention-days: 14
