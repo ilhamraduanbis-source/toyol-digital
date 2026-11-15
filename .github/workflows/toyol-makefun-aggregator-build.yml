@@ -104,12 +104,12 @@ jobs:
           if ! git diff --cached --quiet; then git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm 'Recorded coding-agent implementation'; fi
           git ls-files --error-unmatch main.ts >/dev/null
           git diff --quiet HEAD -- main.ts lib
-          if ! git log --format=%s -- main.ts | grep -qv "^Import official competition starter$"; then echo "NO_REAL_CODE_CHANGES"; exit 1; fi
+          if ! git log --format=%s -- main.ts | grep -v "^Import official competition starter$" > "$RUNNER_TEMP/makefun/source-revisions.txt" || ! test -s "$RUNNER_TEMP/makefun/source-revisions.txt"; then echo "NO_REAL_CODE_CHANGES"; exit 1; fi
           echo "SOURCE_COMMIT $(git rev-parse HEAD)"
           # Collect the harness-native records with the official bundler; do not edit the records.
           printf "%s\n" "Ni last perbincangan toyol. Sambung sini" > "$RUNNER_TEMP/makefun/owner-prompt.txt"
           printf "%s\n" "withheld: private harness instructions; no system prompt disclosed" > "$RUNNER_TEMP/makefun/system-prompt.txt"
-          node "$kit/cli/makefun.mjs" bundle --repo "$entry" --out "$RUNNER_TEMP/makefun/transcripts.tar.gz" --opencode-dir "$XDG_DATA_HOME/opencode" --harness opencode --harness-version 2.3.0 --model "$MODEL" --provider opencode --prompt-file "$RUNNER_TEMP/makefun/owner-prompt.txt" --prompt-origin handed-off --prompt-via "Owner delegated Toyol continuation in ChatGPT to this recorded coding harness." --system-prompt "$RUNNER_TEMP/makefun/system-prompt.txt" --instructions none
+          node "$kit/cli/makefun.mjs" bundle --repo "$entry" --out "$RUNNER_TEMP/makefun/transcripts.tar.gz" --opencode-dir "$XDG_DATA_HOME/opencode" --harness opencode --harness-version 2.3.0 --model "$MODEL" --provider opencode --prompt-file "$RUNNER_TEMP/makefun/owner-prompt.txt" --prompt-origin handed-off --prompt-via "Owner delegated Toyol continuation in ChatGPT to this recorded coding harness." --system-prompt "$RUNNER_TEMP/makefun/system-prompt.txt" --effort default --mcp none
           test -s "$RUNNER_TEMP/makefun/transcripts.tar.gz"
           node "$kit/cli/makefun.mjs" check --kit "$kit" --repo "$entry" --transcripts "$RUNNER_TEMP/makefun/transcripts.tar.gz" --json > "$RUNNER_TEMP/makefun/evidence/check.json"
           echo 'LOCAL_ENTRY_GATE_PASSED'
