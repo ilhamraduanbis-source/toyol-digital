@@ -24,7 +24,7 @@ jobs:
           const emit=(k,v)=>console.log(k+' '+JSON.stringify(v));
           async function api(path,{method='GET',body,token}={}){
             const r=await fetch(root+path,{method,redirect:'error',headers:{Accept:'application/json',...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(20000)});
-            const j=await r.json();return {ok:r.ok,status:r.status,data:j.data??j,error:j.error?.code??null};
+            const j=await r.json();return {ok:r.ok,status:r.status,data:j.data??j,error:j.error?.code??null,detail:String(j.error?.message??j.message??'').slice(0,500)};
           }
           try{
             const d=await api('/jobs/'+jobId),job=d.data.job??d.data;
@@ -37,7 +37,7 @@ jobs:
             delete process.env.TOYOL_SOLANA_KEYPAIR_JSON;
             const auth=await api('/agents/onboard',{method:'POST',body:{autonomous:true,agentName:'Toyol Digital',description:'Independent AI worker operated by its human owner; Python and JavaScript data processing, structured source-cited research, API validation and reproducible tests. Delivers verifiable reports and code; no fabricated evidence.',capabilityTags:['research','data-analysis','python','javascript','api-testing'],identityKey}});
             const a=auth.data,token=a.apiKey,agent=a.agentAccountId??a.agentId??a.agent?.id;
-            if(!auth.ok||typeof token!=='string'||!token||!agent){emit('ONBOARD_STOP',{status:auth.status,error:auth.error,fields:Object.keys(a)});process.exit(0);}
+            if(!auth.ok||typeof token!=='string'||!token||!agent){emit('ONBOARD_STOP',{status:auth.status,error:auth.error,detail:auth.detail,fields:Object.keys(a)});process.exit(0);}
             console.log('::add-mask::'+token);console.log('::add-mask::'+identityKey);
             for(const k of ['claimUrl','hmacSecret'])if(typeof a[k]==='string')console.log('::add-mask::'+a[k]);
             emit('DEALWORK_AGENT',{id:agent,recovered:a.recovered??false,fee:0});
@@ -46,12 +46,16 @@ jobs:
             if(!contracts.ok||!Array.isArray(list)){emit('STOP',{reason:'CONTRACT_HISTORY_SCHEMA',status:contracts.status});process.exit(0);}
             const prior=list.find(c=>(c.jobId??c.job?.id)===jobId);
             if(prior){emit('EXISTING_CONTRACT',{id:prior.id,state:prior.state});process.exit(0);}
+            const schema=await fetch('https://api.dealwork.ai/openapi.json',{redirect:'error',signal:AbortSignal.timeout(12000)}).then(r=>r.json());
+            const claimSpec=schema.paths?.['/jobs/{id}/claim']?.post??schema.paths?.['/jobs/{jobId}/claim']?.post;
+            emit('CLAIM_SCHEMA',{body:claimSpec?.requestBody??null,description:claimSpec?.description??null});
+            if(!claimSpec){emit('STOP',{reason:'NO_OFFICIAL_CLAIM_SCHEMA'});process.exit(0);}
             const criteria=job.acceptanceCriteria??job.acceptance_criteria??[];
             if(!Array.isArray(criteria)){emit('STOP',{reason:'CRITERIA_SCHEMA'});process.exit(0);}
             const ids=criteria.map(c=>c.id).filter(x=>typeof x==='string');
             const claim=await api('/jobs/'+jobId+'/claim',{method:'POST',token,body:{acceptedCriteriaIds:ids}});
             const contract=claim.data.contract??claim.data;
-            emit('CLAIM_RESULT',{status:claim.status,error:claim.error,id:contract.id,state:contract.state??contract.status,jobId:contract.jobId,escrow:contract.escrow?.status??claim.data.escrow?.status,amount:contract.agreedAmount??contract.amount??contract.price,fields:Object.keys(contract)});
+            emit('CLAIM_RESULT',{status:claim.status,error:claim.error,detail:claim.detail,id:contract.id,state:contract.state??contract.status,jobId:contract.jobId,escrow:contract.escrow?.status??claim.data.escrow?.status,amount:contract.agreedAmount??contract.amount??contract.price,fields:Object.keys(contract)});
             if(!claim.ok||typeof contract.id!=='string'||(contract.state??contract.status)!=='escrow_locked'){emit('STOP',{reason:'NOT_ESCROW_LOCKED_NO_WORK'});process.exit(0);}
             const start=await api('/contracts/'+contract.id+'/events',{method:'POST',token,body:{type:'START_WORK'}});
             emit('START_RESULT',{status:start.status,error:start.error,state:start.data.newState??start.data.state,contract:contract.id});
