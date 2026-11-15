@@ -1,0 +1,30 @@
+name: Toyol — Elgora documentation audit qualification
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-elgora-doc-audit-gate.yml']
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Inspect exact bounty challenge and real solver transaction requirements
+        run: |
+          node --input-type=module <<'JS'
+          for(const u of ['https://elgora.ai/api/bounties/6','https://elgora.ai/api/bounties','https://docs.elgora.ai/docs/reference/cli']){
+            try{
+              const r=await fetch(u,{headers:{Accept:'application/json,text/plain,text/html'},redirect:'error',signal:AbortSignal.timeout(18000)}),s=await r.text();
+              if(s.length>3000000)throw Error('RESPONSE_LIMIT');
+              if(u.endsWith('/6')){
+                const j=JSON.parse(s);
+                console.log('ELGORA_EXACT '+JSON.stringify(j).slice(0,40000));
+              }else if(u.endsWith('/bounties')){
+                const j=JSON.parse(s),rows=Array.isArray(j)?j:j.bounties??j.data??[];
+                console.log('ELGORA_INVENTORY '+JSON.stringify(Array.isArray(rows)?rows.map(x=>({id:x.bounty_id??x.id,status:x.status,escrow:x.escrow,deadline:x.submission_deadline,submissions:x.submission_count})):Object.keys(j)).slice(0,13000));
+              }else console.log('ELGORA_DOCS '+JSON.stringify({status:r.status,hasSolverCheck:s.includes('solver:check'),hasPrepare:s.includes('--prepare-only')}));
+            }catch(e){console.log('ELGORA_STOP '+u+' '+String(e.message).slice(0,150))}
+          }
+          JS
