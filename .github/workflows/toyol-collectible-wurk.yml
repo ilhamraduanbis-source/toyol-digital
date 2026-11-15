@@ -71,6 +71,21 @@ jobs:
               emit('BASE_TASK_AWARD',{id,http:res.status,status:t.status,phase:t.phase,awardCount:t.awardCount??a.length,ownAwards:mine.map(x=>({id:x.submissionId,status:x.status,amount:x.workerPayment,tx:x.settlementTxHash}))});
             }catch(e){emit('BASE_TASK_UNAVAILABLE',{id,error:String(e.message).slice(0,100)})}
           }
+          // Discover real work for this existing verified account. No claims or submissions.
+          try {
+            const page=await read('/jobs/available?limit=50');
+            const jobs=page.jobs??page.data?.jobs??page.items??page.data;
+            if(!Array.isArray(jobs))throw Error('JOB_SCHEMA');
+            const own=new Set(rows.map(x=>x.custom_short_id??x.jobId));
+            emit('WURK_AVAILABLE_SNAPSHOT',{count:jobs.length,hasMore:page.hasMore??page.pagination?.hasMore??null});
+            for(const x of jobs){
+              const id=x.customId??x.id??x.custom_id??x.short_id;
+              const brief=String(x.description??x.message_markdown??x.descriptionPreview??x.title??'');
+              const eligible=typeof id==='string'&&!own.has(id)&&!/twitter|instagram|telegram|discord|social media|casino|gambling|betting|referral|airdrop|buy tokens|deposit|repost|follow us/i.test(brief);
+              if(!eligible)continue;
+              emit('WURK_NEW_CANDIDATE',{id,title:brief.slice(0,1000),reward:x.reward??x.rewardFinancials??x.gross_pool??null,mode:x.mode??x.jobMode??x.job_mode});
+            }
+          }catch(e){emit('WURK_AVAILABLE_UNAVAILABLE',{reason:String(e.message).slice(0,120)});}
           emit('AUDIT_ONLY',{transactions:0,fees:0});
           JS
 
