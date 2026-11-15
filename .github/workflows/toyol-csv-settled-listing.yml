@@ -1,0 +1,30 @@
+name: Toyol — Submit CSV service to free Settled discovery
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-csv-settled-listing.yml']
+permissions:
+  contents: read
+jobs:
+  submit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Register the owner-approved public paid service with Settled
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const url='https://toyol-csv-evidence.ilhamraduan-bis.workers.dev/v1/csv/audit';
+          const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({csv:'id,name\n1,Ada\n',required:['name'],unique:['id']}),redirect:'error',signal:AbortSignal.timeout(20000)});
+          assert.equal(r.status,402);
+          const q=JSON.parse(Buffer.from(r.headers.get('payment-required'),'base64').toString('utf8'));
+          const a=q.accepts.find(x=>x.network==='eip155:8453');
+          assert.equal(a.amount,'10000');assert.equal(a.payTo.toLowerCase(),'0xac57ad3c3f233e5865c3cd652f67ffc82a7af431');
+          const s=await fetch('https://settled.tools/v1/submit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url}),redirect:'error',signal:AbortSignal.timeout(30000)});
+          const body=await s.text();
+          console.log('TOYOL_SETTLED_SUBMIT '+JSON.stringify({status:s.status,response:body.slice(0,12000),ownerSpend:0}));
+          if(!s.ok){console.log('TOYOL_DISCOVERY_NOT_CONFIRMED');process.exit(0)}
+          const c=await fetch('https://settled.tools/v1/free/check?url='+encodeURIComponent(url),{redirect:'error',signal:AbortSignal.timeout(30000)});
+          console.log('TOYOL_SETTLED_CHECK '+JSON.stringify({status:c.status,response:(await c.text()).slice(0,16000)}));
+          JS
