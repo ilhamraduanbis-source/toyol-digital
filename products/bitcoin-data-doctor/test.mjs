@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createApp, answer, validateQuestion, PRICE, MODEL } from "./src/server.mjs";
-const recipient="ST000000000000000000002AMW42H";
-// This public test fixture is the protocol burn address, NEVER a live payout destination.
+const recipient="ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM";
+// This public test fixture is a documented example address, NEVER a live payout destination.
 // No payment is created, sent or settled by these tests.
 let calls=0;
 const ai={run:async(model,args)=>{calls++;assert.equal(model,MODEL);assert.equal(args.max_tokens,384);return {response:"Validate the schema."};}};
