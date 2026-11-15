@@ -26,7 +26,9 @@ jobs:
             throw Error('RPC_'+method);
           }
           const chain=await rpc('eth_chainId',[]);if(chain!=='0x2105')throw Error('CHAIN');
-          const latest=await rpc('eth_getBlockByNumber',['latest',false]),block=BigInt(latest.number),ts=Number(BigInt(latest.timestamp))*1000;
+          let latest=await rpc('eth_getBlockByNumber',['latest',false]);
+          for(let i=0;i<35&&Number(BigInt(latest.timestamp))*1000<expiry+6000;i++){await new Promise(r=>setTimeout(r,3000));latest=await rpc('eth_getBlockByNumber',['latest',false]);}
+          const block=BigInt(latest.number),ts=Number(BigInt(latest.timestamp))*1000;
           const tag=latest.number;
           const used=await rpc('eth_call',[{to:token,data:'0xe94a0102'+pad(wallet)+nonce.slice(2)},tag]);
           const balance=await rpc('eth_call',[{to:token,data:'0x70a08231'+pad(wallet)},tag]);
