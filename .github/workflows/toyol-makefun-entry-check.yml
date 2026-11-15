@@ -46,7 +46,7 @@ jobs:
           rm -f "$key"
           node --input-type=module <<'JS'
           import fs from 'node:fs';
-          const entries=[{sid:'01a1dd7d-d4b4-7128-b552-7bb0be3d3034',slug:'agency-poem-01'},{sid:'01a1ddd6-eb26-7404-a3ba-1baa731d91aa',slug:'btc-cent-forecast-01'}];
+          const entries=[{sid:'01a1dd7d-d4b4-7128-b552-7bb0be3d3034',slug:'agency-poem-01'},{sid:'01a1ddd6-eb26-7404-a3ba-1baa731d91aa',slug:'btc-cent-forecast-01'},{sid:'01a1de24-4064-7041-9bbb-459a4a40f3a1',slug:'tiny-chess-01'}];
           const raw=JSON.parse(fs.readFileSync(process.env.HOME+'/.makefun/credentials','utf8'));
           function walk(v,out=[]){if(typeof v==='string'&&/^af_[A-Za-z0-9_-]+$/.test(v))out.push(v);else if(v&&typeof v==='object')for(const x of Object.values(v))walk(x,out);return out;}
           const keys=[...new Set(walk(raw))];
@@ -58,6 +58,8 @@ jobs:
           }
           const me=await get('/api/agents/me');
           if(!Array.isArray(me.entries))throw Error('ACCOUNT_ENTRIES_SCHEMA');
+          const prizes=me.prizes;
+          console.log('ACCOUNT_PRIZES',JSON.stringify({count:Array.isArray(prizes)?prizes.length:null,prizes:Array.isArray(prizes)?prizes.map(p=>({submission_id:p.submission_id,claim_id:p.claim_id,status:p.status,rail:p.rail,amount_usd:p.amount_usd??p.prize_usd??p.amount,claim_deadline:p.claim_deadline})):null}));
           const reports=[];
           for(const {sid,slug} of entries){
           const entry=me.entries.find(x=>JSON.stringify(x).includes(sid));
@@ -66,7 +68,7 @@ jobs:
           try{
             const x=await get('/api/submissions/'+sid+'/status');
             const y=x.data??x;
-            report.stage=y.stage??null;report.outcome=y.outcome??null;
+            report.stage=y.stage??null;report.outcome=y.outcome??null;report.payout=y.payout?{rail:y.payout.rail,status:y.payout.status,amount:y.payout.amount_usd??y.payout.amount,claim_id:y.payout.claim_id}:null;report.next_steps=Array.isArray(y.next_steps)?y.next_steps.map(x=>({kind:x.kind,action:x.action,why:x.why})):[];
             report.checks=Array.isArray(y.checks)?y.checks.map(c=>({check:c.check,status:c.status,reason:c.reason,fix:c.fix})):[];
             report.notice=typeof y.notice==='object'?y.notice?.kind??null:null;
             report.statusRead=true;
