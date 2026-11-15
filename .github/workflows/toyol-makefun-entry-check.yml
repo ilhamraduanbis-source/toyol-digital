@@ -1,0 +1,80 @@
+name: Toyol — Authenticated Makefun entry check
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-makefun-entry-check.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-makefun-entry-check
+  cancel-in-progress: false
+jobs:
+  status:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Download official contest kit
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/makefun-status"
+          mkdir -p "$root"
+          cd "$root"
+          curl --fail --silent --show-error --retry 2 --retry-delay 5 --max-time 30 https://make.fun/c/agency-poem-01/kit -o kit.tgz
+          python3 - <<'PY'
+          import tarfile,pathlib
+          with tarfile.open('kit.tgz') as z:
+              a=z.getmembers()
+              if sum(x.size for x in a)>100000000 or any(x.name.startswith('/') or '..' in pathlib.PurePosixPath(x.name).parts or not(x.isfile() or x.isdir()) for x in a): raise SystemExit('UNSAFE_KIT')
+              z.extractall('.',filter='data')
+          PY
+      - name: Check existing account and exact entry using official authentication
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/makefun-status"
+          export HOME="$root/home"
+          mkdir -p "$HOME" "$GITHUB_WORKSPACE/out"
+          chmod 700 "$HOME"
+          umask 077
+          key="$HOME/wallet.json"
+          trap 'rm -f "$key"; rm -rf "$HOME/.makefun"' EXIT
+          printf '%s' "$TOYOL_SOLANA_KEYPAIR_JSON" > "$key"
+          unset TOYOL_SOLANA_KEYPAIR_JSON
+          node "$root/agency-poem-01-kit/cli/makefun.mjs" register --keypair "$key" --origin https://make.fun --name Toyol-Digital --json > "$HOME/auth.json"
+          rm -f "$key"
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const sid='01a1dd7d-d4b4-7128-b552-7bb0be3d3034';
+          const raw=JSON.parse(fs.readFileSync(process.env.HOME+'/.makefun/credentials','utf8'));
+          function walk(v,out=[]){if(typeof v==='string'&&/^af_[A-Za-z0-9_-]+$/.test(v))out.push(v);else if(v&&typeof v==='object')for(const x of Object.values(v))walk(x,out);return out;}
+          const keys=[...new Set(walk(raw))];
+          if(keys.length!==1)throw Error('AUTH_SCHEMA_REVIEW');
+          async function get(path){
+            const r=await fetch('https://make.fun'+path,{headers:{'x-api-key':keys[0],Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(25000)});
+            if(!r.ok)throw Error('STATUS_HTTP_'+r.status);
+            const t=await r.text();if(t.length>4000000)throw Error('RESPONSE_LIMIT');return JSON.parse(t);
+          }
+          const me=await get('/api/agents/me');
+          if(!Array.isArray(me.entries))throw Error('ACCOUNT_ENTRIES_SCHEMA');
+          const entry=me.entries.find(x=>JSON.stringify(x).includes(sid));
+          const report={submission_id:sid,accountEntryFound:!!entry,income_verified:false,checkedAt:new Date().toISOString()};
+          if(entry){report.accountEntry={};for(const k of ['status','stage','outcome','title','rank','score','competition','competition_slug'])if(entry[k]!==undefined&&typeof entry[k]!=='object')report.accountEntry[k]=entry[k];}
+          try{
+            const x=await get('/api/submissions/'+sid+'/status');
+            const y=x.data??x;
+            report.stage=y.stage??null;report.outcome=y.outcome??null;
+            report.checks=Array.isArray(y.checks)?y.checks.map(c=>({check:c.check,status:c.status,reason:c.reason,fix:c.fix})):[];
+            report.notice=typeof y.notice==='object'?y.notice?.kind??null:null;
+            report.statusRead=true;
+          }catch(e){report.statusRead=false;report.error=e.message;}
+          fs.writeFileSync(process.env.GITHUB_WORKSPACE+'/out/entry.json',JSON.stringify(report,null,2));
+          console.log('AUTHENTICATED_POETRY_STATUS',JSON.stringify(report));
+          JS
+      - name: Preserve status evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toyol-makefun-authenticated-status
+          path: out/entry.json
+          retention-days: 7
