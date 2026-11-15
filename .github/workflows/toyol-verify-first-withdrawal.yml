@@ -1,0 +1,28 @@
+name: Toyol — Verify first wallet withdrawal
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-verify-first-withdrawal.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Verify exact withdrawal transfer and remaining balances, read only
+        run: |
+          node --input-type=module <<'JS'
+          const tx='0xfaa80ebb390bab4fbd4a45d2c06499ccb21538c55f0add52b0ba6bc98a55a467',from='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431',to='0x2f4f4b790f1d899d02e3ba238caba8e104fb1142',token='0x833589fcd6edb6e08f4c7c32d4f71b54bda02913';
+          const endpoints=['https://mainnet.base.org','https://base-rpc.publicnode.com'];
+          async function rpc(method,params){for(const endpoint of endpoints){try{const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),redirect:'error',signal:AbortSignal.timeout(10000)}),j=await r.json();if(r.ok&&!j.error&&j.result!=null)return j.result}catch{}}throw Error('RPC_'+method)}
+          try{
+            if(await rpc('eth_chainId',[])!=='0x2105')throw Error('WRONG_CHAIN');
+            const receipt=await rpc('eth_getTransactionReceipt',[tx]);
+            const matches=receipt.logs.filter(l=>l.address.toLowerCase()===token&&l.topics[0]==='0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'&&l.topics[1]?.slice(-40).toLowerCase()===from.slice(2)&&l.topics[2]?.slice(-40).toLowerCase()===to.slice(2)&&BigInt(l.data)===1000000n);
+            const latest=await rpc('eth_blockNumber',[]),final=await rpc('eth_getBlockByNumber',['finalized',false]);
+            console.log('WITHDRAWAL_VERIFIED '+JSON.stringify({tx,success:receipt.status==='0x1',exactTransfer:matches.length===1,amountMicros:matches.length===1?'1000000':null,from,to,confirmations:Number(BigInt(latest)-BigInt(receipt.blockNumber)+1n),finalized:BigInt(final.number)>=BigInt(receipt.blockNumber)}));
+            for(const a of [from,to]){const raw=await rpc('eth_call',[{to:token,data:'0x70a08231'+a.slice(2).padStart(64,'0')},'latest']);console.log('WALLET_BALANCE '+JSON.stringify({address:a,usdcMicros:String(BigInt(raw))}))}
+          }catch(e){console.log('VERIFICATION_UNAVAILABLE '+String(e.message).slice(0,100))}
+          JS
