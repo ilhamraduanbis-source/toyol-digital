@@ -1,0 +1,31 @@
+name: Toyol — Exact Solana funding quote
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-sendstables-quote.yml']
+permissions:
+  contents: read
+jobs:
+  quote:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Get exact current fees to the existing Toyol Solana wallet; read only
+        run: |
+          node --input-type=module <<'JS'
+          const recipient='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ',mint='EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+          for(const amount of ['1','0.75','0.5','0.25']){
+            try{
+              const u=new URL('https://sendstables.com/api/v1/quote');for(const [k,v] of Object.entries({from:'base',to:'solana',amount,recipient}))u.searchParams.set(k,v);
+              const r=await fetch(u,{headers:{Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(15000)}),j=await r.json();
+              console.log('SENDSTABLES_QUOTE '+JSON.stringify({http:r.status,amount,quote:j}).slice(0,10000));
+            }catch(e){console.log('QUOTE_STOP '+amount+' '+String(e.message).slice(0,150))}
+          }
+          for(const method of ['getBalance','getTokenAccountsByOwner']){
+            try{
+              const params=method==='getBalance'?[recipient,{commitment:'finalized'}]:[recipient,{mint},{encoding:'jsonParsed',commitment:'finalized'}];
+              const r=await fetch('https://api.mainnet-beta.solana.com',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(15000)});console.log('SOLANA_CHECK '+JSON.stringify({method,http:r.status,result:await r.json()}).slice(0,7000));
+            }catch(e){console.log('RPC_STOP '+String(e.message).slice(0,150))}
+          }
+          JS
