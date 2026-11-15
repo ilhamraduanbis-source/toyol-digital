@@ -1,0 +1,58 @@
+name: Toyol — Synmerco award and payout watch
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-synmerco-award-watch.yml']
+  schedule:
+    - cron: '17 */3 * * *'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: toyol-synmerco-single-identity
+  cancel-in-progress: false
+jobs:
+  bid:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: toyol-synmerco-identity
+          run-id: '43686723054'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/synmerco
+      - name: Maintain availability and reconcile exact existing bid, award and wallet
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          node --input-type=module <<'JS'
+          import {createHmac,createDecipheriv} from 'node:crypto';
+          import fs from 'node:fs';
+          const root='https://synmerco-escrow.onrender.com',id='ed43cce4-eee8-4925-9a17-9b1cea6b6519',address='0x80F986F20a3A39510e26654578310885a62CF8FD';
+          const emit=(k,v)=>console.log(k+' '+JSON.stringify(v)),need=(x,m)=>{if(!x)throw Error(m)};
+          async function api(path,{method='GET',body,token}={}){
+            const r=await fetch(root+path,{method,redirect:'error',headers:{Accept:'application/json',...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(20000)});
+            return {ok:r.ok,status:r.status,j:await r.json()};
+          }
+          try{
+            const seed=JSON.parse(process.env.TOYOL_SOLANA_KEYPAIR_JSON),wrap=createHmac('sha256',Buffer.from(seed.slice(0,32))).update('Toyol Digital Synmerco API credential encryption v1').digest();
+            delete process.env.TOYOL_SOLANA_KEYPAIR_JSON;
+            const e=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/synmerco/credential.enc.json','utf8')),d=createDecipheriv('aes-256-gcm',wrap,Buffer.from(e.iv,'base64'));
+            d.setAuthTag(Buffer.from(e.tag,'base64'));
+            const {did,token,address:stored}=JSON.parse(Buffer.concat([d.update(Buffer.from(e.ciphertext,'base64')),d.final()]).toString('utf8'));
+            need(stored===address&&did==='did:pkh:eip155:8453:'+address&&token.startsWith('sk_syn_'),'CREDENTIAL_IDENTITY');console.log('::add-mask::'+token);
+            const hb=await api('/v1/agents/heartbeat',{method:'POST',token,body:{availability:'online'}});
+            need(hb.ok&&hb.j.busy!==true&&hb.j.readiness?.live===true,'NOT_LIVE');
+            const i=await api('/v1/intents/'+id),b=await api('/v1/intents/'+id+'/bids',{token});
+            const mine=b.j.bids?.find(x=>String(x.bidId??x.id)==='5553');
+            emit('SYN_AWARD_STATUS',{intentStatus:i.j.status,bidStatus:mine?.status??null,bidAmount:mine?.amountCents??null,matchedToToyol:i.j.matchedDid===did,bidCount:b.j.total,live:hb.j.readiness?.live});
+            const raw=await api('/v1/escrows',{token});
+            const list=Array.isArray(raw.j)?raw.j:raw.j.escrows??raw.j.data??[];
+            emit('ESCROW_STATUS',{http:raw.status,count:Array.isArray(list)?list.length:null,matching:Array.isArray(list)?list.filter(x=>x.intentId===id||x.terms?.intentId===id||x.providerDid===did||x.sellerDid===did).map(x=>({id:x.escrowId??x.id,status:x.status,amountCents:x.amountCents,providerDid:x.providerDid??x.sellerDid,providerAddress:x.providerAddress??x.sellerAddress??null})):[]});
+            const rr=await fetch('https://mainnet.base.org',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',data:'0x70a08231'+address.slice(2).toLowerCase().padStart(64,'0')},'latest']}),signal:AbortSignal.timeout(10000)});
+            const v=await rr.json();if(v.result&&/^0x[0-9a-f]+$/i.test(v.result))emit('SYN_WALLET_BALANCE',{address,usdcMicros:BigInt(v.result).toString()});
+            if(i.j.matchedDid===did||['accepted','awarded','selected'].includes(mine?.status))emit('AWARD_REVIEW_REQUIRED',{intent:id,bid:'5553',reason:'Verify funded escrow, exact payout and timeline before first pull'});
+          }catch(e){emit('SAFE_STOP',{reason:String(e.message).slice(0,150)})}
+          JS
