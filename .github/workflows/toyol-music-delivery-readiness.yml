@@ -42,7 +42,14 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m pip install --disable-pip-version-check --quiet numpy==2.3.5
-          command -v ffmpeg
+          if ! command -v ffmpeg >/dev/null; then
+            python3 -m pip install --disable-pip-version-check --quiet imageio-ffmpeg==0.6.0
+            mkdir -p "$RUNNER_TEMP/audio-bin"
+            exe=$(python3 -c 'import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())')
+            ln -s "$exe" "$RUNNER_TEMP/audio-bin/ffmpeg"
+            export PATH="$RUNNER_TEMP/audio-bin:$PATH"
+          fi
+          ffmpeg -version | head -n 1
           mkdir -p out/source
           cp skills/original-music/source/render.py out/source/
           cp skills/original-music/README.md out/README.md
