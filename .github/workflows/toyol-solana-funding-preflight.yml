@@ -1,0 +1,31 @@
+name: Toyol — Solana funding preflight
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-solana-funding-preflight.yml']
+permissions:
+  contents: read
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Read exact public Solana wallet, USDC account and ATA rent
+        run: |
+          node --input-type=module <<'JS'
+          const wallet='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ',mint='EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGkZwyTDt1v';
+          const endpoints=['https://api.mainnet-beta.solana.com','https://solana-rpc.publicnode.com'];
+          let ok=false;
+          for(const url of endpoints){
+            try{
+              async function rpc(method,params){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(14000),redirect:'error'});if(!r.ok)throw Error('HTTP_'+r.status);const j=await r.json();if(j.error||j.result===undefined)throw Error('RPC_ERROR');return j.result;}
+              const [balance,accounts,rent]=await Promise.all([rpc('getBalance',[wallet,{commitment:'finalized'}]),rpc('getTokenAccountsByOwner',[wallet,{mint},{encoding:'jsonParsed',commitment:'finalized'}]),rpc('getMinimumBalanceForRentExemption',[165,{commitment:'finalized'}])]);
+              if(!Number.isSafeInteger(balance.value)||!Array.isArray(accounts.value)||!Number.isSafeInteger(rent))throw Error('SCHEMA');
+              const rows=accounts.value.map(x=>{const i=x.account?.data?.parsed?.info;if(i?.owner!==wallet||i?.mint!==mint||i.tokenAmount?.decimals!==6||!/^\d+$/.test(i.tokenAmount.amount))throw Error('ACCOUNT_MISMATCH');return {address:x.pubkey,state:i.state,amountMicros:i.tokenAmount.amount};});
+              console.log('SOLANA_FUNDING_PREFLIGHT '+JSON.stringify({rpc:url,wallet,lamports:balance.value,usdcAccounts:rows,usdcTotalMicros:String(rows.reduce((sum,x)=>sum+BigInt(x.amountMicros),0n)),tokenAccountRentLamports:rent,transactionSent:false,feeSpent:false}));
+              ok=true;break;
+            }catch(e){console.log('PUBLIC_RPC_UNAVAILABLE '+url+' '+String(e.message).slice(0,120));}
+          }
+          if(!ok){console.log('FUNDING_UNVERIFIED_NO_PAYMENT');}
+          JS
