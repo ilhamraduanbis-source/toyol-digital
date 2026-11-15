@@ -1,0 +1,78 @@
+name: Toyol — AgentHansa daily reward claim
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-hansa-checkin.yml']
+  schedule:
+    - cron: '41 9 * * *'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: toyol-hansa-single-identity
+  cancel-in-progress: false
+jobs:
+  claim:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: toyol-hansa-first-account
+          run-id: '43694276621'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/hansa
+      - name: Claim daily reward on the existing agent and reconcile its earnings
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          node --input-type=module <<'JS'
+          import {createHmac,createDecipheriv} from 'node:crypto';
+          import fs from 'node:fs';
+          const root='https://www.agenthansa.com',aid='d6c20cad-abc9-417d-b493-f33a3b4ed328';
+          const emit=(k,v)=>console.log(k+' '+JSON.stringify(v)),need=(x,m)=>{if(!x)throw Error(m)};
+          const seed=JSON.parse(process.env.TOYOL_SOLANA_KEYPAIR_JSON??'null');
+          need(Array.isArray(seed)&&seed.length===64,'OWNER_SECRET_FORMAT');
+          const key=createHmac('sha256',Buffer.from(seed.slice(0,32))).update('Toyol Digital AgentHansa credential encryption v1').digest();delete process.env.TOYOL_SOLANA_KEYPAIR_JSON;
+          const e=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/hansa/account.enc.json','utf8')),dec=createDecipheriv('aes-256-gcm',key,Buffer.from(e.iv,'base64'));dec.setAuthTag(Buffer.from(e.tag,'base64'));
+          const a=JSON.parse(Buffer.concat([dec.update(Buffer.from(e.ciphertext,'base64')),dec.final()]).toString('utf8'));
+          need(a.id===aid&&a.name==='Toyol-Digital'&&typeof a.token==='string','IDENTITY');const token=a.token;console.log('::add-mask::'+token);
+          async function api(path,{method='GET',body}={}){
+            const r=await fetch(root+path,{method,redirect:'error',headers:{Accept:'application/json',Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(20000)});
+            return {ok:r.ok,status:r.status,j:await r.json()};
+          }
+          const safe=x=>Object.fromEntries(Object.entries(x).filter(([k,v])=>!(/secret|token|key|email|referral|credential|payment_link/i.test(k))&&['number','boolean','string'].includes(typeof v)));
+          const words={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20};
+          function solve(q){
+            q=q.toLowerCase().replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\b/g,s=>String(words[s]));
+            let m;
+            if((m=q.match(/^what is the sum of (\d+) and (\d+)(?: [a-z]+)?\?$/)))return +m[1]+ +m[2];
+            if((m=q.match(/^what is (\d+) (?:plus|\+) (\d+)\?$/)))return +m[1]+ +m[2];
+            if((m=q.match(/^what is (\d+) (?:minus|-) (\d+)\?$/)))return +m[1]- +m[2];
+            if((m=q.match(/^what is (\d+) (?:times|multiplied by|x|\*) (\d+)\?$/)))return +m[1]* +m[2];
+            if((m=q.match(/^what is (\d+) divided by (\d+)\?$/))&&+m[2]!==0)return +m[1]/ +m[2];
+            if((m=q.match(/^a [a-z]+ has (\d+) [a-z]+ and (doubles|triples|quadruples) the collection\. how many now\?$/)))return +m[1]*({doubles:2,triples:3,quadruples:4}[m[2]]);
+            return null;
+          }
+          const before=await api('/api/agents/earnings');need(before.ok&&before.j.agent_id===aid,'EARNINGS_IDENTITY');
+          emit('HANSA_EARNINGS_BEFORE',safe(before.j));
+          let c;
+          if(Date.now()<Date.parse('2026-11-15T08:27:30Z')){
+            const p=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/hansa/challenge.json','utf8'));
+            need(p.id==='c118aaab-fb46-48cc-b7b8-7bc195ba7a06'&&p.question==='What is the sum of four and 6 tickets?','FIRST_CHALLENGE_IDENTITY');
+            c={ok:true,j:{status:'challenge_required',challenge_id:p.id,question:p.question}};
+          }else c=await api('/api/agents/checkin',{method:'POST'});
+          emit('CHECKIN_STATUS',{http:c.status??200,...safe(c.j)});
+          if(c.ok&&c.j.status==='challenge_required'){
+            const n=solve(c.j.question);
+            if(n===null||!Number.isSafeInteger(n)||n<0){emit('UNSUPPORTED_CHALLENGE',{question:c.j.question});process.exit(0)}
+            const v=await api('/api/agents/checkin/verify',{method:'POST',body:{challenge_id:c.j.challenge_id,challenge_answer:n}});
+            emit('CHECKIN_VERIFIED',{http:v.status,answer:n,...safe(v.j)});
+          }
+          const after=await api('/api/agents/earnings');need(after.ok&&after.j.agent_id===aid,'EARNINGS_IDENTITY');
+          emit('HANSA_EARNINGS_AFTER',safe(after.j));
+          const prev=Number(before.j.total_earned),now=Number(after.j.total_earned);
+          emit('REWARD_RECONCILIATION',{incrementUsd:Number.isFinite(prev)&&Number.isFinite(now)?now-prev:null,totalEarned:after.j.total_earned,pending:after.j.pending_earned,confirmed:after.j.confirmed_earned,paid:after.j.paid_earned,available:after.j.available_usdc,threshold:after.j.payout_threshold,walletBound:!!after.j.wallet_address||!!after.j.fluxa_agent_id,spend:0,onchainPaymentVerified:false});
+          JS
