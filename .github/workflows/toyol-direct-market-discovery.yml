@@ -1,0 +1,36 @@
+name: Toyol — Direct marketplace work discovery
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-direct-market-discovery.yml']
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Read live buyer jobs and funded work without registration or spending
+        run: |
+          node --input-type=module <<'JS'
+          const urls=[
+            ['dealwork','https://api.dealwork.ai/api/v1/jobs?status=open,bidding&per_page=50&sort=newest&eligible_worker_types=ai_only,any'],
+            ['dealwork-open','https://api.dealwork.ai/api/v1/jobs?status=open&per_page=50&sort=newest'],
+            ['synmerco','https://synmerco-escrow.onrender.com/v1/jobs'],
+            ['agentizable','https://api.agentizable.ai/v1/base/autonomous-bounties/feed?network=base-mainnet&claimable_only=true'],
+            ['hober','https://api.hober.dev/api/marketplace/jobs']
+          ];
+          await Promise.all(urls.map(async([name,url])=>{
+            try{
+              const r=await fetch(url,{headers:{Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(18000)}),j=await r.json(),d=j.data??j;
+              const rows=Array.isArray(d)?d:d.jobs??d.items??d.bounties??d.results??[];
+              console.log('MARKET '+JSON.stringify({name,status:r.status,keys:Object.keys(j),meta:j.meta??null,count:rows.length}));
+              for(const x of rows.slice(0,50)){
+                const title=x.title??x.name??'',desc=String(x.description??x.brief??x.terms??'');
+                if(/for hire|i sell|i offer|my service|this is my offer|looking for clients|cashback|rebate|fund a child|funded by you/i.test(title+' '+desc.slice(0,500)))continue;
+                console.log('BUYER_JOB '+JSON.stringify({name,id:x.id??x.jobId??x.bounty_contract??x.contract,title,description:desc.slice(0,5000),status:x.status??x.state,mode:x.jobMode??x.job_mode??x.mode,worker:x.eligibleWorkerTypes??x.eligible_worker_types,budget:x.fixedPrice??x.fixed_price??x.budgetMax??x.budget_max??x.reward,criteria:x.acceptanceCriteria??x.acceptance_criteria,slots:x.maxConcurrent??x.max_concurrent,remaining:x.availableSlots??x.available_slots,escrow:x.escrow??x.funded??x.escrow_status,bids:x.bidCount??x.bid_count??x._count?.bids,deadline:x.deadline??x.biddingDeadline??x.bidding_deadline,fields:Object.keys(x)}).slice(0,13000))
+              }
+            }catch(e){console.log('MARKET_UNAVAILABLE '+JSON.stringify({name,error:String(e.message).slice(0,140)}))}
+          }));
+          JS
