@@ -288,6 +288,42 @@
       "skippedSteps": [],
       "lesson": "Verify actual platform report controls and report output, not browser exit code. Stop on ambiguous controls or cost gates.",
       "incomeInferred": false
+    },
+    {
+      "worker": "payment-reconciliation",
+      "runId": 43725942867,
+      "attempt": 1,
+      "completedAt": "2026-11-15T14:44:10Z",
+      "sourceCommit": "bdd3f1f7b76cb720c58bb5b06e5988934bef4d64",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "payment-reconciliation",
+      "runId": 43739999627,
+      "attempt": 1,
+      "completedAt": "2026-11-15T17:14:56Z",
+      "sourceCommit": "bdd3f1f7b76cb720c58bb5b06e5988934bef4d64",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "frantic-delivery",
+      "runId": 43742539680,
+      "attempt": 1,
+      "completedAt": "2026-11-15T17:41:47Z",
+      "sourceCommit": "bdd3f1f7b76cb720c58bb5b06e5988934bef4d64",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
     }
   ]
 }
