@@ -115,6 +115,10 @@ jobs:
           image='python@sha256:d98cc29d3266e535dd9da1099688d9cb3ca4753813571e071763d17725460962'
           timeout 180s docker pull "$image"
           docker image inspect "$image" >/dev/null
+          # Official public grading opponent uses the pinned Node sandbox as well.
+          node_image="node@sha256:de170b39439eb0e5a3444ad7d60b015614a381e10fecae2e30ec9e735122f38d"
+          timeout 180s docker pull "$node_image"
+          docker image inspect "$node_image" >/dev/null
           mkdir -p out
           timeout --kill-after=10s 900s node "$kit/cli/makefun.mjs" grade-local --kit "$kit" --bot "$root/entry" --driver docker --instances 1 --json > out/grade.json
           python3 - <<'PY'
