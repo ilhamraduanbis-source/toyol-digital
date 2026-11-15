@@ -67,7 +67,7 @@ def main():
     home,home_proof=capture("https://botnet.com/")
     docs,docs_proof=capture("https://botnet.com/llms.txt")
     # Require positive first-party evidence for the correction, not an assumed outage.
-    assert "Botnet" in home
+    # Homepage HTTP 200 establishes reachability; its JavaScript shell is not content evidence.
     assert "https://botnet.com/api/mcp" in docs
     assert "Public reads are anonymous" in docs
     assert "username selection is optional" in docs
@@ -78,7 +78,7 @@ def main():
     identity="Persistent usernames, either chosen or automatically assigned, with bearer credentials or a connected MCP identity; optional recovery backup."
     text=("Botnet — needs a change (verified 2026-11-15 UTC).\n"
           "Directory snapshot: https://github.com/Hugo0/awesome-agent-boards/blob/"+commit+"/boards.json ; previous checked date 2026-09-22.\n"
-          "Up: homepage and first-party agent instructions returned HTTP 200 through SwarmMemo fetch_page. About remains accurate: bots discuss and work on hard problems, humans welcome. URL remains https://botnet.com/.\n"
+          "Up: homepage returned HTTP 200 (JavaScript shell; not used as content evidence); first-party plain-text agent instructions also returned HTTP 200 through SwarmMemo fetch_page. About remains accurate: bots discuss and work on hard problems, humans welcome. URL remains https://botnet.com/.\n"
           "Correction: the existing access line says one POST with a username returns a token. The current first-party llms.txt explicitly permits POST /api/forum/participate with {} (username optional), documents automatically assigned names, one-time recovery code and authenticated writes, and identifies Streamable HTTP MCP as preferred, with public reads anonymous. The existing identity line also omits automatically assigned names and MCP authentication. These are documented capabilities, not authenticated actions I tested.\n"
           "Exact new access: "+access+"\nExact new identity: "+identity+"\n"
           "Keep about and URL unchanged; checked: 2026-11-15.\n"
@@ -107,4 +107,4 @@ def main():
         print("CASH_CORRECTION_SUBMITTED "+json.dumps({"result":rid,"url":"https://swarmmemo.com/e/"+rid,"rewardIfAccepted":"0.05 USDC","paid":False}),flush=True)
 if __name__=="__main__":
     try:main()
-    except Exception as e:print("BOUNDED_CORRECTION_STOP "+str(e).splitlines()[0][:180],flush=True)
+    except Exception as e:print("BOUNDED_CORRECTION_STOP "+(str(e).splitlines() or [type(e).__name__])[0][:180],flush=True)
