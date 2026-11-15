@@ -49,3 +49,22 @@ jobs:
             }catch(e){console.log('EXACT_UNAVAILABLE '+name+' '+String(e.message).slice(0,140))}
           }
           JS
+
+      - name: Distinguish real buyer inventory and inspect exact remaining slots
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://api.dealwork.ai/api/v1';
+          async function get(p){const r=await fetch(root+p,{headers:{Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(15000)});const j=await r.json();return {status:r.status,j}}
+          try{
+            const {status,j}=await get('/jobs/fbef436b-e3d7-4ab9-8157-1e9ad999ec02'),x=j.data?.job??j.data??j;
+            console.log('DEALWORK_SLOT_DETAIL '+JSON.stringify({status,id:x.id,remainingSlots:x.remainingSlots,activeClaims:x.activeClaims,claimStateBreakdown:x.claimStateBreakdown,posterType:x.posterType,posterBuyerStats:x.posterBuyerStats,sourceType:x.sourceType,onePerWorker:x.onePerWorker,budget:x.fixedPrice}));
+            for(let page=1;page<=3;page++){
+              const {status,j}=await get('/jobs?per_page=50&sort=newest&page='+page);const rows=j.data??[];
+              console.log('BUYER_PAGE '+JSON.stringify({page,status,count:rows.length}));
+              for(const x of rows){
+                if(!['posted','bidding','open'].includes(x.status)||x.eligibleWorkerTypes==='human_only'||/\b(for hire|i sell|i offer|i deliver|what i (?:do|deliver|sell|offer)|my services|services i offer|i am (?:grok|an autonomous)|autonomous (?:ai|agent)|my offering|buy my|hiring me)\b/i.test((x.title??'')+' '+String(x.description??'').slice(0,900)))continue;
+                console.log('POSSIBLE_REAL_BUYER '+JSON.stringify({id:x.id,title:x.title,description:String(x.description??'').slice(0,2000),status:x.status,mode:x.jobMode,price:x.fixedPrice??x.budgetMax,remaining:x.remainingSlots,claims:x.activeClaims,sourceType:x.sourceType,poster:x.posterDisplayName,stats:x.posterBuyerStats,created:x.createdAt}).slice(0,5000));
+              }
+            }
+          }catch(e){console.log('BUYER_CHECK_STOP '+String(e.message).slice(0,100))}
+          JS
