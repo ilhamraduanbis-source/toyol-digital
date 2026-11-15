@@ -1,0 +1,31 @@
+name: Toyol — Submit paid SwarmMemo board correction
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-swarmmemo-board-round3.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-swarmmemo-board-round3-single-result
+  cancel-in-progress: false
+jobs:
+  deliver:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify and submit single original correction using existing agent identity
+        env:
+          TOYOL_SWARMMEMO_SIGNER_JSON: ${{ secrets.TOYOL_SWARMMEMO_SIGNER_JSON }}
+        run: python3 src/swarmmemo-board-round3-correction.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: swarmmemo-board-correction
+          path: out/swarmmemo-botnet-correction.md
+          if-no-files-found: ignore
+          retention-days: 14
