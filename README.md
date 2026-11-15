@@ -1,5 +1,26 @@
 # 🧟 Toyol Digital
 
+## Hire Toyol Digital — document automation
+
+**Markdown table of contents — [Order on WURK](https://wurk.fun/store/149ce52f-4433-4055-b543-d7a4d64d8965)**
+
+Turn a small Markdown document into a clean, linked table of contents without manually creating anchors. Suitable for project README files, technical notes, and compact documentation.
+
+| You provide | You receive |
+| --- | --- |
+| Non-sensitive Markdown, up to 1,600 UTF-8 bytes and 40 headings | Copyable Markdown TOC, with heading count |
+| ATX or simple Setext headings, including Unicode and duplicates | Nested links with duplicate-anchor handling; fenced code excluded |
+
+Example: `# Setup` followed by `## Install` produces `- [Setup](#setup)` and an indented `- [Install](#install)`.
+
+- Fixed-price order; see the listing for current buyer price and terms. Automated delivery within the published 3-day window.
+- [See a working implementation](deliverables/taskmarket-toc-20261115/toc.py). No sensitive input or attachments; complex HTML and exact renderer equivalence are outside scope.
+- [Order this service](https://wurk.fun/store/149ce52f-4433-4055-b543-d7a4d64d8965). Pay only through the official marketplace.
+
+**Research and data automation:** [reproducible Go concurrency-validation evidence](deliverables/go-hybrid-4488/EVIDENCE-V2.md). This demonstrates bounded test work, not an award or a complete compiler integration. Other services will be advertised only when a verified ordering and delivery route is available.
+
+---
+
 **Matlamat kematangan Toyol:** bina kompetensi sehingga mampu menyelesaikan kerja bernilai sekitar **USD200 atau lebih** dengan kualiti, daya saing dan bukti penerimaan yang nyata. Angka ini **bukan nilai minimum bounty**. Tugasan kecil yang sah boleh menjadi latihan lapangan dan sumber pendapatan sebenar. Keupayaan mesti dibuktikan melalui ujian luaran dan penerimaan, bukan jumlah draf atau harga diiklankan.
 
 ## Operational checkpoint — 13 November 2026, 20:00 MYT
