@@ -1,0 +1,160 @@
+{
+  "version": 1,
+  "language": "ms-MY",
+  "purpose": "Academic skill curriculum, not model weight training; examples are original synthetic exercises, not actual PhD content.",
+  "sources": {
+    "ukm": "https://www.ukm.my/akademik/pelajar-pascasiswazah/",
+    "dbp": "https://prpm.dbp.gov.my/Cari1?d=175768&keyword=daripada",
+    "sep": "https://plato.stanford.edu/entries/reflective-equilibrium/",
+    "prisma": "https://www.prisma-statement.org/prisma-2020",
+    "crossref": "https://api.crossref.org/works/10.1136/bmj.n71",
+    "doaj": "https://doaj.org/",
+    "openalex": "https://api.openalex.org/works/https://doi.org/10.1136/bmj.n71",
+    "gaya": "https://www.ukm.my/pusatsiswazah/thesis-templates-and-guidlines/"
+  },
+  "modules": [
+    {
+      "id": "M01",
+      "title": "Reka bentuk dan penjajaran kajian",
+      "refs": [
+        "ukm",
+        "gaya"
+      ],
+      "principle": "Bezakan masalah, persoalan, objektif, korpus, kaedah dan batas dapatan. Pilih kaedah selepas persoalan, bukan sebaliknya.",
+      "exercise": "Kajian konseptual rekaan: Apakah hubungan antara justifikasi dan kepastian?",
+      "worked": "Masalah: kekeliruan antara dua konsep. Persoalan: bagaimana hubungan kedua-duanya? Objektif: menganalisis hubungan konsep. Korpus: teks yang ditentukan dan disemak. Kaedah: analisis konsep dan hujah. Batas: tiada dakwaan tentang populasi manusia.",
+      "kind": "alignment"
+    },
+    {
+      "id": "M02",
+      "title": "Tatabahasa Melayu ilmiah",
+      "refs": [
+        "dbp"
+      ],
+      "principle": "Bezakan kata sendi, imbuhan, subjek predikat dan pilihan kata. Perubahan makna mesti diterangkan; pilihan gaya bukan kesalahan tatabahasa.",
+      "exercise": "Dapatan ini diperolehi dari tiga sumber dan ianya menunjukkan pola tertentu.",
+      "worked": "Dapatan ini diperoleh daripada tiga sumber dan menunjukkan pola tertentu. Daripada merujuk kepada sumber; diperoleh ialah bentuk pasif baku; ianya diganti tanpa mengubah dakwaan.",
+      "kind": "malay"
+    },
+    {
+      "id": "M03",
+      "title": "Analisis konsep dan hujah falsafah",
+      "refs": [
+        "sep"
+      ],
+      "principle": "Pisahkan kesahan bentuk hujah daripada kebenaran premis. Bina contoh balas, kenal pasti andaian tersembunyi dan bezakan pernyataan deskriptif daripada normatif.",
+      "exercise": "Jika semua kepercayaan benar ialah pengetahuan, maka tekaan yang kebetulan benar juga pengetahuan.",
+      "worked": "P1: Semua kepercayaan benar ialah pengetahuan. P2: Tekaan yang kebetulan benar ialah kepercayaan benar. K: Tekaan itu pengetahuan. Bentuk sah jika premis diterima; P1 dipersoal dengan contoh balas tekaan bernasib baik. Kesahan tidak menjamin premis benar.",
+      "kind": "argument"
+    },
+    {
+      "id": "M04",
+      "title": "Penyelidikan Islam dan bacaan turath",
+      "refs": [
+        "ukm"
+      ],
+      "principle": "Tentukan pengarang, judul, edisi, bahasa, bab, halaman dan konteks. Bezakan teks asal, terjemahan, tafsiran dan rekonstruksi. Jangan samakan istilah tradisi tanpa hujah.",
+      "exercise": "Contoh rekaan: istilah X dalam naskhah A dikatakan sama dengan konsep Y dalam karya moden B.",
+      "worked": "Tahan penyamaan sehingga teks asal, edisi, petikan berlokasi, konteks dan perbezaan fungsi istilah diperiksa. Catat terjemahan literal berasingan daripada interpretasi. Status: teks belum diperoleh, maka dakwaan tidak boleh disahkan.",
+      "kind": "primary"
+    },
+    {
+      "id": "M05",
+      "title": "Sorotan literatur dan jurang kajian",
+      "refs": [
+        "prisma",
+        "crossref"
+      ],
+      "principle": "Sintesis mengikut persoalan dan perbahasan; bezakan sorotan naratif, skop dan sistematik. PRISMA ialah panduan pelaporan untuk sorotan sistematik, bukan kaedah wajib semua kajian falsafah.",
+      "exercise": "Tiga kajian rekaan mentakrifkan X dengan cara berbeza; tiada data bahawa semua literatur telah disemak.",
+      "worked": "Peta persamaan, perbezaan dan alasan setiap definisi. Catat pangkalan data, istilah carian, tarikh dan kriteria. Kesimpulan: jurang sementara dalam korpus terpilih, bukan dakwaan bahawa tiada kajian terdahulu.",
+      "kind": "literature"
+    },
+    {
+      "id": "M06",
+      "title": "Penulisan akademik dan kohesi",
+      "refs": [
+        "gaya",
+        "dbp"
+      ],
+      "principle": "Bina perenggan dengan dakwaan, alasan, bukti dan batas. Jaga peralihan idea. Jangan menukar gaya menjadi kepastian palsu atau memanjangkan ayat tanpa tujuan.",
+      "exercise": "Semua pengkaji bersetuju bahawa X merupakan punca utama Y. Ini sudah terbukti.",
+      "worked": "Dalam korpus rekaan ini, dua pengkaji mengaitkan X dengan Y. Walau bagaimanapun, hubungan tersebut belum memadai untuk menunjukkan sebab akibat. Nyatakan bukti dan batas kajian sebelum menguatkan kesimpulan.",
+      "kind": "prose"
+    },
+    {
+      "id": "M07",
+      "title": "Pengesahan sitasi dan bibliografi",
+      "refs": [
+        "crossref",
+        "openalex",
+        "gaya"
+      ],
+      "principle": "Semak DOI, judul, pengarang, tahun dan penerbit pada rekod asal. Padanan metadata tidak membuktikan halaman atau kandungan. Petikan mesti disemak pada teks sebenar.",
+      "exercise": "DOI latihan: 10.1136/bmj.n71. Petikan langsung tanpa halaman tidak dibekalkan.",
+      "worked": "Semak metadata Crossref dan bandingkan tajuk. Jangan cipta halaman, petikan atau dapatan. Tandakan teks penuh belum diperiksa apabila hanya metadata tersedia.",
+      "kind": "citation"
+    },
+    {
+      "id": "M08",
+      "title": "Kaedah kualitatif dan kuantitatif",
+      "refs": [
+        "ukm"
+      ],
+      "principle": "Bezakan reka bentuk, persampelan, pengukuran, analisis, kesahan dan kebolehpercayaan; pilih berdasarkan persoalan. Kajian empirikal memerlukan etika dan data sebenar.",
+      "exercise": "Adakah persepsi pelajar terhadap konsep X berubah selepas kuliah?",
+      "worked": "Reka bentuk pra/pasca boleh mengukur perubahan tetapi bukan automatik membuktikan sebab akibat. Pertimbangkan kumpulan perbandingan, instrumen, bias, persetujuan, kerahsiaan dan analisis yang sesuai.",
+      "kind": "empirical"
+    },
+    {
+      "id": "M09",
+      "title": "Kaedah induktif dan inferens",
+      "refs": [
+        "sep"
+      ],
+      "principle": "Bezakan deduksi, induksi, abduksi dan penghujahan analogi. Nilai kecukupan bukti serta skop generalisasi. Istilah istiqra mesti diperiksa pada tradisi dan sumber khusus.",
+      "exercise": "Tiga teks daripada satu tradisi menggunakan istilah X; kesimpulan: semua tradisi menggunakannya.",
+      "worked": "Kesimpulan melampaui korpus. Hadkan kepada tiga teks yang diperiksa, atau perluaskan persampelan berasaskan justifikasi. Bezakan pemerhatian contoh daripada generalisasi universal.",
+      "kind": "induction"
+    },
+    {
+      "id": "M10",
+      "title": "Integriti, ketulenan dan penggunaan AI",
+      "refs": [
+        "ukm",
+        "gaya"
+      ],
+      "principle": "AI bukan pengarang yang bertanggungjawab. Semak dasar institusi dan penerbit sebenar. Bezakan bantuan penyuntingan, analisis dan penulisan; jaga kerahsiaan, atribusi serta asal usul data.",
+      "exercise": "AI mencadangkan tiga rujukan yang tidak dapat ditemui.",
+      "worked": "Buang rujukan tidak disahkan; rekod carian dan ketidakpastian. Jangan gunakan petikan atau dapatan rekaan. Pengguna menilai, mengesahkan dan mempertanggungjawabkan sumbangan sendiri.",
+      "kind": "integrity"
+    },
+    {
+      "id": "M11",
+      "title": "Proposal, bab tesis dan viva",
+      "refs": [
+        "ukm",
+        "gaya"
+      ],
+      "principle": "Susun masalah, sorotan, kaedah, dapatan dan sumbangan secara koheren mengikut peraturan institusi yang berkuat kuasa. Latih jawapan kepada bantahan terkuat.",
+      "exercise": "Pemeriksa: mengapa analisis konsep digunakan, bukan soal selidik?",
+      "worked": "Persoalan ialah hubungan makna dan justifikasi, bukan taburan persepsi. Analisis konsep dan hujah sesuai. Jika kajian ingin mengetahui persepsi, perlu reka bentuk empirikal berasingan. Nyatakan batas pilihan ini.",
+      "kind": "viva"
+    },
+    {
+      "id": "M12",
+      "title": "Audit menyeluruh dan penulisan semula",
+      "refs": [
+        "ukm",
+        "dbp",
+        "gaya",
+        "crossref",
+        "sep"
+      ],
+      "principle": "Audit penjajaran, hujah, bahasa, sumber, etika, batas dan sumbangan. Simpan perbezaan sebelum dan selepas; jangan mengubah suara penulis tanpa izin.",
+      "exercise": "Draf rekaan: Oleh itu, semua masyarakat menerima X, berdasarkan dua dokumen.",
+      "worked": "Dua dokumen yang dianalisis menyokong tafsiran X dalam konteks terhad. Dakwaan tentang seluruh masyarakat memerlukan bukti lain. Semak lokasi rujukan, kekalkan maksud dan catat sebab pindaan.",
+      "kind": "synthesis"
+    }
+  ]
+}

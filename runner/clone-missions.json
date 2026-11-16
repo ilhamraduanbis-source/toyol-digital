@@ -86,7 +86,9 @@
       "id": "nexus-cross-sector",
       "workflow": "toyol-nexus-cross-sector.yml",
       "mode": "scheduled",
-      "purpose": "Independent cross-sector paid-work discovery: academia, research software, education, data, translation, accessibility, business and civil public services. Prioritize explicit cash bounties and executable deliverables; distinguish procurement estimates, funding and awards. Prepare evidence-backed next actions; no ghostwriting, impersonation, duplicate claims, owner spend or unapproved external write."
+      "purpose": "Dedicated academic research and intellectual development assistant; no income hunting. Learn research methodology, philosophical and Islamic studies methods, academic Malay grammar and scholarly prose, source verification, literature synthesis, argument critique, integrity and viva through curriculum, reproducible exercises, audited tools and durable evidence. Public repository accepts synthetic exercises and public bibliographic metadata only; never private PhD drafts or student data. No paid model, external submission or author impersonation.",
+      "domain": "academic-development",
+      "incomeHunting": false
     }
   ],
   "continuityPolicy": {
