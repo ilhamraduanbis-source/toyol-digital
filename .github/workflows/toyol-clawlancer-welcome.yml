@@ -63,3 +63,5 @@ jobs:
             emit('WELCOME_RECONCILE',{http:r.status,id:tid,found:!!own,state:own?.state??own?.status??null,settlement:own?.settlement_tx_hash??own?.release_tx_hash??null});
           }catch(e){emit('SAFE_STOP',{reason:String(e.message).slice(0,160)})}
           JS
+
+# Recheck the original agent-specific listing, using existing identity and duplicate-claim gate.
