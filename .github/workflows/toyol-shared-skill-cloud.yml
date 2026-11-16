@@ -8,7 +8,7 @@ on:
       - 'runner/clone-missions.json'
       - '.github/workflows/toyol-shared-skill-cloud.yml'
   workflow_run:
-    workflows: ['Toyol — Makefun aggregator official entry','Toyol — RaptorX original research evidence','Toyol — Frantic Delivery Executor','Toyol — First External Paid QA (0.10 USDC, no deposit)','Toyol — Real Paid Data Brief (0.02 USDC)','Toyol — Reusable protocol analysis skill tests']
+    workflows: ['Toyol — Makefun aggregator official entry','Toyol — RaptorX original research evidence','Toyol — Frantic Delivery Executor','Toyol — First External Paid QA (0.10 USDC, no deposit)','Toyol — Real Paid Data Brief (0.02 USDC)','Toyol — Reusable protocol analysis skill tests','Toyol — Shared AI model integration']
     types: [completed]
   schedule:
     - cron: '19 * * * *'
@@ -113,7 +113,7 @@ jobs:
           registry={m['id']:m['workflow'] for m in missions}
           assert len(registry)==len(missions) and 0<len(registry)<=20
           # Preserve historical and common skill observations as well.
-          registry.update({'raptorx':'toyol-raptorx-research.yml','protocol-analysis':'toyol-protocol-analysis-skill.yml'})
+          registry.update({'raptorx':'toyol-raptorx-research.yml','protocol-analysis':'toyol-protocol-analysis-skill.yml','ai-model-development':'toyol-agent-ai.yml'})
           added=[]
           for worker,name in registry.items():
               try:
