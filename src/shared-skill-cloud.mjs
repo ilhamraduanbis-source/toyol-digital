@@ -62,6 +62,12 @@ export function agentContext(worker,query='',now=Date.now()){
    liveExecutionAuthorized:false,ownerSpend:0,incomeInferred:false}};
 }
 
+// The existing shared cloud exposes the same optional local-model interface to every clone.
+export async function think(worker,purpose,task,{modelDir=process.env.TOYOL_LOCAL_MODEL_DIR}={}){
+ const {runBatch}=await import('./agent-ai.mjs');
+ return runBatch([{worker,purpose,task}],{modelDir})[0];
+}
+
 export function runSkill(id,args=[]){
  const s=catalog.find(x=>x.id===id);
  if(!s||!Array.isArray(args)||args.length>20||args.some(x=>typeof x!=='string'||x.length>4096))throw Error('INVALID_SKILL_CALL');
@@ -97,7 +103,8 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
  if(op==='list')console.log(JSON.stringify(inventory(),null,2));
  else if(op==='context')console.log(JSON.stringify(workerContext(args[0],args.slice(1).join(' ')),null,2));
  else if(op==='agent')console.log(JSON.stringify(agentContext(args[0],args.slice(1).join(' ')),null,2));
+ else if(op==='think')think(args[0],args[1],args.slice(2).join(' ')).then(x=>console.log(JSON.stringify(x,null,2))).catch(e=>{console.error(e.message);process.exitCode=1;});
  else if(op==='run')process.exitCode=runSkill(args[0],args.slice(1));
  else if(op==='--self-test')selfTest();
- else throw Error('Use list, context <worker> <query>, run <skill> <args>, --self-test');
+ else throw Error('Use list, context <worker> <query>, agent <worker> <query>, think <worker> <purpose> <task>, run <skill> <args>, --self-test');
 }
