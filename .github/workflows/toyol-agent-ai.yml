@@ -22,7 +22,7 @@ jobs:
   gateway-test:
     if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 16
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -47,7 +47,7 @@ jobs:
               if not (dest/name).is_file():raise SystemExit('MISSING_PINNED_MODEL_FILE '+name)
           print('LOCAL_MODEL_PROVISIONED',dest.name)
           PY
-      - name: Execute real CPU inference for all 11 registered clone identities
+      - name: Execute real CPU inference for all registered clone identities
         env:
           HF_HUB_OFFLINE: '1'
           TRANSFORMERS_OFFLINE: '1'
@@ -62,7 +62,7 @@ jobs:
           from pathlib import Path
           data=json.loads(Path('out/agent-ai/actual-proposals.json').read_text())
           ids={m['id'] for m in json.loads(Path('runner/clone-missions.json').read_text())['missions']}
-          assert len(data)==len(ids)==11 and {r['worker'] for r in data}==ids
+          assert len(data)==len(ids) and {r['worker'] for r in data}==ids
           for r in data:
               assert r['model']=='Qwen/Qwen2.5-0.5B-Instruct'
               assert r['generatedTokens']>0 and r['proposal'].strip()
@@ -70,7 +70,7 @@ jobs:
               print('REAL_AI_RESULT',r['worker'],r['purpose'],r['generatedTokens'])
           print('REAL_AI_INFERENCE_PASS',len(data))
           PY
-      - name: AI selects reviewed tools; all eleven identities execute and validate local work
+      - name: AI selects reviewed tools; all registered identities execute and validate local work
         env:
           HF_HUB_OFFLINE: '1'
           TRANSFORMERS_OFFLINE: '1'
@@ -84,7 +84,7 @@ jobs:
           from pathlib import Path
           rows=json.loads(Path('out/agent-ai/action-receipts.json').read_text())
           ids={m['id'] for m in json.loads(Path('runner/clone-missions.json').read_text())['missions']}
-          assert len(rows)==len(ids)==11 and {r['worker'] for r in rows}==ids
+          assert len(rows)==len(ids) and {r['worker'] for r in rows}==ids
           for r in rows:
               assert r['selection']['method']=='constrained-model-logits'
               assert r['status']=='VERIFIED_LOCAL_ACTION' and r['evidence']
@@ -94,7 +94,7 @@ jobs:
           PY
       - name: Verify persistent queue fencing, recovery and parallel task claims
         run: python3 -m unittest discover -s test -p test_agent_queue.py -v
-      - name: Eleven agents independently claim distinct work ranked by the actual AI model
+      - name: Registered agents independently claim distinct work ranked by the actual AI model
         run: |
           set -euo pipefail
           export PATH="$RUNNER_TEMP/toyol-ai-venv/bin:$PATH"
@@ -104,11 +104,12 @@ jobs:
           import json
           from pathlib import Path
           r=json.loads(Path('out/agent-ai/queued-cycle.json').read_text())
-          assert len(r['agents'])==11 and len(r['tasks'])==5
+          ids={m['id'] for m in json.loads(Path('runner/clone-missions.json').read_text())['missions']}
+          assert len(r['agents'])==len(ids) and {a['worker'] for a in r['agents']}==ids and len(r['tasks'])==5
           assert len({t['id'] for t in r['tasks']})==5
           assert all(t['state']=='done' and t['attempts']==1 and t['receipt']['status']=='VERIFIED_LOCAL_ACTION' for t in r['tasks'])
           assert len({t['worker'] for t in r['tasks']})==5
-          assert sum(a['status']=='NO_DISTINCT_READY_TASK' for a in r['agents'])==6
+          assert sum(a['status']=='NO_DISTINCT_READY_TASK' for a in r['agents'])==len(ids)-5
           assert r['ownerSpend']==0 and r['incomeInferred'] is False
           for t in r['tasks']:print('DISTINCT_AI_TASK_DONE',t['worker'],t['action'],t['id'])
           print('AI_QUEUE_PASS',len(r['agents']),len(r['tasks']))

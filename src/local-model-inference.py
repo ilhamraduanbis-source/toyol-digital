@@ -15,8 +15,8 @@ def main():
     model_dir = pathlib.Path(sys.argv[1]).resolve(strict=True)
     if not (model_dir / "model.safetensors").is_file():
         raise SystemExit("MODEL_WEIGHTS_NOT_PROVISIONED")
-    jobs = json.loads(sys.stdin.read(200001))
-    if not isinstance(jobs, list) or not 1 <= len(jobs) <= 11:
+    jobs = json.loads(sys.stdin.read(400001))
+    if not isinstance(jobs, list) or not 1 <= len(jobs) <= 20:
         raise ValueError("BATCH_SIZE")
     for j in jobs:
         if j["purpose"] not in PURPOSES or j["model"]["id"] != MODEL_ID or j["model"]["revision"] != REVISION:

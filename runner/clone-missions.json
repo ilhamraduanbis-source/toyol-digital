@@ -69,6 +69,31 @@
       "workflow": "toyol-titan-challenges.yml",
       "mode": "scheduled",
       "purpose": "Independent USD500k track: major innovation competitions and eligible institutional funding; distinguish individual prize, shared pool, restricted grants and actual income; no entry without rules and capability gates."
+    },
+    {
+      "id": "atlas-mega-contracts",
+      "workflow": "toyol-atlas-mega-contracts.yml",
+      "mode": "scheduled",
+      "purpose": "USD5 million individual contract-value target: discover civil software, data and digital transformation procurement in official EU TED notices; verify value currency, deadline, capability, eligibility and payable lots before bid. No owner spend, registration or bid submission."
+    },
+    {
+      "id": "orion-mega-contracts",
+      "workflow": "toyol-orion-mega-contracts.yml",
+      "mode": "scheduled",
+      "purpose": "USD5 million individual contract-value target: discover civil software, data and digital transformation procurement through official UK Find a Tender OCDS releases; verify latest source, eligibility, currency, scope and realistic subcontract delivery before bid. No owner spend, registration or bid submission."
     }
-  ]
+  ],
+  "continuityPolicy": {
+    "preserveExistingWork": true,
+    "finishVerifiedCommitmentsFirst": true,
+    "allowParallelReadOnlyDiscovery": true,
+    "afterVerifiedCompletion": "SEEK_DISTINCT_OPPORTUNITY_ACROSS_ALL_REWARD_BANDS",
+    "fixedRewardCeiling": false,
+    "prioritizePayableDeliverableAndHigherValue": true,
+    "reuseReviewedSharedSkills": true,
+    "preventDuplicateClaim": true,
+    "ownerSpendUsd": 0,
+    "externalActionRequiresExistingPermission": true,
+    "doNotInferCompletionFromWorkflowSuccess": true
+  }
 }

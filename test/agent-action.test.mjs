@@ -7,10 +7,10 @@ const response=(jobs,change={})=>({status:0,stdout:JSON.stringify(jobs.map(j=>({
 test('model selection for every identity uses fixed menu and no provider credentials',()=>{
  const rows=selectActions(allAgentRequests(),{modelDir:'/mock',runner:(cmd,args,opts)=>{
   assert.equal(cmd,'python3');assert.equal(args.at(-1),'--select');assert.equal(opts.env.OPENAI_API_KEY,undefined);
-  const jobs=JSON.parse(opts.input);assert.equal(jobs.length,11);assert.ok(jobs.every(x=>x.choices.length===5));
+  const jobs=JSON.parse(opts.input);assert.equal(jobs.length,allAgentRequests().length);assert.ok(jobs.every(x=>x.choices.length===5));
   return response(jobs);
  }});
- assert.equal(rows.length,11);assert.ok(rows.every(x=>x.action==='audit-roster'));
+ assert.equal(rows.length,allAgentRequests().length);assert.ok(rows.every(x=>x.action==='audit-roster'));
 });
 test('reject foreign actions, invalid scores, wrong identities and unavailable inference',()=>{
  const req=allAgentRequests().slice(0,1);
@@ -24,7 +24,7 @@ test('all five reviewed tools actually execute and independently verify their ou
  const results=await Promise.all(menu.map(x=>executeAction({worker:'aggregator',action:x.id})));
  assert.equal(results.length,5);
  assert.ok(results.every(x=>x.status==='VERIFIED_LOCAL_ACTION'&&x.ownerSpend===0&&x.externalAction===false&&x.incomeInferred===false));
- assert.equal(results.find(x=>x.action==='audit-roster').evidence.records,11);
+ assert.equal(results.find(x=>x.action==='audit-roster').evidence.records,allAgentRequests().length);
  assert.equal(results.find(x=>x.action==='test-tabular').evidence.lossless,true);
 });
 test('unregistered agent and arbitrary actions are rejected',async()=>{

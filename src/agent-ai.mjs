@@ -32,12 +32,12 @@ export function prepareRequest(worker,purpose,task){
  return {worker,purpose,task,context,instruction:purposes[purpose],model:MODEL};
 }
 export function runBatch(requests,{modelDir,python='python3',runner=spawnSync}={}){
- if(!Array.isArray(requests)||requests.length<1||requests.length>11)throw Error('INVALID_BATCH_SIZE');
+ if(!Array.isArray(requests)||requests.length<1||requests.length>20)throw Error('INVALID_BATCH_SIZE');
  if(typeof modelDir!=='string'||!modelDir)throw Error('LOCAL_MODEL_NOT_PROVISIONED');
  // Rebuild from registered mission and validated inputs; ignore caller-supplied context/model.
  const jobs=requests.map(x=>prepareRequest(x.worker,x.purpose,x.task));
  const env={PATH:process.env.PATH||'/usr/bin:/bin',HOME:process.env.HOME||'/tmp',LANG:'C.UTF-8',HF_HUB_OFFLINE:'1',TRANSFORMERS_OFFLINE:'1',HF_HUB_DISABLE_TELEMETRY:'1',TOKENIZERS_PARALLELISM:'false',OMP_NUM_THREADS:'2',MKL_NUM_THREADS:'2'};
- const result=runner(python,[resolve(root,'src/local-model-inference.py'),modelDir],{input:JSON.stringify(jobs),encoding:'utf8',env,cwd:root,timeout:240000,maxBuffer:2_000_000});
+ const result=runner(python,[resolve(root,'src/local-model-inference.py'),modelDir],{input:JSON.stringify(jobs),encoding:'utf8',env,cwd:root,timeout:360000,maxBuffer:2_000_000});
  if(result.error||result.status!==0)throw Error('LOCAL_INFERENCE_UNAVAILABLE');
  let rows;try{rows=JSON.parse(result.stdout)}catch{throw Error('INVALID_MODEL_RESPONSE')}
  if(!Array.isArray(rows)||rows.length!==jobs.length)throw Error('INCOMPLETE_MODEL_RESPONSE');
@@ -59,7 +59,9 @@ const missionProbes=Object.freeze({
  'tiny-chess-training':['learn','Specify a practice exercise and a correctness test for legal chess move generation.'],
  'multihopper':['plan','Propose a read-only test of reconciliation using simulated data without signing or transfers.'],
  'leviathan-contracts':['research','Specify three eligibility checks for a public software procurement opportunity; do not claim qualification.'],
- 'titan-awards':['coordinate','Propose a division of technical review work among existing agents for an AI competition; do not enter or claim funding.']
+ 'titan-awards':['coordinate','Propose a division of technical review work among existing agents for an AI competition; do not enter or claim funding.'],
+ 'atlas-mega-contracts':['research','Identify eligibility and payable-lot checks for a five-million-dollar civil software procurement; distinguish estimated contract value from actual revenue.'],
+ 'orion-mega-contracts':['review','Review how to validate an active UK procurement notice, currency estimate and realistic subcontract scope without submitting a bid.']
 });
 export function allAgentRequests(){return roster().map(m=>{const [purpose,task]=missionProbes[m.id]??['plan','Propose one local development test.'];return {worker:m.id,purpose,task};});}
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){

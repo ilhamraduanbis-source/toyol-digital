@@ -26,10 +26,10 @@ const env=()=>({PATH:process.env.PATH||'/usr/bin:/bin',HOME:process.env.HOME||'/
 const sha=x=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
 const csv=rows=>rows.map(row=>row.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n')+'\n';
 export function selectActions(requests,{modelDir,runner=spawnSync}={}){
- if(!Array.isArray(requests)||requests.length<1||requests.length>11||new Set(requests.map(x=>x.worker)).size!==requests.length)throw Error('INVALID_AGENT_BATCH');
+ if(!Array.isArray(requests)||requests.length<1||requests.length>20||new Set(requests.map(x=>x.worker)).size!==requests.length)throw Error('INVALID_AGENT_BATCH');
  if(typeof modelDir!=='string'||!modelDir)throw Error('LOCAL_MODEL_NOT_PROVISIONED');
  const jobs=requests.map(x=>({...prepareRequest(x.worker,x.purpose,x.task),choices:menu}));
- const response=runner('python3',[resolve(root,'src/local-model-inference.py'),modelDir,'--select'],{input:JSON.stringify(jobs),encoding:'utf8',env:env(),cwd:root,timeout:180000,maxBuffer:500000});
+ const response=runner('python3',[resolve(root,'src/local-model-inference.py'),modelDir,'--select'],{input:JSON.stringify(jobs),encoding:'utf8',env:env(),cwd:root,timeout:240000,maxBuffer:500000});
  if(response.error||response.status!==0)throw Error('ACTION_MODEL_UNAVAILABLE');
  let rows;try{rows=JSON.parse(response.stdout)}catch{throw Error('INVALID_ACTION_RESPONSE')}
  if(!Array.isArray(rows)||rows.length!==jobs.length)throw Error('INCOMPLETE_ACTION_RESPONSE');

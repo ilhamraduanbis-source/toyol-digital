@@ -47,10 +47,10 @@ jobs:
             return done.status;
           }));
           assert.equal(results.filter(x=>x==='done').length,5);
-          assert.equal(results.filter(x=>x==='NO_DISTINCT_READY_TASK').length,6);
+          assert.equal(results.filter(x=>x==='NO_DISTINCT_READY_TASK').length,allAgentRequests().length-5);
           const state=await queueCall(database,'status',{scope});
           assert.equal(state.tasks.length,5);
           assert.equal(new Set(state.tasks.map(x=>x.worker)).size,5);
           assert.ok(state.tasks.every(x=>x.state==='done'&&x.attempts===1&&x.receipt.status==='VERIFIED_LOCAL_ACTION'));
-          console.log('QUEUE_REAL_TOOLS_PASS',JSON.stringify({workers:11,completedDistinct:5,duplicates:0,unassigned:6}));
+          console.log('QUEUE_REAL_TOOLS_PASS',JSON.stringify({workers:allAgentRequests().length,completedDistinct:5,duplicates:0,unassigned:allAgentRequests().length-5}));
           JS

@@ -56,7 +56,7 @@ export function agentContext(worker,query='',now=Date.now()){
    latest?.conclusion==='failure'?'REVIEW_FAILURE_BEFORE_RETRY':
    mission.mode==='adopt'?'REVIEW_EXISTING_RESULT':
    mission.mode==='scheduled'?'CHECK_OWN_MISSION_AND_SHARED_OPPORTUNITIES':'REVIEW_MISSION';
- return {...context,mission:{id:mission.id,workflow:mission.workflow,mode:mission.mode,purpose:mission.purpose},
+ return {...context,mission:{id:mission.id,workflow:mission.workflow,mode:mission.mode,purpose:mission.purpose},continuityPolicy:config.continuityPolicy??null,
    ownObservations:own,latestOwnObservation:latest,
    decision:{next,expired,reason:expired?'Prior deadline passed; reuse skills without retrying expired entry.':latest?.conclusion==='failure'?'Review real failure; do not repeat blindly.':'Use existing mission and shared evidence to choose next bounded work.',
    liveExecutionAuthorized:false,ownerSpend:0,incomeInferred:false}};

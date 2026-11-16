@@ -51,7 +51,7 @@ jobs:
     timeout-minutes: 4
     strategy:
       fail-fast: false
-      max-parallel: 11
+      max-parallel: 6
       matrix:
         worker: ${{ fromJSON(needs.plan.outputs.workers) }}
     steps:
@@ -164,7 +164,9 @@ jobs:
                   if not matches:return []
                   if len(matches)!=1 or z.getinfo(matches[0]).file_size>250000:raise ValueError('receipt archive schema')
                   data=json.loads(z.read(matches[0]))
-              if not isinstance(data,list) or len(data)!=len(current_ids) or {r.get('worker') for r in data}!=current_ids:raise ValueError('receipt roster mismatch')
+              historical_cfg=api('/contents/runner/clone-missions.json?ref='+run['head_sha'])
+              historical_ids={m['id'] for m in json.loads(base64.b64decode(historical_cfg['content']))['missions']}
+              if not isinstance(data,list) or len(data)!=len(historical_ids) or {r.get('worker') for r in data}!=historical_ids:raise ValueError('receipt roster mismatch')
               result=[]
               for r in data:
                   action=r.get('action');sel=r.get('selection',{});ev=r.get('evidence',{})

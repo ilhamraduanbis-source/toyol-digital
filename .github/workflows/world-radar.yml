@@ -8,6 +8,8 @@ on:
     paths:
       - '.github/workflows/world-radar.yml'
       - 'src/paid-task-radar.mjs'
+      - 'src/mission-continuity.mjs'
+      - 'test/mission-continuity.test.mjs'
       - 'src/frantic-payout-notice.mjs'
       - 'src/original-issue-gate.mjs'
       - 'test/paid-task-radar.test.mjs'
@@ -30,12 +32,14 @@ jobs:
         with:
           persist-credentials: false
       - name: Confirm money and task safety gate
-        run: node --test test/paid-task-radar.test.mjs test/original-issue-gate.test.mjs
+        run: node --test test/paid-task-radar.test.mjs test/original-issue-gate.test.mjs test/mission-continuity.test.mjs
       - name: Refresh free-entry bounty and benchmark leads across live markets
         run: node src/paid-task-radar.mjs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TOYOL_DIRECT_ONLY: '1'
+      - name: Prepare distinct cross-tier opportunities without changing active work
+        run: node src/mission-continuity.mjs
       - name: Notify only for verified Frantic USDC settlement
         run: node src/frantic-payout-notice.mjs
         env:

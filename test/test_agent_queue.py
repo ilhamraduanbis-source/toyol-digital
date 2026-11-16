@@ -30,13 +30,13 @@ class QueueTests(unittest.TestCase):
             db=q.connect(self.path)
             try:return q.claim(db,self.scope,w,self.scores,now=100)
             finally:db.close()
-        with concurrent.futures.ThreadPoolExecutor(max_workers=11) as pool:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(self.workers)) as pool:
             rows=list(pool.map(take,self.workers))
         leased=[r for r in rows if r["status"]=="LEASED"]
         self.assertEqual(len(leased),5)
         self.assertEqual(len({r["id"] for r in leased}),5)
         self.assertEqual(len({r["action"] for r in leased}),5)
-        self.assertEqual(sum(r["status"]=="NO_DISTINCT_READY_TASK" for r in rows),6)
+        self.assertEqual(sum(r["status"]=="NO_DISTINCT_READY_TASK" for r in rows),len(self.workers)-5)
         for c in leased:q.finish(self.db,c["id"],c["worker"],c["token"],self.receipt(c),now=101)
         self.db.close()
         self.db=q.connect(self.path)

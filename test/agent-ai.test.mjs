@@ -4,8 +4,8 @@ import {prepareRequest,runBatch,allAgentRequests,MODEL,purposes} from '../src/ag
 
 test('every registered clone can independently request all eight kinds of AI assistance',()=>{
  const agents=allAgentRequests();
- assert.equal(agents.length,11);
- assert.equal(new Set(agents.map(a=>a.worker)).size,11);
+ assert.ok(agents.length>=13&&agents.length<=20);
+ assert.equal(new Set(agents.map(a=>a.worker)).size,agents.length);
  for(const a of agents)for(const purpose of Object.keys(purposes)){
   const req=prepareRequest(a.worker,purpose,'Plan a bounded local verification.');
   assert.equal(req.worker,a.worker);
@@ -35,7 +35,7 @@ const reply=(python,args,opts)=>{
 test('batch revalidates caller context and marks all model answers as untrusted drafts',()=>{
  const requests=allAgentRequests().map(x=>({...x,context:{secret:'not sent'},model:{id:'paid-model'}}));
  const rows=runBatch(requests,{modelDir:'/mock-model',runner:reply});
- assert.equal(rows.length,11);
+ assert.equal(rows.length,requests.length);
  assert.ok(rows.every(x=>x.status==='UNTRUSTED_DRAFT_REQUIRES_VALIDATION'&&x.ownerSpend===0&&x.liveExecutionAuthorized===false&&x.incomeInferred===false));
 });
 test('fail closed on absent model, inference error, wrong identity, empty output or incomplete output',()=>{
