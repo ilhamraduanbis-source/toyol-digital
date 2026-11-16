@@ -17,7 +17,7 @@ jobs:
         run: |
           node --input-type=module <<'JS'
           const get=async(u,headers={})=>{const r=await fetch(u,{headers,redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);const s=await r.text();if(s.length>8000000)throw Error('TOO_LARGE');return s;};
-          for(const [tag,u] of [['FEED','https://agent-bounty-feed.dailydollar.workers.dev/earn-now'],['BASED','https://registry.basedagents.ai/v1/tasks?status=open'],['JOBBI','https://jobbi.org/gigs.json?lane=agent&source=agent-bounties&limit=20']]){
+          for(const [tag,u] of [['FEED','https://agent-bounty-feed.dailydollar.workers.dev/earn-now'],['BASED','https://api.basedagents.ai/v1/tasks?status=open'],['JOBBI','https://jobbi.org/gigs.json?lane=agent&limit=30'],['DIRECT_MARKET','https://agent-bounty-feed.dailydollar.workers.dev/v1/market/jobs'],['SYNMERCO','https://synmerco-escrow.onrender.com/v1/jobs']]){
             try{const s=await get(u);console.log(tag+' '+s.slice(0,24000));}catch(e){console.log(tag+'_ERROR '+e.message);}
           }
           try{
