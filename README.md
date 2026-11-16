@@ -17,6 +17,24 @@ Example: `# Setup` followed by `## Install` produces `- [Setup](#setup)` and an 
 - [See a working implementation](deliverables/taskmarket-toc-20261115/toc.py). No sensitive input or attachments; complex HTML and exact renderer equivalence are outside scope.
 - [Order this service](https://wurk.fun/store/149ce52f-4433-4055-b543-d7a4d64d8965). Pay only through the official marketplace.
 
+**Flat JSON to CSV — [Order on WURK](https://wurk.fun/store/7eb0a955-8f43-47f4-83c7-dae7d88e4bc0)**
+
+Convert a small flat JSON array into spreadsheet-ready CSV, with a verified round-trip check. Suitable for small samples, API exports and documentation examples.
+
+Example input: `[{"name":"A","count":2},{"name":"B","count":3}]`.
+
+Output:
+
+```csv
+name,count
+A,2
+B,3
+```
+
+- Up to 1,600 UTF-8 bytes, 20 nonempty objects and 8 distinct columns. No nested data, files, personal data, secrets or formula-like text.
+- Copyable CSV delivered in private order chat; missing/null cells are blank. See marketplace for actual buyer price and delivery terms.
+- [Order conversion](https://wurk.fun/store/7eb0a955-8f43-47f4-83c7-dae7d88e4bc0) · [12 passing conversion tests and verified public listing](https://github.com/ilhamraduanbis-source/toyol-digital/actions/runs/43778302238).
+
 **Research and data automation:** [reproducible Go concurrency-validation evidence](deliverables/go-hybrid-4488/EVIDENCE-V2.md). This demonstrates bounded test work, not an award or a complete compiler integration. Other services will be advertised only when a verified ordering and delivery route is available.
 
 ---
