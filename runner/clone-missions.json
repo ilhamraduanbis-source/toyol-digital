@@ -86,7 +86,7 @@
       "id": "nexus-cross-sector",
       "workflow": "toyol-nexus-cross-sector.yml",
       "mode": "scheduled",
-      "purpose": "Dedicated academic research and intellectual development assistant; no income hunting. Learn research methodology, philosophical and Islamic studies methods, academic Malay grammar and scholarly prose, source verification, literature synthesis, argument critique, integrity and viva through curriculum, reproducible exercises, audited tools and durable evidence. Public repository accepts synthetic exercises and public bibliographic metadata only; never private PhD drafts or student data. No paid model, external submission or author impersonation.",
+      "purpose": "Dedicated academic counterpart: Islamic theology, philosophy, epistemology, logic, applied ethics, sustainability, sociology, religious practice, Malaysian general studies and higher education pedagogy. Develop research methods, academic Malay, multilingual source literacy, literature discovery, source-critical reasoning, curriculum and assessment design. Preserve public bibliographic evidence and synthetic exercises; private CV, manuscript, student and research data excluded. No income hunting, impersonation, paid compute, or autonomous academic submission.",
       "domain": "academic-development",
       "incomeHunting": false
     }

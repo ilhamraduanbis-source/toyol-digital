@@ -1,5 +1,5 @@
 """NEXUS academic practice. Public, synthetic examples only; no thesis uploads."""
-import argparse, datetime as dt, hashlib, json, os, pathlib, re, urllib.request
+import argparse, datetime as dt, hashlib, json, os, pathlib, re, urllib.request, urllib.parse
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 DIR=ROOT/"runner"/"nexus-academic"
 CUR=DIR/"curriculum.json"
@@ -43,6 +43,31 @@ def source_probe(url):
         # Availability only. Do not archive or republish third-party full text.
         return {"url":url,"status":"REACHABLE","http":status,"sample_bytes":len(raw),"full_text_reviewed":False}
     except Exception as e:return {"url":url,"status":"UNAVAILABLE","error":type(e).__name__,"full_text_reviewed":False}
+def discover(query):
+    url="https://api.crossref.org/works?"+urllib.parse.urlencode({"query.bibliographic":query,"rows":5,"filter":"type:journal-article","select":"DOI,title,author,published,URL,type"})
+    try:
+        req=urllib.request.Request(url,headers={"User-Agent":"NexusAcademic/2.0","Accept":"application/json"})
+        with urllib.request.urlopen(req,timeout=15) as f:raw=f.read(1000001)
+        if len(raw)>1000000:raise ValueError("response limit")
+        items=json.loads(raw)["message"]["items"]
+        records=[]
+        for i in items:
+            doi=i.get("DOI","")
+            if not re.fullmatch(r"10\.\d{4,9}/[^\s]+",doi):continue
+            title=(i.get("title") or [""])[0]
+            if not title:continue
+            records.append({"doi":doi,"title":title[:350],"year":(i.get("published",{}).get("date-parts") or [[None]])[0][0],"url":"https://doi.org/"+doi,"status":"METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"})
+        return {"query":query,"source":url,"status":"METADATA_RETRIEVED","records":records}
+    except Exception as e:return {"query":query,"source":url,"status":"UNAVAILABLE","error":type(e).__name__,"records":[]}
+def practice_transfer(m,n):
+    # Different examples across cycles; deterministic check evaluates real tool behavior, not scholarly expertise.
+    bad="Dapatan ini diperolehi dari "+("dokumen" if n%2 else "kajian")+" dan ianya menunjukkan bahawa semua responden bersetuju."
+    revised="Dapatan ini diperoleh daripada "+("dokumen" if n%2 else "kajian")+" dan menunjukkan persetujuan dalam kalangan responden yang diperiksa."
+    before=audit(bad);after=audit(revised)
+    return {"original":bad,"revision":revised,"before":before,"after":after,
+      "test_pass":{"BM01","BM02","ARG01"}<={x["rule"] for x in before} and not {"BM01","BM02","ARG01"}&{x["rule"] for x in after},
+      "limit":"Synthetic transfer check; no independent model reasoning or mastery claimed."}
+
 def practice(m):
     # Original worked examples are a reference answer, not generated independent answers.
     check={"alignment":["Masalah","Persoalan","Objektif","Kaedah","Batas"],
@@ -61,7 +86,8 @@ def practice(m):
     checks={c:c.casefold() in worked.casefold() for c in check}
     return {"exercise":m["exercise"],"reference_answer":worked,"checks":checks,"fixture_pass":all(checks.values()),"audit_before":audit(m["exercise"]),"audit_after":audit(worked),"evaluation":"Checks of reference fixture and rule engine only; not independent model mastery."}
 def selftest(c):
-    assert len(c["modules"])==12 and len({m["id"] for m in c["modules"]})==12
+    assert len(c["modules"])==36 and len({m["id"] for m in c["modules"]})==36
+    assert all(m.get("query") for m in c["modules"])
     assert all(m["refs"] and all(k in c["sources"] for k in m["refs"]) for m in c["modules"])
     assert all(practice(m)["fixture_pass"] for m in c["modules"])
     assert {x["rule"] for x in audit("Ianya diperolehi dari sumber dan di jalankan.")}>={"BM01","BM02","BM03","BM04"}
@@ -72,7 +98,7 @@ def selftest(c):
     try: metadata("https://invalid.example")
     except ValueError:pass
     else:raise AssertionError("invalid DOI accepted")
-    print("NEXUS_ACADEMIC_TESTS_OK 9; 12 module fixtures validated")
+    print("NEXUS_ACADEMIC_TESTS_OK; "+str(len(c["modules"]))+" module fixtures validated")
 def cycle(c):
     state=read(STATE)
     old=state.get("sessions",[])
@@ -81,6 +107,13 @@ def cycle(c):
     if runid!="local" and any(s["run_id"]==runid for s in old):
         print("NEXUS_SESSION_ALREADY_RECORDED",runid);return
     refs=[source_probe(c["sources"][k]) for k in m["refs"]]
+    literature=discover(m["query"])
+    transfer=practice_transfer(m,n)
+    assert transfer["test_pass"]
+    anchor=None
+    if not any(x.get("publication_anchor") for x in old):
+        try:anchor={"metadata":metadata(c["publication_anchor"]["doi"]),"reading_note":c["publication_anchor"]["reading_note"],"review_status":c["publication_anchor"]["status"]}
+        except Exception as e:anchor={"status":"METADATA_UNAVAILABLE","error":type(e).__name__}
     meta=None
     if m["kind"] in {"citation","literature","synthesis"}:
         try:meta=metadata("10.1136/bmj.n71")
@@ -89,14 +122,19 @@ def cycle(c):
     assert result["fixture_pass"]
     r={"run_id":runid,"at":dt.datetime.now(dt.timezone.utc).isoformat(),"module":m["id"],"title":m["title"],
        "round":n//len(c["modules"])+1,"lesson":m["principle"],"references":refs,"metadata_exercise":meta,
-       "practice":result,"status":"REFERENCE_PRACTICE_COMPLETED","mastery_verified":False,
+       "practice":result,"literature":literature,"transfer":transfer,"publication_anchor":anchor,"status":"REFERENCE_PRACTICE_COMPLETED","mastery_verified":False,
        "curriculum_sha256":digest(CUR.read_text()),"owner_spend":0,"private_data":False}
     dump(OUT/"session.json",r)
-    old.append({"run_id":runid,"at":r["at"],"module":m["id"],"title":m["title"],"round":r["round"],"status":r["status"],"fixture_pass":True,"sources_reachable":sum(x["status"]=="REACHABLE" for x in refs),"sources_total":len(refs),"mastery_verified":False})
+    old.append({"run_id":runid,"at":r["at"],"module":m["id"],"title":m["title"],"round":r["round"],"status":r["status"],"fixture_pass":True,"sources_reachable":sum(x["status"]=="REACHABLE" for x in refs),"sources_total":len(refs),"mastery_verified":False,"literature":literature,"transfer_test_pass":transfer["test_pass"],"publication_anchor":anchor if anchor and anchor.get("metadata") else None})
     state["sessions"]=old
     state["next_module"]=c["modules"][len(old)%len(c["modules"])]["id"]
     dump(STATE,state)
     report=["# NEXUS — Rekod latihan akademik","", "Status: latihan rujukan selesai, penguasaan bebas belum dinilai.","", "**Modul:** "+m["title"],"",m["principle"],"","## Latihan",m["exercise"],"","## Contoh jawapan rujukan",m["worked"],"","## Bukti","Latihan rujukan lulus semakan berstruktur: "+str(sum(result["checks"].values()))+"/"+str(len(result["checks"]))+".","Sumber dapat dicapai: "+str(sum(x["status"]=="REACHABLE" for x in refs))+"/"+str(len(refs))+". Capaian bukan bukti teks penuh telah diperiksa.","","## Seterusnya",state["next_module"],"","Tiada data PhD peribadi. Tiada latihan berat model atau tuntutan penguasaan bebas."]
+    (OUT/"report.md").write_text("\n".join(report)+"\n",encoding="utf-8")
+    if literature["records"]:
+        report.extend(["","## Rujukan baharu untuk saringan"]+["- "+x["title"]+" — "+x["url"] for x in literature["records"]])
+    report.extend(["","Metadata bukan bacaan teks penuh. Saringan relevansi, akses teks, kaedah dan dapatan diperlukan."])
+    if anchor and anchor.get("metadata"):report.extend(["","## Kajian rujukan awal",anchor["reading_note"],"DOI: "+anchor["metadata"]["doi"]])
     (OUT/"report.md").write_text("\n".join(report)+"\n",encoding="utf-8")
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as f:f.write("\n".join(report)+"\n")

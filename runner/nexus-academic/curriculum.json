@@ -1,7 +1,7 @@
 {
-  "version": 1,
+  "version": 2,
   "language": "ms-MY",
-  "purpose": "Academic skill curriculum, not model weight training; examples are original synthetic exercises, not actual PhD content.",
+  "purpose": "CV-aligned academic development: 36 modules, continuing public metadata discovery and evidence-bounded practice; no model-weight training, private profile or private research data.",
   "sources": {
     "ukm": "https://www.ukm.my/akademik/pelajar-pascasiswazah/",
     "dbp": "https://prpm.dbp.gov.my/Cari1?d=175768&keyword=daripada",
@@ -10,7 +10,29 @@
     "crossref": "https://api.crossref.org/works/10.1136/bmj.n71",
     "doaj": "https://doaj.org/",
     "openalex": "https://api.openalex.org/works/https://doi.org/10.1136/bmj.n71",
-    "gaya": "https://www.ukm.my/pusatsiswazah/thesis-templates-and-guidlines/"
+    "gaya": "https://www.ukm.my/pusatsiswazah/thesis-templates-and-guidlines/",
+    "ghazali": "https://plato.stanford.edu/entries/al-ghazali/",
+    "ibnsina": "https://plato.stanford.edu/entries/ibn-sina/",
+    "islamic_texts": "https://sourcebooks.fordham.edu/islam/islamsbook.asp",
+    "epistemology": "https://plato.stanford.edu/entries/epistemology/",
+    "logic": "https://plato.stanford.edu/entries/logic-classical/",
+    "ethics": "https://plato.stanford.edu/entries/ethics-virtue/",
+    "environment": "https://plato.stanford.edu/entries/ethics-environmental/",
+    "religion": "https://plato.stanford.edu/entries/philosophy-religion/",
+    "relativism": "https://plato.stanford.edu/entries/relativism/",
+    "technology": "https://plato.stanford.edu/entries/technology/",
+    "mqa": "https://www.mqa.gov.my/",
+    "kpt": "https://www.mohe.gov.my/",
+    "perlembagaan": "https://www.parlimen.gov.my/",
+    "dbp_main": "https://prpm.dbp.gov.my/",
+    "water_study": "https://doi.org/10.6007/IJARBSS/v8-i4/4124",
+    "un_water": "https://www.unwater.org/",
+    "un_sdgs": "https://sdgs.un.org/goals",
+    "myjurnal": "https://myjurnal.mohe.gov.my/",
+    "philpapers": "https://philpapers.org/",
+    "un_undrip": "https://social.desa.un.org/issues/indigenous-peoples/united-nations-declaration-on-the-rights-of-indigenous-peoples",
+    "hadith": "https://sunnah.com/",
+    "quran": "https://quran.com/"
   },
   "modules": [
     {
@@ -23,7 +45,8 @@
       "principle": "Bezakan masalah, persoalan, objektif, korpus, kaedah dan batas dapatan. Pilih kaedah selepas persoalan, bukan sebaliknya.",
       "exercise": "Kajian konseptual rekaan: Apakah hubungan antara justifikasi dan kepastian?",
       "worked": "Masalah: kekeliruan antara dua konsep. Persoalan: bagaimana hubungan kedua-duanya? Objektif: menganalisis hubungan konsep. Korpus: teks yang ditentukan dan disemak. Kaedah: analisis konsep dan hujah. Batas: tiada dakwaan tentang populasi manusia.",
-      "kind": "alignment"
+      "kind": "alignment",
+      "query": "research design philosophy Islamic studies"
     },
     {
       "id": "M02",
@@ -34,7 +57,8 @@
       "principle": "Bezakan kata sendi, imbuhan, subjek predikat dan pilihan kata. Perubahan makna mesti diterangkan; pilihan gaya bukan kesalahan tatabahasa.",
       "exercise": "Dapatan ini diperolehi dari tiga sumber dan ianya menunjukkan pola tertentu.",
       "worked": "Dapatan ini diperoleh daripada tiga sumber dan menunjukkan pola tertentu. Daripada merujuk kepada sumber; diperoleh ialah bentuk pasif baku; ianya diganti tanpa mengubah dakwaan.",
-      "kind": "malay"
+      "kind": "malay",
+      "query": "Malay academic grammar writing"
     },
     {
       "id": "M03",
@@ -45,7 +69,8 @@
       "principle": "Pisahkan kesahan bentuk hujah daripada kebenaran premis. Bina contoh balas, kenal pasti andaian tersembunyi dan bezakan pernyataan deskriptif daripada normatif.",
       "exercise": "Jika semua kepercayaan benar ialah pengetahuan, maka tekaan yang kebetulan benar juga pengetahuan.",
       "worked": "P1: Semua kepercayaan benar ialah pengetahuan. P2: Tekaan yang kebetulan benar ialah kepercayaan benar. K: Tekaan itu pengetahuan. Bentuk sah jika premis diterima; P1 dipersoal dengan contoh balas tekaan bernasib baik. Kesahan tidak menjamin premis benar.",
-      "kind": "argument"
+      "kind": "argument",
+      "query": "philosophical argument analysis"
     },
     {
       "id": "M04",
@@ -56,7 +81,8 @@
       "principle": "Tentukan pengarang, judul, edisi, bahasa, bab, halaman dan konteks. Bezakan teks asal, terjemahan, tafsiran dan rekonstruksi. Jangan samakan istilah tradisi tanpa hujah.",
       "exercise": "Contoh rekaan: istilah X dalam naskhah A dikatakan sama dengan konsep Y dalam karya moden B.",
       "worked": "Tahan penyamaan sehingga teks asal, edisi, petikan berlokasi, konteks dan perbezaan fungsi istilah diperiksa. Catat terjemahan literal berasingan daripada interpretasi. Status: teks belum diperoleh, maka dakwaan tidak boleh disahkan.",
-      "kind": "primary"
+      "kind": "primary",
+      "query": "Islamic studies textual methodology"
     },
     {
       "id": "M05",
@@ -68,7 +94,8 @@
       "principle": "Sintesis mengikut persoalan dan perbahasan; bezakan sorotan naratif, skop dan sistematik. PRISMA ialah panduan pelaporan untuk sorotan sistematik, bukan kaedah wajib semua kajian falsafah.",
       "exercise": "Tiga kajian rekaan mentakrifkan X dengan cara berbeza; tiada data bahawa semua literatur telah disemak.",
       "worked": "Peta persamaan, perbezaan dan alasan setiap definisi. Catat pangkalan data, istilah carian, tarikh dan kriteria. Kesimpulan: jurang sementara dalam korpus terpilih, bukan dakwaan bahawa tiada kajian terdahulu.",
-      "kind": "literature"
+      "kind": "literature",
+      "query": "literature review Islamic philosophy"
     },
     {
       "id": "M06",
@@ -80,7 +107,8 @@
       "principle": "Bina perenggan dengan dakwaan, alasan, bukti dan batas. Jaga peralihan idea. Jangan menukar gaya menjadi kepastian palsu atau memanjangkan ayat tanpa tujuan.",
       "exercise": "Semua pengkaji bersetuju bahawa X merupakan punca utama Y. Ini sudah terbukti.",
       "worked": "Dalam korpus rekaan ini, dua pengkaji mengaitkan X dengan Y. Walau bagaimanapun, hubungan tersebut belum memadai untuk menunjukkan sebab akibat. Nyatakan bukti dan batas kajian sebelum menguatkan kesimpulan.",
-      "kind": "prose"
+      "kind": "prose",
+      "query": "academic Malay scholarly writing"
     },
     {
       "id": "M07",
@@ -93,7 +121,8 @@
       "principle": "Semak DOI, judul, pengarang, tahun dan penerbit pada rekod asal. Padanan metadata tidak membuktikan halaman atau kandungan. Petikan mesti disemak pada teks sebenar.",
       "exercise": "DOI latihan: 10.1136/bmj.n71. Petikan langsung tanpa halaman tidak dibekalkan.",
       "worked": "Semak metadata Crossref dan bandingkan tajuk. Jangan cipta halaman, petikan atau dapatan. Tandakan teks penuh belum diperiksa apabila hanya metadata tersedia.",
-      "kind": "citation"
+      "kind": "citation",
+      "query": "citation verification bibliography"
     },
     {
       "id": "M08",
@@ -104,7 +133,8 @@
       "principle": "Bezakan reka bentuk, persampelan, pengukuran, analisis, kesahan dan kebolehpercayaan; pilih berdasarkan persoalan. Kajian empirikal memerlukan etika dan data sebenar.",
       "exercise": "Adakah persepsi pelajar terhadap konsep X berubah selepas kuliah?",
       "worked": "Reka bentuk pra/pasca boleh mengukur perubahan tetapi bukan automatik membuktikan sebab akibat. Pertimbangkan kumpulan perbandingan, instrumen, bias, persetujuan, kerahsiaan dan analisis yang sesuai.",
-      "kind": "empirical"
+      "kind": "empirical",
+      "query": "qualitative quantitative research religious studies"
     },
     {
       "id": "M09",
@@ -115,7 +145,8 @@
       "principle": "Bezakan deduksi, induksi, abduksi dan penghujahan analogi. Nilai kecukupan bukti serta skop generalisasi. Istilah istiqra mesti diperiksa pada tradisi dan sumber khusus.",
       "exercise": "Tiga teks daripada satu tradisi menggunakan istilah X; kesimpulan: semua tradisi menggunakannya.",
       "worked": "Kesimpulan melampaui korpus. Hadkan kepada tiga teks yang diperiksa, atau perluaskan persampelan berasaskan justifikasi. Bezakan pemerhatian contoh daripada generalisasi universal.",
-      "kind": "induction"
+      "kind": "induction",
+      "query": "induction Islamic philosophy istiqra"
     },
     {
       "id": "M10",
@@ -127,7 +158,8 @@
       "principle": "AI bukan pengarang yang bertanggungjawab. Semak dasar institusi dan penerbit sebenar. Bezakan bantuan penyuntingan, analisis dan penulisan; jaga kerahsiaan, atribusi serta asal usul data.",
       "exercise": "AI mencadangkan tiga rujukan yang tidak dapat ditemui.",
       "worked": "Buang rujukan tidak disahkan; rekod carian dan ketidakpastian. Jangan gunakan petikan atau dapatan rekaan. Pengguna menilai, mengesahkan dan mempertanggungjawabkan sumbangan sendiri.",
-      "kind": "integrity"
+      "kind": "integrity",
+      "query": "academic research integrity AI"
     },
     {
       "id": "M11",
@@ -139,7 +171,8 @@
       "principle": "Susun masalah, sorotan, kaedah, dapatan dan sumbangan secara koheren mengikut peraturan institusi yang berkuat kuasa. Latih jawapan kepada bantahan terkuat.",
       "exercise": "Pemeriksa: mengapa analisis konsep digunakan, bukan soal selidik?",
       "worked": "Persoalan ialah hubungan makna dan justifikasi, bukan taburan persepsi. Analisis konsep dan hujah sesuai. Jika kajian ingin mengetahui persepsi, perlu reka bentuk empirikal berasingan. Nyatakan batas pilihan ini.",
-      "kind": "viva"
+      "kind": "viva",
+      "query": "philosophy thesis viva methodology"
     },
     {
       "id": "M12",
@@ -154,7 +187,342 @@
       "principle": "Audit penjajaran, hujah, bahasa, sumber, etika, batas dan sumbangan. Simpan perbezaan sebelum dan selepas; jangan mengubah suara penulis tanpa izin.",
       "exercise": "Draf rekaan: Oleh itu, semua masyarakat menerima X, berdasarkan dua dokumen.",
       "worked": "Dua dokumen yang dianalisis menyokong tafsiran X dalam konteks terhad. Dakwaan tentang seluruh masyarakat memerlukan bukti lain. Semak lokasi rujukan, kekalkan maksud dan catat sebab pindaan.",
-      "kind": "synthesis"
+      "kind": "synthesis",
+      "query": "academic writing argument evidence"
+    },
+    {
+      "id": "M13",
+      "title": "Usuluddin, ilmu kalam dan teologi",
+      "kind": "primary",
+      "refs": [
+        "ghazali",
+        "religion",
+        "islamic_texts"
+      ],
+      "query": "Islamic theology kalam divine attributes reason revelation",
+      "principle": "Bezakan persoalan ketuhanan, kaedah kalam, premis metafizik dan hujah tekstual; jangan anggap semua aliran sama.",
+      "exercise": "Bandingkan dua hujah rekaan mengenai sifat Tuhan.",
+      "worked": "Periksa teks asal, edisi dan konteks; asingkan premis akal daripada tafsiran dalil dan batas kesimpulan."
+    },
+    {
+      "id": "M14",
+      "title": "Falsafah Islam klasik dan kontemporari",
+      "kind": "argument",
+      "refs": [
+        "ibnsina",
+        "ghazali",
+        "islamic_texts",
+        "philpapers"
+      ],
+      "query": "Islamic philosophy Avicenna al Ghazali Ibn Rushd metaphysics",
+      "principle": "Baca al-Farabi, Ibn Sina, al-Ghazali dan Ibn Rushd mengikut persoalan; beza laporan pandangan dengan hujah sendiri.",
+      "exercise": "Bina hujah rekaan tentang kewujudan yang bergantung kepada sebab.",
+      "worked": "P1: Yang kontingen memerlukan penjelasan. P2: X kontingen. K: X memerlukan penjelasan. Uji contoh balas, skop dan maksud keperluan."
+    },
+    {
+      "id": "M15",
+      "title": "Epistemologi Islam dan teori ilmu",
+      "kind": "argument",
+      "refs": [
+        "epistemology",
+        "ibnsina",
+        "ghazali"
+      ],
+      "query": "Islamic epistemology knowledge certainty testimony reason revelation",
+      "principle": "Bezakan sumber, justifikasi, kebenaran, kepastian, shakk, zann dan wahm; istilah Arab memerlukan sumber berlokasi.",
+      "exercise": "Adakah yakin bermaksud benar?",
+      "worked": "P1: Jika yakin menjamin benar, tiada keyakinan salah. P2: Ada keyakinan salah. K: Yakin tidak menjamin benar. Contoh balas ialah keyakinan salah."
+    },
+    {
+      "id": "M16",
+      "title": "Mantik, burhan dan istiqra",
+      "kind": "induction",
+      "refs": [
+        "logic",
+        "ibnsina",
+        "ghazali"
+      ],
+      "query": "Arabic logic burhan istiqra induction Avicenna epistemology",
+      "principle": "Bezakan induksi moden daripada istiqra menurut pengarang, tradisi dan jenis kesimpulan; semak demonstrasi dan inferens.",
+      "exercise": "Tiga contoh istiqra digunakan oleh satu pengarang.",
+      "worked": "Hadkan generalisasi kepada korpus yang diperiksa. Baca definisi dalam edisi sebenar sebelum menyamakan istilah."
+    },
+    {
+      "id": "M17",
+      "title": "Metafizik, ontologi dan falsafah manusia",
+      "kind": "argument",
+      "refs": [
+        "ibnsina",
+        "religion"
+      ],
+      "query": "Islamic metaphysics ontology human nature soul philosophy",
+      "principle": "Bezakan kewujudan, hakikat, sebab, jiwa, kebebasan dan identiti; nyatakan andaian.",
+      "exercise": "Adakah kesedaran sahaja cukup untuk identiti peribadi?",
+      "worked": "P1: Jika kesedaran cukup, dua kesinambungan yang sama boleh menjadi satu identiti. P2: Identiti numerik tidak berganda. K: Kriteria itu perlu diperhalusi. Uji contoh balas dan premis."
+    },
+    {
+      "id": "M18",
+      "title": "Pandangan alam, relativisme dan pascamodenisme",
+      "kind": "argument",
+      "refs": [
+        "relativism",
+        "epistemology",
+        "philpapers"
+      ],
+      "query": "Islamic worldview epistemic relativism postmodernism intellectual humility",
+      "principle": "Bezakan pluraliti tafsiran, kerendahan hati epistemik, relativisme dan skeptisisme; fahami hujah lawan secara adil.",
+      "exercise": "Dua orang tidak sependapat mengenai X, maka tiada kebenaran tentang X.",
+      "worked": "P1: Perselisihan dianggap meniadakan kebenaran. P2: Terdapat perselisihan. K: Tiada kebenaran X. Contoh balas: perselisihan ukuran panjang tidak meniadakan panjang sebenar."
+    },
+    {
+      "id": "M19",
+      "title": "Akhlak, etika normatif dan etika gunaan",
+      "kind": "argument",
+      "refs": [
+        "ethics",
+        "ghazali"
+      ],
+      "query": "Islamic virtue ethics akhlaq applied ethics moral philosophy",
+      "principle": "Bandingkan etika kebajikan, deontologi, konsekuensialisme dan akhlak tanpa menyamakan tradisi.",
+      "exercise": "Adakah tindakan yang membawa manfaat sentiasa baik?",
+      "worked": "P1: Manfaat dianggap memadai bagi kebaikan. P2: Tindakan X bermanfaat tetapi melanggar hak. K: Premis kecukupan manfaat perlu diuji. Contoh balas menggunakan hak individu."
+    },
+    {
+      "id": "M20",
+      "title": "Etika air, wuduk, israf dan kelestarian",
+      "kind": "primary",
+      "refs": [
+        "water_study",
+        "quran",
+        "hadith",
+        "un_water"
+      ],
+      "query": "Islamic ablution water consumption ethics wastage israf sustainability",
+      "principle": "Bezakan hukum normatif daripada ukuran penggunaan air. Semak dalil, fiqh, edisi, data dan kajian empirikal.",
+      "exercise": "Artikel 2018 mengkaji etika penggunaan air dalam wuduk melalui kajian kepustakaan.",
+      "worked": "Teks asal artikel menyatakan analisis dokumen; edisi dan konteks ayat, hadis serta pandangan fuqaha perlu diperiksa. Kesimpulan normatif tidak mengukur liter penggunaan sebenar."
+    },
+    {
+      "id": "M21",
+      "title": "Kelestarian interaksi manusia dan alam",
+      "kind": "empirical",
+      "refs": [
+        "environment",
+        "un_sdgs",
+        "un_undrip"
+      ],
+      "query": "Orang Asli traditional ecological knowledge human environment sustainability Malaysia",
+      "principle": "Gabungkan etika alam, pengetahuan tempatan dan reka bentuk empirikal; jangan menganggap komuniti Orang Asli homogen.",
+      "exercise": "Kajian rekaan tentang amalan kelestarian komuniti setempat.",
+      "worked": "Peroleh persetujuan komuniti, jaga kerahsiaan dan hak pengetahuan. Bezakan bias sampel daripada analisis tema dan jangan membuat generalisasi tanpa data."
+    },
+    {
+      "id": "M22",
+      "title": "Sosiologi agama dan tingkah laku manusia",
+      "kind": "empirical",
+      "refs": [
+        "myjurnal",
+        "doaj"
+      ],
+      "query": "religious practice Islamic higher education students Malaysia sociology religiosity behaviour",
+      "principle": "Bezakan amalan, kepercayaan, sikap, norma sosial dan ukuran tingkah laku; elak inferens sebab akibat tanpa reka bentuk.",
+      "exercise": "Kajian rekaan tentang amalan agama dan tingkah laku pelajar.",
+      "worked": "Semak persetujuan, kesahan instrumen, bias keinginan sosial, pensampelan dan analisis. Jangan menilai iman individu berdasarkan skor tunggal."
+    },
+    {
+      "id": "M23",
+      "title": "Al-Quran, tafsir dan takhrij hadis",
+      "kind": "primary",
+      "refs": [
+        "quran",
+        "hadith",
+        "islamic_texts"
+      ],
+      "query": "Quran hermeneutics hadith takhrij methodology Islamic studies",
+      "principle": "Semak ayat dan konteks, perbezaan tafsir, sumber hadis, sanad/matan dan penilaian ulama; jangan mereka nombor atau status hadis.",
+      "exercise": "Petikan hadis dikongsi tanpa sumber asal.",
+      "worked": "Cari teks asal dan edisi, semak konteks, nombor serta penilaian hadis. Jika belum diperoleh tandakan belum disahkan."
+    },
+    {
+      "id": "M24",
+      "title": "Hubungan etnik dan masyarakat Malaysia",
+      "kind": "empirical",
+      "refs": [
+        "myjurnal",
+        "kpt"
+      ],
+      "query": "Malaysia ethnic relations social cohesion multiculturalism national integration",
+      "principle": "Bezakan etnik, agama, budaya, identiti, prasangka dan integrasi; elak stereotaip dan dakwaan populasi tanpa data.",
+      "exercise": "Tinjauan rekaan hubungan antara interaksi pelajar dan sikap sosial.",
+      "worked": "Semak persetujuan, bias, ukuran, konteks dan analisis; pisahkan korelasi daripada kausaliti."
+    },
+    {
+      "id": "M25",
+      "title": "Etika dan peradaban, sejarah dan tamadun",
+      "kind": "primary",
+      "refs": [
+        "islamic_texts",
+        "myjurnal"
+      ],
+      "query": "Malay civilization ethics civilization Ibn Khaldun Malaysia",
+      "principle": "Baca sejarah, perubahan institusi, peradaban dan konsep etika secara berlapis; banding sumber bukan slogan.",
+      "exercise": "Dakwaan rekaan bahawa satu peradaban berkembang hanya kerana satu faktor.",
+      "worked": "Semak teks asal, edisi, konteks, faktor alternatif dan bukti sejarah. Jangan menggantikan analisis dengan naratif tunggal."
+    },
+    {
+      "id": "M26",
+      "title": "Kenegaraan, Aspirasi Negara Bangsa dan kewarganegaraan",
+      "kind": "primary",
+      "refs": [
+        "perlembagaan",
+        "kpt"
+      ],
+      "query": "Malaysia nation building citizenship constitution national identity social integration",
+      "principle": "Bezakan norma perlembagaan, undang-undang semasa, sejarah negara, identiti, patriotisme dan perkauman.",
+      "exercise": "Dakwaan rekaan mengenai hak bahasa dan kewarganegaraan.",
+      "worked": "Rujuk teks asal perlembagaan, edisi atau pindaan berkuat kuasa dan konteks. Bezakan tafsiran daripada peruntukan sebenar."
+    },
+    {
+      "id": "M27",
+      "title": "Integriti, antirasuah dan etika institusi",
+      "kind": "argument",
+      "refs": [
+        "kpt",
+        "ethics"
+      ],
+      "query": "Malaysia integrity anti corruption education institutional ethics",
+      "principle": "Bezakan kesalahan undang-undang, konflik kepentingan, rasuah dan penilaian moral; rujuk akta dan sumber rasmi yang relevan.",
+      "exercise": "Hadiah kepada pegawai dianggap baik kerana kecil.",
+      "worked": "P1: Nilai kecil dianggap menghapus konflik. P2: Hadiah boleh mempengaruhi keputusan walaupun kecil. K: Nilai sahaja tidak menentukan integriti. Uji contoh balas dan peraturan sebenar."
+    },
+    {
+      "id": "M28",
+      "title": "Pengajian Islam dan isu kontemporari Muslim",
+      "kind": "synthesis",
+      "refs": [
+        "quran",
+        "hadith",
+        "myjurnal"
+      ],
+      "query": "contemporary Muslim issues Malaysia Islamic thought ethics society",
+      "principle": "Hubungkan asas Islam, ibadah, akhlak, fiqh dan kehidupan moden; beza nas, pandangan ulama dan realiti empirikal.",
+      "exercise": "Kes rekaan tentang amalan ibadah dan tekanan sosial.",
+      "worked": "Audit dokumen sumber, konteks, bukti empirikal dan rujukan. Jangan mengubah pertimbangan hukum menjadi dakwaan fakta tanpa sokongan."
+    },
+    {
+      "id": "M29",
+      "title": "Seni, kreativiti dan estetika Islam",
+      "kind": "argument",
+      "refs": [
+        "islamic_texts",
+        "philpapers"
+      ],
+      "query": "Islamic aesthetics art creativity philosophy ethics",
+      "principle": "Bezakan estetika, seni, fungsi budaya, hukum, etika dan sejarah seni; elak penyederhanaan seni Islam.",
+      "exercise": "Adakah semua karya yang indah baik secara moral?",
+      "worked": "P1: Keindahan dianggap mencukupi bagi moral. P2: Karya indah boleh menggalakkan mudarat. K: Keindahan tidak memadai. Uji contoh balas."
+    },
+    {
+      "id": "M30",
+      "title": "Falsafah teknologi, AI dan cabaran semasa",
+      "kind": "argument",
+      "refs": [
+        "technology",
+        "ethics",
+        "kpt"
+      ],
+      "query": "philosophy technology artificial intelligence Islamic ethics education",
+      "principle": "Bezakan fungsi teknologi, nilai yang dibawa, tanggungjawab manusia, bias dan kesan sosial.",
+      "exercise": "Adakah AI yang tepat semestinya wajar digunakan?",
+      "worked": "P1: Ketepatan dianggap memadai. P2: Sistem tepat boleh melanggar privasi. K: Ketepatan tidak memadai. Contoh balas memerlukan etika, konteks dan hak."
+    },
+    {
+      "id": "M31",
+      "title": "Bahasa Kebangsaan dan komunikasi ilmiah Melayu",
+      "kind": "malay",
+      "refs": [
+        "dbp_main",
+        "gaya"
+      ],
+      "query": "Malay academic writing Bahasa Melayu cohesion grammar higher education",
+      "principle": "Bezakan laras akademik daripada bahasa umum; bina penerangan pemula dan pensyarah; jangan ubah maksud pengarang.",
+      "exercise": "Ianya diperolehi dari sumber yang telah di kaji.",
+      "worked": "Bukti diperoleh daripada sumber yang telah dikaji. Gugurkan ianya dan jelaskan pilihan kata mengikut konteks."
+    },
+    {
+      "id": "M32",
+      "title": "Pedagogi pendidikan tinggi, MPU dan reka bentuk kuliah",
+      "kind": "alignment",
+      "refs": [
+        "mqa",
+        "kpt"
+      ],
+      "query": "higher education constructive alignment general studies Malaysia MPU learning outcomes",
+      "principle": "Jajarkan CLO, aktiviti dan penilaian; bezakan tahap diploma/ijazah dan prinsip pendidikan inklusif.",
+      "exercise": "Bina hasil pembelajaran dan penilaian untuk logik asas.",
+      "worked": "Masalah: pelajar keliru hujah. Persoalan: bolehkah mereka menilai premis? Objektif: menilai contoh. Kaedah: aktiviti kes dan rubrik. Batas: uji pencapaian CLO, bukan kepercayaan."
+    },
+    {
+      "id": "M33",
+      "title": "Pembinaan soalan, rubrik dan moderasi",
+      "kind": "alignment",
+      "refs": [
+        "mqa",
+        "kpt"
+      ],
+      "query": "assessment design moderation higher education Bloom taxonomy rubric Malaysia",
+      "principle": "Jaga kesahan kandungan, aras kognitif, penjajaran CLO/PLO, skema dan pemeriksaan bias. Ikut dokumen kursus sebenar.",
+      "exercise": "Soalan rekaan untuk hasil pembelajaran analisis etika.",
+      "worked": "Masalah: soalan hafalan tidak sejajar. Persoalan: bagaimana menguji aplikasi? Objektif: analisis kes. Kaedah: rubrik bukti dan alasan. Batas: skor hanya menilai hasil yang dinyatakan."
+    },
+    {
+      "id": "M34",
+      "title": "Pemeriksaan luar dan jaminan kualiti akademik",
+      "kind": "synthesis",
+      "refs": [
+        "mqa",
+        "kpt"
+      ],
+      "query": "external examiner quality assurance higher education curriculum Malaysia",
+      "principle": "Bezakan pematuhan dokumen, amalan sebenar, kesahan pentaksiran dan isu keadilan. Gunakan data sebenar hanya secara peribadi.",
+      "exercise": "Dokumen kursus menyatakan CLO tetapi tugasan tidak mengukur CLO.",
+      "worked": "Audit dokumen, bukti pemetaan, rujukan standard berkuat kuasa dan cadangkan tindakan pembetulan tanpa mendedahkan data pelajar."
+    },
+    {
+      "id": "M35",
+      "title": "Penyelidikan pendidikan, pembelajaran hibrid dan H5P",
+      "kind": "empirical",
+      "refs": [
+        "mqa",
+        "kpt",
+        "doaj"
+      ],
+      "query": "higher education hybrid learning H5P formative assessment student learning",
+      "principle": "Bezakan penglibatan, pencapaian dan kesan pedagogi. Gunakan reka bentuk dan bukti bersesuaian; jangan anggap teknologi menjamin pembelajaran.",
+      "exercise": "Ujian rekaan aktiviti H5P untuk kemahiran berfikir.",
+      "worked": "Tentukan ukuran, bias, persetujuan jika kajian, reka bentuk perbandingan dan analisis hasil. Bezakan data penggunaan daripada penguasaan."
+    },
+    {
+      "id": "M36",
+      "title": "Pemetaan kajian sendiri dan agenda PhD",
+      "kind": "literature",
+      "refs": [
+        "crossref",
+        "openalex",
+        "philpapers",
+        "myjurnal",
+        "water_study"
+      ],
+      "query": "Islamic philosophy epistemology induction Islamic environmental ethics Malaysia",
+      "principle": "Peta hubungan tema terdahulu dengan soalan baharu tanpa menganggap tajuk PhD telah diputuskan; semak pertindihan dan potensi sumbangan.",
+      "exercise": "Bina peta hubungan etika penggunaan air, pandangan alam dan epistemologi.",
+      "worked": "Rekod carian BM/EN/AR, korpus yang tersedia, matriks tema, pertindihan dan jurang sementara. Bezakan kesinambungan idea daripada novelty yang dibuktikan."
     }
-  ]
+  ],
+  "publication_anchor": {
+    "doi": "10.6007/IJARBSS/v8-i4/4124",
+    "publisher": "https://hrmars.com/IJARBSS/article/view/4124/Ethics-of-Water-Usage-in-the-Context-of-Ablution-A-Perception-Based-on-the-Concept-of-Excess-in-the-Quran-and-Sunnah",
+    "reading_note": "Public article abstract and methodology identify qualitative library/document analysis of Islamic guidance on water consumption in ablution. Normative analysis supports an argument against excess; it does not itself establish measured litres or population prevalence. Verify citation pagination against the specific publication version: publisher PDF opened in this review begins at 849, whereas CV and other copies have inconsistent ranges. No page range is canonicalized here.",
+    "status": "PUBLIC_ARTICLE_ABSTRACT_AND_METHOD_SECTION_REVIEWED"
+  }
 }
