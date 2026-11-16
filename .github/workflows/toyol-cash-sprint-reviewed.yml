@@ -39,3 +39,5 @@ jobs:
           done
           echo "CASH_SPRINT_COMPLETE blocked=$failed; submission is not payment"
           exit "$failed"
+
+# Fresh operator-authorized check: existing reviewed work only; live seat and duplicate gates remain intact.
