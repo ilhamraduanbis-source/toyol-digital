@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M02",
+  "next_module": "M03",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -13,6 +13,78 @@
       "sources_reachable": 1,
       "sources_total": 2,
       "mastery_verified": false
+    },
+    {
+      "run_id": "43806550037",
+      "at": "2026-11-16T04:51:28.506059+00:00",
+      "module": "M02",
+      "title": "Tatabahasa Melayu ilmiah",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 1,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Malay academic grammar writing",
+        "source": "https://api.crossref.org/works?query.bibliographic=Malay+academic+grammar+writing&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.1016/j.jeap.2026.101755",
+            "title": "Investigating causal constructions in academic writing: Integrating local grammar with construction grammar",
+            "year": 2026,
+            "url": "https://doi.org/10.1016/j.jeap.2026.101755",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.37376/1570-000-041-003",
+            "title": "Teaching Pedagogical Grammar in Writing Context to Enrich Libyan Students’ Academic Writing",
+            "year": 2022,
+            "url": "https://doi.org/10.37376/1570-000-041-003",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1558/wap.v7i2-3.26045",
+            "title": "The Role of Information Management in the Assessment of Grammar in L2 Academic Writing",
+            "year": 2015,
+            "url": "https://doi.org/10.1558/wap.v7i2-3.26045",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.15858/engtea.68.4.201312.3",
+            "title": "Research Findings on Teaching Grammar for Academic Writing",
+            "year": 2013,
+            "url": "https://doi.org/10.15858/engtea.68.4.201312.3",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1016/j.jslw.2007.07.002",
+            "title": "Preparing writing teachers to teach the vocabulary and grammar of academic prose",
+            "year": 2007,
+            "url": "https://doi.org/10.1016/j.jslw.2007.07.002",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "publication_anchor": {
+        "metadata": {
+          "doi": "10.6007/ijarbss/v8-i4/4124",
+          "title": "Ethics of Water Usage in the Context of Ablution: A Perception Based on the Concept of Excess in the Qur'an and Sunnah",
+          "authors": [
+            "Muhammad Ilham Bin Raduan",
+            "Mazlan Ibrahim",
+            "Mashitoh Yaacob"
+          ],
+          "year": 2018,
+          "source": "https://api.crossref.org/works/10.6007/IJARBSS/v8-i4/4124",
+          "status": "METADATA_VERIFIED_ONLY",
+          "full_text_verified": false
+        },
+        "reading_note": "Public article abstract and methodology identify qualitative library/document analysis of Islamic guidance on water consumption in ablution. Normative analysis supports an argument against excess; it does not itself establish measured litres or population prevalence. Verify citation pagination against the specific publication version: publisher PDF opened in this review begins at 849, whereas CV and other copies have inconsistent ranges. No page range is canonicalized here.",
+        "review_status": "PUBLIC_ARTICLE_ABSTRACT_AND_METHOD_SECTION_REVIEWED"
+      }
     }
   ]
 }
