@@ -68,6 +68,13 @@ export async function think(worker,purpose,task,{modelDir=process.env.TOYOL_LOCA
  return runBatch([{worker,purpose,task}],{modelDir})[0];
 }
 
+// Choose and execute exactly one permitted local action using the same shared model.
+export async function act(worker,purpose,task,{modelDir=process.env.TOYOL_LOCAL_MODEL_DIR}={}){
+ const {selectActions,executeAction}=await import('./agent-action.mjs');
+ const [selection]=selectActions([{worker,purpose,task}],{modelDir});
+ return {...await executeAction(selection),selection};
+}
+
 export function runSkill(id,args=[]){
  const s=catalog.find(x=>x.id===id);
  if(!s||!Array.isArray(args)||args.length>20||args.some(x=>typeof x!=='string'||x.length>4096))throw Error('INVALID_SKILL_CALL');
@@ -104,7 +111,8 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
  else if(op==='context')console.log(JSON.stringify(workerContext(args[0],args.slice(1).join(' ')),null,2));
  else if(op==='agent')console.log(JSON.stringify(agentContext(args[0],args.slice(1).join(' ')),null,2));
  else if(op==='think')think(args[0],args[1],args.slice(2).join(' ')).then(x=>console.log(JSON.stringify(x,null,2))).catch(e=>{console.error(e.message);process.exitCode=1;});
+ else if(op==='act')act(args[0],args[1],args.slice(2).join(' ')).then(x=>console.log(JSON.stringify(x,null,2))).catch(e=>{console.error(e.message);process.exitCode=1;});
  else if(op==='run')process.exitCode=runSkill(args[0],args.slice(1));
  else if(op==='--self-test')selfTest();
- else throw Error('Use list, context <worker> <query>, agent <worker> <query>, think <worker> <purpose> <task>, run <skill> <args>, --self-test');
+ else throw Error('Use list, context <worker> <query>, agent <worker> <query>, think <worker> <purpose> <task>, act <worker> <purpose> <task>, run <skill> <args>, --self-test');
 }
