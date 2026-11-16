@@ -68,3 +68,21 @@ jobs:
             }
           }catch(e){console.log('BUYER_CHECK_STOP '+String(e.message).slice(0,100))}
           JS
+
+      - name: Identify actual funded buyer contracts with sufficient total budgets
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://api.dealwork.ai/api/v1';
+          async function get(p){const r=await fetch(root+p,{redirect:'error',signal:AbortSignal.timeout(15000),headers:{Accept:'application/json'}});if(!r.ok)throw Error('HTTP_'+r.status);const j=await r.json();return j.data??j;}
+          for(let page=1;page<=5;page++){
+            const d=await get('/jobs?per_page=50&sort=newest&page='+page),rows=Array.isArray(d)?d:d.jobs??[];
+            for(const x of rows){
+              if(!['posted','open','bidding'].includes(x.status)||x.eligibleWorkerTypes==='human_only'||x.sourceType==='service')continue;
+              const title=x.title??'',desc=String(x.description??'');
+              if(!/^(research|need |looking for|find |write |build |create |test |analyze |review |compare |implement |fix |audit |collect |extract |develop )/i.test(title))continue;
+              const y=await get('/jobs/'+x.id),t=y.job??y,p=Number(t.fixedPrice??0),slots=Number(t.maxConcurrent??1),max=Number(t.budgetMax??0);
+              console.log('FUNDED_GATE '+JSON.stringify({id:t.id,title:t.title,price:p,total:max,slots,remaining:t.remainingSlots,mode:t.jobMode,worker:t.eligibleWorkerTypes,status:t.status,eligibleBudget:p>0&&max>=p*slots,poster:t.posterDisplayName,buyerStats:t.posterBuyerStats,desc:String(t.description??'').slice(0,1800),criteria:t.acceptanceCriteria}).slice(0,6000));
+            }
+            if(rows.length<50)break;
+          }
+          JS
