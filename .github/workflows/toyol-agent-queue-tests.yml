@@ -1,0 +1,56 @@
+name: Toyol — Agent queue concurrency tests
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/agent-queue.py'
+      - 'src/agent-queue.mjs'
+      - 'test/test_agent_queue.py'
+      - '.github/workflows/toyol-agent-queue-tests.yml'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-agent-queue-ci
+  cancel-in-progress: true
+jobs:
+  regression:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify atomic task claims, fenced recovery and persistence
+        run: python3 -m unittest discover -s test -p test_agent_queue.py -v
+      - name: Verify actual approved local tools and gateway
+        run: node --test test/agent-ai.test.mjs test/agent-action.test.mjs
+      - name: Verify CLI from separate process and restart without duplicate work
+        run: |
+          set -euo pipefail
+          db="$RUNNER_TEMP/toyol-queue.sqlite"
+          printf '%s' '{"scope":"cli-check"}' | python3 src/agent-queue.py "$db" seed > "$RUNNER_TEMP/queue-a.json"
+          printf '%s' '{"scope":"cli-check"}' | python3 src/agent-queue.py "$db" seed > "$RUNNER_TEMP/queue-b.json"
+          cmp "$RUNNER_TEMP/queue-a.json" "$RUNNER_TEMP/queue-b.json"
+          node --input-type=module - "$db" <<'JS'
+          import assert from 'node:assert/strict';
+          import {queueCall} from './src/agent-queue.mjs';
+          import {executeAction} from './src/agent-action.mjs';
+          import {allAgentRequests} from './src/agent-ai.mjs';
+          const database=process.argv[2],scope='cli-check';
+          const results=await Promise.all(allAgentRequests().map(async a=>{
+            const c=await queueCall(database,'claim',{scope,worker:a.worker,scores:[5,4,3,2,1]});
+            if(c.status!=='LEASED')return c.status;
+            const receipt=await executeAction(c);
+            const done=await queueCall(database,'finish',{id:c.id,worker:c.worker,token:c.token,receipt});
+            return done.status;
+          }));
+          assert.equal(results.filter(x=>x==='done').length,5);
+          assert.equal(results.filter(x=>x==='NO_DISTINCT_READY_TASK').length,6);
+          const state=await queueCall(database,'status',{scope});
+          assert.equal(state.tasks.length,5);
+          assert.equal(new Set(state.tasks.map(x=>x.worker)).size,5);
+          assert.ok(state.tasks.every(x=>x.state==='done'&&x.attempts===1&&x.receipt.status==='VERIFIED_LOCAL_ACTION'));
+          console.log('QUEUE_REAL_TOOLS_PASS',JSON.stringify({workers:11,completedDistinct:5,duplicates:0,unassigned:6}));
+          JS
