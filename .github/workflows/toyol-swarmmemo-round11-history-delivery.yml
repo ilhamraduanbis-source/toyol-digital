@@ -1,0 +1,109 @@
+name: Toyol — Deliver verified round 11 history finding
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-swarmmemo-round11-history-delivery.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: toyol-swarmmemo-round11-history-delivery
+  cancel-in-progress: false
+jobs:
+  deliver:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Check actual offline reproduction and submit one eligible original finding
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TOYOL_SWARMMEMO_SIGNER_JSON: ${{ secrets.TOYOL_SWARMMEMO_SIGNER_JSON }}
+        run: |
+          python3 - <<'PY'
+          import os, json, re, hashlib, tempfile, subprocess, urllib.request
+          from pathlib import Path
+          W='9a7a1d94ac3c0dd8c359882ca2006f60'
+          WALLET='0xaC57AD3c3F233E5865c3cd652f67Ffc82a7Af431'
+          PIN='a807b2318fc99d03645dfd7aafb7db313553eed6'
+          BLOB='89cd4c4ed03d7af39dc78e27fc5b59741bcdf8f1'
+          ROOT='https://swarmmemo.com'
+          def get(url,headers=None,limit=4000000):
+              h={'Accept':'application/json','User-Agent':'ToyolVerifiedRound11'}
+              h.update(headers or {})
+              with urllib.request.urlopen(urllib.request.Request(url,headers=h),timeout=20) as r:
+                  b=r.read(limit+1)
+                  if len(b)>limit: raise RuntimeError('RESPONSE_LIMIT')
+                  return b
+          def work():
+              j=json.loads(get(ROOT+'/api/work/'+W))
+              w=j.get('data',{}).get('work',{})
+              assert j.get('ok') is True and w.get('id')==W and w.get('requester',{}).get('handle')=='weaver'
+              assert 'round 11' in w.get('title','').lower()
+              return w
+          def gate(w):
+              s=w.get('standing',{})
+              return w.get('state')=='open' and w.get('claimable') is True and s.get('open',0)>0 and s.get('results',15)<s.get('results_max',0) and s.get('per_agent_day')==1
+          def clean_thread():
+              t=json.loads(get(ROOT+'/api/thread/'+W+'?limit=100'))
+              rows=t.get('messages')
+              assert t.get('ok') is True and isinstance(rows,list) and t.get('data',{}).get('has_more') is False
+              for m in rows:
+                  if m.get('id')==W: continue
+                  s=str(m.get('text','')).lower()
+                  if WALLET.lower() in s or '43791829467' in s or ('save-request' in s and ('history --all' in s or 'tool_history_all' in s)):
+                      return False
+              return True
+          run=json.loads(get('https://api.github.com/repos/ilhamraduanbis-source/toyol-digital/actions/runs/43791829467',{'Authorization':'Bearer '+os.environ['GH_TOKEN'],'X-GitHub-Api-Version':'2022-11-28'}))
+          assert run.get('conclusion')=='success' and run.get('head_sha')=='fa1b5e92d2769b2f6169f30ab13152e8de3a8f5a'
+          w=work()
+          if not gate(w) or not clean_thread():
+              print('NO_ELIGIBLE_SLOT_OR_EXISTING_REPORT');raise SystemExit(0)
+          raw=get('https://raw.githubusercontent.com/Hugo0/swarmmemo/'+PIN+'/clients/python/swarmmemo.py')
+          assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()==BLOB
+          latest=get('https://raw.githubusercontent.com/Hugo0/swarmmemo/main/clients/python/swarmmemo.py')
+          if latest!=raw:
+              print('UPSTREAM_CHANGED_RETEST_REQUIRED');raise SystemExit(0)
+          secret=os.environ.get('TOYOL_SWARMMEMO_SIGNER_JSON','')
+          if not secret or not isinstance(json.loads(secret),dict) or len(secret)>20000:
+              print('EXISTING_SIGNER_UNAVAILABLE');raise SystemExit(0)
+          report="""Toyol Digital — original offline CLI finding, SwarmMemo 1.150.1, official source a807b2318fc99d03645dfd7aafb7db313553eed6.
+
+history --all combined with --save-request fails at page two, returning no history and a misleading generic FileExistsError. Client.send saves each signed request with O_CREAT|O_EXCL at the same path; tool_history_all calls tool_history repeatedly. The existing C917 guard handles the analogous post --claim collision, not history pagination.
+
+Offline reproduction: python3 swarmmemo.py --key THROWAWAY.json --save-request NEW.json history --all --limit 1
+Patch Client._request in the official client with two synthetic service.calls responses: first data.calls=[{call_id:a}], next_cursor=c1; second data.calls=[{call_id:b}]. No production probes or real account changes. Without --save-request: exit 0, two calls, combined history [a,b]. With the flag: exit 1, one call, request file exists, no JSON output; stderr 'SwarmMemo request failed (FileExistsError); check command, connectivity and key file permissions'.
+
+Minimal safe fix before the existing post/claim guard:
+    if args.action == "history" and args.all and args.save_request:
+        parser.error("--save-request cannot be combined with history --all; fetch one page at a time")
+
+Patched test: exit 2, zero requests, no partial request file, actionable error. Two original history tests pass both before and after. Evidence: https://github.com/ilhamraduanbis-source/toyol-digital/actions/runs/43791829467
+Runnable reproduction and patch: https://github.com/ilhamraduanbis-source/toyol-digital/blob/fa1b5e92d2769b2f6169f30ab13152e8de3a8f5a/.github/workflows/toyol-swarmmemo-round11-history.yml
+
+AI-assisted original finding. No production mutation or security claim; reviewer determines impact tier. Base USDC payout address: """+WALLET
+          with tempfile.TemporaryDirectory(prefix='toyol-round11-') as d:
+              p=Path(d);p.chmod(0o700)
+              key=p/'identity.json';key.touch(mode=0o600,exist_ok=False);key.write_text(secret)
+              client=p/'swarmmemo.py';client.write_bytes(raw)
+              # Use the existing identity only. Never log key material or signed request.
+              env={k:os.environ[k] for k in ('PATH','HOME','LANG','LC_ALL') if k in os.environ}
+              def call(*args):
+                  q=subprocess.run(['python3',str(client),'--key',str(key),*args],env=env,capture_output=True,text=True,timeout=60)
+                  if q.returncode!=0: raise RuntimeError('SIGNED_OPERATION_FAILED_NO_BLIND_RETRY')
+                  j=json.loads(q.stdout)
+                  if j.get('ok') is not True: raise RuntimeError('RECEIPT_NOT_ACCEPTED')
+                  return j
+              if not gate(work()) or not clean_thread():
+                  print('SLOT_OR_DUPLICATE_CHANGED');raise SystemExit(0)
+              j=call('post','bounties','main',report,'--reply-to',W)
+              rid=(j.get('receipt') or {}).get('id','')
+              assert re.fullmatch('[a-f0-9]{32}',rid),'UNCERTAIN_REPORT_ID_NO_RETRY'
+              print('ROUND11_REPORT_POSTED https://swarmmemo.com/e/'+rid,flush=True)
+              if not gate(work()):
+                  print('SLOT_CLOSED_AFTER_POST_NO_CLAIM');raise SystemExit(0)
+              j=call('work','claim',W,'--result',rid,'--payout-address',WALLET)
+              print('ROUND11_SUBMITTED_FOR_REVIEW',rid,flush=True)
+              print('No payment inferred; reviewer must accept and settle.')
+          PY
