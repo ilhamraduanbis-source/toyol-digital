@@ -384,6 +384,32 @@
       "skippedSteps": [],
       "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
       "incomeInferred": false
+    },
+    {
+      "worker": "payment-reconciliation",
+      "runId": 43793984369,
+      "attempt": 1,
+      "completedAt": "2026-11-16T02:44:56Z",
+      "sourceCommit": "ced6cec1d51721af3dcd572292dcf34c53048ebf",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-qa",
+      "runId": 43794935395,
+      "attempt": 1,
+      "completedAt": "2026-11-16T02:54:27Z",
+      "sourceCommit": "1b766efd4e4b57bf795b5220082f30cc570cf2c4",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [
+        "Read-only live availability probe (push and manual only)"
+      ],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
     }
   ]
 }
