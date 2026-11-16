@@ -61,8 +61,13 @@ def github_lead(i):
     body=str(i.get("body") or "")[:12000]
     text=title+"\n"+body
     if EXCLUDE.search(text) or not tags(text):return None
-    amount=explicit_cash(text)
+    if re.search(r"\b(xss|red team|injection|vulnerability|token reward|RTC)\b",title,re.I):return None
+    if re.search(r"\b(bounty alert|dashboard|introductions|opportunities found|opportunityies found)\b",title,re.I) and not explicit_cash(title):return None
+    amount=explicit_cash(title)
+    if not amount and any(str(l.get("name","")).lower()=="bounty" for l in (i.get("labels") or []) if isinstance(l,dict)):
+        amount=explicit_cash(body)
     if not amount:return None
+    if int(i.get("comments") or 0)>0:return None  # contested or discussion-heavy: do not auto-prioritize
     url=str(i.get("html_url") or "")
     if not re.fullmatch(r"https://github\.com/[\w.-]+/[\w.-]+/issues/\d+",url):return None
     return {"source":"GitHub original issue","id":url,"url":url,"title":title[:220],
@@ -80,9 +85,12 @@ def search_gh(item):
         return {"source":"GitHub","sector":sector,"query":term,"count":len(j["items"]),"incomplete":bool(j.get("incomplete_results"))},[x for i in j["items"] if (x:=github_lead(i))]
     except Exception as e:return {"source":"GitHub","sector":sector,"query":term,"error":str(e)[:120]},[]
 def procurement_lead(row,source):
-    text=" ".join(str(row.get(k) or "") for k in ("title","description","buyer"))
+    text=" ".join(str(row.get(k) or "") for k in ("title","description"))
+    title=str(row.get("title") or "")
     sectors=tags(text)
     if not sectors or EXCLUDE.search(text):return None
+    if not re.search(r"\b(research services|research and development|data analysis|data services|translation|locali[sz]ation|software|digital platform|information system|documentation|curriculum development|educational services|library services|evaluation|consultancy|analytics|digital archive|digitisation|digitization)\b",title,re.I):return None
+    if re.search(r"\b(clinical|health service|mental health|medical|diagnosis|treatment|care service|supported living|children.s views|fieldwork|satellite tags|supply of|external decorations)\b",text,re.I):return None
     # Contracts involving physical or in-person delivery are not autonomous tasks.
     if re.search(r"\b(catering|cleaning services|transport services|building works|on-site staffing|security guards)\b",text,re.I):return None
     d=row.get("deadline")
@@ -128,13 +136,20 @@ def test():
     assert github_lead(dict(i,title="Bounty $250 for exam answers in education")) is None
     assert explicit_cash("Bounty USD 125.50")=="125.50"
     assert explicit_cash("cost $50") is None
+    assert github_lead(dict(i,title="Cloud Revenue Command Dashboard",body="Bounty $1000")) is None
+    assert github_lead(dict(i,comments=2)) is None
+    assert github_lead(dict(i,title="Bounty $250 for XSS research")) is None
+    assert procurement_lead({"id":"x","url":"https://example.org","title":"Clinical Diagnosis and Treatment","buyer":"University","value":1000,"currency":"GBP"},"test") is None
     assert procurement_lead({"id":"x","url":"https://example.org","title":"Research data services","value":1000,"currency":"GBP","deadline":NOW-dt.timedelta(days=1)},"test") is None
     assert not procurement_lead({"id":"x","url":"https://example.org","title":"Research data services","value":1000,"currency":"GBP"},"test")["income_verified"]
-    print("NEXUS_SELF_TESTS_OK 9")
+    print("NEXUS_SELF_TESTS_OK 13")
 def main():
     test()
     if "--test" in sys.argv:return
-    items=[(s,t) for s,terms in QUERIES.items() for t in terms]
+    all_items=[(s,t) for s,terms in QUERIES.items() for t in terms]
+    # GitHub token search quota is limited; rotate 3 terms per six-hour cycle.
+    start=(int(NOW.timestamp())//21600*3)%len(all_items)
+    items=[all_items[(start+i)%len(all_items)] for i in range(3)]
     sources=[];leads=[]
     with cf.ThreadPoolExecutor(max_workers=3) as pool:
         # Keep GitHub search requests bounded; no external mutations.
