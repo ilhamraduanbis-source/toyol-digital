@@ -58,7 +58,7 @@
       "exercise": "Dapatan ini diperolehi dari tiga sumber dan ianya menunjukkan pola tertentu.",
       "worked": "Dapatan ini diperoleh daripada tiga sumber dan menunjukkan pola tertentu. Daripada merujuk kepada sumber; diperoleh ialah bentuk pasif baku; ianya diganti tanpa mengubah dakwaan.",
       "kind": "malay",
-      "query": "Malay academic grammar writing"
+      "query": "tatabahasa bahasa Melayu penulisan akademik imbuhan kata sendi"
     },
     {
       "id": "M03",
@@ -108,7 +108,7 @@
       "exercise": "Semua pengkaji bersetuju bahawa X merupakan punca utama Y. Ini sudah terbukti.",
       "worked": "Dalam korpus rekaan ini, dua pengkaji mengaitkan X dengan Y. Walau bagaimanapun, hubungan tersebut belum memadai untuk menunjukkan sebab akibat. Nyatakan bukti dan batas kajian sebelum menguatkan kesimpulan.",
       "kind": "prose",
-      "query": "academic Malay scholarly writing"
+      "query": "penulisan akademik bahasa Melayu kohesi koheren laras ilmiah"
     },
     {
       "id": "M07",
@@ -228,7 +228,7 @@
         "ibnsina",
         "ghazali"
       ],
-      "query": "Islamic epistemology knowledge certainty testimony reason revelation",
+      "query": "Islamic epistemology knowledge certainty epistemologi Islam ilmu pengetahuan",
       "principle": "Bezakan sumber, justifikasi, kebenaran, kepastian, shakk, zann dan wahm; istilah Arab memerlukan sumber berlokasi.",
       "exercise": "Adakah yakin bermaksud benar?",
       "worked": "P1: Jika yakin menjamin benar, tiada keyakinan salah. P2: Ada keyakinan salah. K: Yakin tidak menjamin benar. Contoh balas ialah keyakinan salah."
@@ -242,7 +242,7 @@
         "ibnsina",
         "ghazali"
       ],
-      "query": "Arabic logic burhan istiqra induction Avicenna epistemology",
+      "query": "istiqra induction burhan mantiq الاستقراء البرهان المنطق",
       "principle": "Bezakan induksi moden daripada istiqra menurut pengarang, tradisi dan jenis kesimpulan; semak demonstrasi dan inferens.",
       "exercise": "Tiga contoh istiqra digunakan oleh satu pengarang.",
       "worked": "Hadkan generalisasi kepada korpus yang diperiksa. Baca definisi dalam edisi sebenar sebelum menyamakan istilah."
@@ -444,7 +444,7 @@
         "dbp_main",
         "gaya"
       ],
-      "query": "Malay academic writing Bahasa Melayu cohesion grammar higher education",
+      "query": "bahasa Melayu penulisan ilmiah bahasa kebangsaan komunikasi akademik",
       "principle": "Bezakan laras akademik daripada bahasa umum; bina penerangan pemula dan pensyarah; jangan ubah maksud pengarang.",
       "exercise": "Ianya diperolehi dari sumber yang telah di kaji.",
       "worked": "Bukti diperoleh daripada sumber yang telah dikaji. Gugurkan ianya dan jelaskan pilihan kata mengikut konteks."
