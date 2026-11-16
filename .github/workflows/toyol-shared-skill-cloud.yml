@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/shared-skill-cloud.mjs'
+      - 'runner/clone-missions.json'
       - '.github/workflows/toyol-shared-skill-cloud.yml'
   workflow_run:
     workflows: ['Toyol — Makefun aggregator official entry','Toyol — RaptorX original research evidence','Toyol — Frantic Delivery Executor','Toyol — First External Paid QA (0.10 USDC, no deposit)','Toyol — Real Paid Data Brief (0.02 USDC)','Toyol — Reusable protocol analysis skill tests']
@@ -18,14 +19,41 @@ concurrency:
   group: toyol-shared-skill-cloud
   cancel-in-progress: false
 jobs:
+  plan:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    outputs:
+      workers: ${{ steps.roster.outputs.workers }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - id: roster
+        name: Resolve registered agents for integration test
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,appendFileSync} from 'node:fs';
+          const ids=JSON.parse(readFileSync('runner/clone-missions.json','utf8')).missions.map(m=>m.id);
+          if(ids.length<1||ids.length>20||new Set(ids).size!==ids.length||ids.some(x=>!/^[a-z0-9-]{1,70}$/.test(x)))throw Error('INVALID_ROSTER');
+          // Full roster on changes/manual testing; sampled routine smoke tests keep costs bounded.
+          const workers=['push','workflow_dispatch'].includes(process.env.EVENT)?ids:ids.filter(x=>['frantic-delivery','swarmmemo-data','payment-reconciliation'].includes(x));
+          if(!workers.length)throw Error('EMPTY_TEST_ROSTER');
+          appendFileSync(process.env.GITHUB_OUTPUT,'workers='+JSON.stringify(workers)+'\n');
+          console.log('AGENT_TEST_ROSTER',JSON.stringify(workers));
+          JS
   cross-worker:
+    needs: plan
     if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 4
     strategy:
       fail-fast: false
+      max-parallel: 11
       matrix:
-        worker: [clone-a, clone-b, parent]
+        worker: ${{ fromJSON(needs.plan.outputs.workers) }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -37,7 +65,7 @@ jobs:
         run: |
           set -euo pipefail
           node src/shared-skill-cloud.mjs --self-test
-          node src/shared-skill-cloud.mjs context "$WORKER" "research csv" > "$RUNNER_TEMP/context.json"
+          node src/shared-skill-cloud.mjs agent "$WORKER" "research csv" > "$RUNNER_TEMP/context.json"
           node src/shared-skill-cloud.mjs run protocol-analysis --self-test
           printf 'id,name\n001,Test\n' > "$RUNNER_TEMP/input.csv"
           node src/shared-skill-cloud.mjs run tabular-conversion csv-to-json "$RUNNER_TEMP/input.csv" "$RUNNER_TEMP/output.json"
@@ -47,6 +75,9 @@ jobs:
           assert json.loads((p/'output.json').read_text())==[{'id':'001','name':'Test'}]
           j=json.loads((p/'context.json').read_text())
           assert len(j['skills'])==4
+          assert j['mission']['id']==j['worker']
+          assert j['decision']['liveExecutionAuthorized'] is False
+          assert all(x['worker']==j['worker'] for x in j['ownObservations'])
           print('SHARED_WORKER_EXECUTED_TWO_SKILLS',j['worker'],[(x['id'],x['sha256']) for x in j['skills']])
           PY
   collect:
@@ -77,14 +108,12 @@ jobs:
           memory=json.loads(base64.b64decode(old['content']))
           assert memory['version']==1 and isinstance(memory['observations'],list)
           seen={x['runId'] for x in memory['observations']}
-          registry={
-              'aggregator':'toyol-makefun-aggregator-build.yml',
-              'raptorx':'toyol-raptorx-research.yml',
-              'frantic-delivery':'frantic-deliver.yml',
-              'swarmmemo-qa':'toyol-first-paid-qa.yml',
-              'swarmmemo-data':'toyol-paid-data-brief.yml',
-              'payment-reconciliation':'toyol-usdc-receipt-watch.yml',
-              'protocol-analysis':'toyol-protocol-analysis-skill.yml'}
+          cfg=api('/contents/runner/clone-missions.json?ref=main')
+          missions=json.loads(base64.b64decode(cfg['content']))['missions']
+          registry={m['id']:m['workflow'] for m in missions}
+          assert len(registry)==len(missions) and 0<len(registry)<=20
+          # Preserve historical and common skill observations as well.
+          registry.update({'raptorx':'toyol-raptorx-research.yml','protocol-analysis':'toyol-protocol-analysis-skill.yml'})
           added=[]
           for worker,name in registry.items():
               try:
