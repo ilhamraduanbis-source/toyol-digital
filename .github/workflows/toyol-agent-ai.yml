@@ -1,0 +1,74 @@
+name: Toyol — Shared AI model integration
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/agent-ai.mjs'
+      - 'src/local-model-inference.py'
+      - 'test/agent-ai.test.mjs'
+      - '.github/workflows/toyol-agent-ai.yml'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-agent-ai-development-test
+  cancel-in-progress: true
+jobs:
+  gateway-test:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Test identity, input and model safety gates
+        run: node --test test/agent-ai.test.mjs
+      - name: Provision pinned Apache-2.0 model and CPU runtime for development tests
+        env:
+          HF_HUB_DISABLE_TELEMETRY: '1'
+          HF_HUB_DISABLE_IMPLICIT_TOKEN: '1'
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/toyol-ai-venv"
+          "$RUNNER_TEMP/toyol-ai-venv/bin/pip" install --disable-pip-version-check --no-input --index-url https://download.pytorch.org/whl/cpu 'torch==2.6.0'
+          "$RUNNER_TEMP/toyol-ai-venv/bin/pip" install --disable-pip-version-check --no-input 'transformers==4.51.3' 'huggingface-hub==0.30.2' 'safetensors==0.5.3'
+          "$RUNNER_TEMP/toyol-ai-venv/bin/python" - <<'PY'
+          import os, pathlib
+          from huggingface_hub import snapshot_download
+          dest=pathlib.Path(os.environ['RUNNER_TEMP'])/'toyol-qwen'
+          snapshot_download(repo_id='Qwen/Qwen2.5-0.5B-Instruct',revision='c89bee90d9f811437d9735454613c35b4a3c4dc8',local_dir=str(dest),token=False,allow_patterns=['config.json','generation_config.json','model.safetensors','tokenizer.json','tokenizer_config.json','vocab.json','merges.txt','LICENSE'])
+          for name in ('model.safetensors','config.json','tokenizer.json','tokenizer_config.json'):
+              if not (dest/name).is_file():raise SystemExit('MISSING_PINNED_MODEL_FILE '+name)
+          print('LOCAL_MODEL_PROVISIONED',dest.name)
+          PY
+      - name: Execute real CPU inference for all 11 registered clone identities
+        env:
+          HF_HUB_OFFLINE: '1'
+          TRANSFORMERS_OFFLINE: '1'
+        run: |
+          set -euo pipefail
+          export PATH="$RUNNER_TEMP/toyol-ai-venv/bin:$PATH"
+          export TOYOL_LOCAL_MODEL_DIR="$RUNNER_TEMP/toyol-qwen"
+          mkdir -p out/agent-ai
+          node src/agent-ai.mjs all > out/agent-ai/actual-proposals.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('out/agent-ai/actual-proposals.json').read_text())
+          ids={m['id'] for m in json.loads(Path('runner/clone-missions.json').read_text())['missions']}
+          assert len(data)==len(ids)==11 and {r['worker'] for r in data}==ids
+          for r in data:
+              assert r['model']=='Qwen/Qwen2.5-0.5B-Instruct'
+              assert r['generatedTokens']>0 and r['proposal'].strip()
+              assert r['liveExecutionAuthorized'] is False and r['ownerSpend']==0 and r['incomeInferred'] is False
+              print('REAL_AI_RESULT',r['worker'],r['purpose'],r['generatedTokens'])
+          print('REAL_AI_INFERENCE_PASS',len(data))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: toyol-local-ai-test-evidence
+          path: out/agent-ai/
+          retention-days: 7
+          if-no-files-found: ignore
