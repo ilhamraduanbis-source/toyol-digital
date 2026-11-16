@@ -14,11 +14,11 @@ jobs:
       - name: Inspect exact bounty challenge and real solver transaction requirements
         run: |
           node --input-type=module <<'JS'
-          for(const u of ['https://elgora.ai/api/bounties/6','https://elgora.ai/api/bounties','https://docs.elgora.ai/docs/reference/cli']){
+          for(const u of ['https://elgora.ai/api/bounties/3','https://elgora.ai/api/bounties/8','https://elgora.ai/api/bounties','https://docs.elgora.ai/docs/reference/cli']){
             try{
               const r=await fetch(u,{headers:{Accept:'application/json,text/plain,text/html'},redirect:'error',signal:AbortSignal.timeout(18000)}),s=await r.text();
               if(s.length>3000000)throw Error('RESPONSE_LIMIT');
-              if(u.endsWith('/6')){
+              if(/\/[38]$/.test(u)){
                 const j=JSON.parse(s);
                 console.log('ELGORA_EXACT '+JSON.stringify(j).slice(0,40000));
               }else if(u.endsWith('/bounties')){
