@@ -1,5 +1,18 @@
 {
   "version": 1,
-  "next_module": "M01",
-  "sessions": []
+  "next_module": "M02",
+  "sessions": [
+    {
+      "run_id": "43806074283",
+      "at": "2026-11-16T04:46:31.118462+00:00",
+      "module": "M01",
+      "title": "Reka bentuk dan penjajaran kajian",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 2,
+      "mastery_verified": false
+    }
+  ]
 }
