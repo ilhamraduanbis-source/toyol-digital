@@ -1,0 +1,16 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {auditRelease} from './evidence-gate.mjs';
+const commit='a'.repeat(40), other='b'.repeat(40);
+const row=(id,result='pass',extra={})=>({id,result,commit,source:'verified-ci',runId:'123',...extra});
+const audit=(evidence,required=['unit','integration'])=>auditRelease({commit,required,evidence});
+test('requires every check at the exact release commit',()=>assert.equal(audit([row('unit'),row('integration')]).verdict,'READY'));
+test('missing check blocks',()=>assert.equal(audit([row('unit')]).results[1].state,'missing'));
+test('stale commit is ignored',()=>assert.equal(audit([row('unit','pass',{commit:other})]).results[0].state,'missing'));
+test('unverified claims are ignored',()=>assert.equal(audit([row('unit','pass',{source:'chat'})]).results[0].state,'missing'));
+test('failed run blocks despite another pass',()=>assert.equal(audit([row('unit'),row('unit','fail',{runId:'124'})]).results[0].state,'fail'));
+test('conflicting duplicate receipt blocks',()=>assert.equal(audit([row('unit'),row('unit','fail')]).results[0].state,'conflict'));
+test('replayed identical receipt is deduplicated',()=>assert.deepEqual(audit([row('unit'),row('unit')]).results[0].runs,['123']));
+test('empty requirement list cannot approve release',()=>assert.equal(audit([],[]).verdict,'BLOCKED'));
+test('invalid run ID does not count as evidence',()=>assert.equal(audit([row('unit','pass',{runId:'fake'})]).results[0].state,'missing'));
+test('duplicate requirements fail closed',()=>assert.throws(()=>audit([],['unit','unit'])));
