@@ -70,19 +70,19 @@ jobs:
               print('EXISTING_SIGNER_UNAVAILABLE');raise SystemExit(0)
           report="""Toyol Digital — original offline CLI finding, SwarmMemo 1.150.1, official source a807b2318fc99d03645dfd7aafb7db313553eed6.
 
-history --all combined with --save-request fails at page two, returning no history and a misleading generic FileExistsError. Client.send saves each signed request with O_CREAT|O_EXCL at the same path; tool_history_all calls tool_history repeatedly. The existing C917 guard handles the analogous post --claim collision, not history pagination.
+          history --all combined with --save-request fails at page two, returning no history and a misleading generic FileExistsError. Client.send saves each signed request with O_CREAT|O_EXCL at the same path; tool_history_all calls tool_history repeatedly. The existing C917 guard handles the analogous post --claim collision, not history pagination.
 
-Offline reproduction: python3 swarmmemo.py --key THROWAWAY.json --save-request NEW.json history --all --limit 1
-Patch Client._request in the official client with two synthetic service.calls responses: first data.calls=[{call_id:a}], next_cursor=c1; second data.calls=[{call_id:b}]. No production probes or real account changes. Without --save-request: exit 0, two calls, combined history [a,b]. With the flag: exit 1, one call, request file exists, no JSON output; stderr 'SwarmMemo request failed (FileExistsError); check command, connectivity and key file permissions'.
+          Offline reproduction: python3 swarmmemo.py --key THROWAWAY.json --save-request NEW.json history --all --limit 1
+          Patch Client._request in the official client with two synthetic service.calls responses: first data.calls=[{call_id:a}], next_cursor=c1; second data.calls=[{call_id:b}]. No production probes or real account changes. Without --save-request: exit 0, two calls, combined history [a,b]. With the flag: exit 1, one call, request file exists, no JSON output; stderr 'SwarmMemo request failed (FileExistsError); check command, connectivity and key file permissions'.
 
-Minimal safe fix before the existing post/claim guard:
-    if args.action == "history" and args.all and args.save_request:
-        parser.error("--save-request cannot be combined with history --all; fetch one page at a time")
+          Minimal safe fix before the existing post/claim guard:
+              if args.action == "history" and args.all and args.save_request:
+                  parser.error("--save-request cannot be combined with history --all; fetch one page at a time")
 
-Patched test: exit 2, zero requests, no partial request file, actionable error. Two original history tests pass both before and after. Evidence: https://github.com/ilhamraduanbis-source/toyol-digital/actions/runs/43791829467
-Runnable reproduction and patch: https://github.com/ilhamraduanbis-source/toyol-digital/blob/fa1b5e92d2769b2f6169f30ab13152e8de3a8f5a/.github/workflows/toyol-swarmmemo-round11-history.yml
+          Patched test: exit 2, zero requests, no partial request file, actionable error. Two original history tests pass both before and after. Evidence: https://github.com/ilhamraduanbis-source/toyol-digital/actions/runs/43791829467
+          Runnable reproduction and patch: https://github.com/ilhamraduanbis-source/toyol-digital/blob/fa1b5e92d2769b2f6169f30ab13152e8de3a8f5a/.github/workflows/toyol-swarmmemo-round11-history.yml
 
-AI-assisted original finding. No production mutation or security claim; reviewer determines impact tier. Base USDC payout address: """+WALLET
+          AI-assisted original finding. No production mutation or security claim; reviewer determines impact tier. Base USDC payout address: """+WALLET
           with tempfile.TemporaryDirectory(prefix='toyol-round11-') as d:
               p=Path(d);p.chmod(0o700)
               key=p/'identity.json';key.touch(mode=0o600,exist_ok=False);key.write_text(secret)
