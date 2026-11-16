@@ -59,6 +59,25 @@ def discover(query):
             records.append({"doi":doi,"title":title[:350],"year":(i.get("published",{}).get("date-parts") or [[None]])[0][0],"url":"https://doi.org/"+doi,"status":"METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"})
         return {"query":query,"source":url,"status":"METADATA_RETRIEVED","records":records}
     except Exception as e:return {"query":query,"source":url,"status":"UNAVAILABLE","error":type(e).__name__,"records":[]}
+def inspect_abstract(record):
+    """Read public bibliographic abstract when supplied; never infer full-text findings."""
+    doi=record["doi"]
+    try:
+        url="https://api.crossref.org/works/"+urllib.parse.quote(doi,safe="/")
+        req=urllib.request.Request(url,headers={"User-Agent":"NexusAcademic/3.1","Accept":"application/json"})
+        with urllib.request.urlopen(req,timeout=12) as f:raw=f.read(500001)
+        if len(raw)>500000:raise ValueError("response limit")
+        item=json.loads(raw)["message"]
+        if item.get("DOI","").casefold()!=doi.casefold():raise ValueError("DOI mismatch")
+        raw_abstract=item.get("abstract","")
+        if not raw_abstract:return {"doi":doi,"status":"ABSTRACT_UNAVAILABLE","full_text_reviewed":False}
+        import html
+        plain=html.unescape(re.sub(r"<[^>]+>"," ",raw_abstract))
+        patterns={"qualitative":r"\b(?:qualitative|kualitatif)\b","quantitative":r"\b(?:quantitative|kuantitatif)\b","document_analysis":r"\b(?:document analysis|library research|analisis dokumen|kajian kepustakaan)\b","interview":r"\b(?:interview[s]?|temu bual)\b","survey":r"\b(?:survey|questionnaire|soal selidik)\b","systematic_review":r"\b(?:systematic review|sorotan sistematik)\b","conceptual":r"\b(?:conceptual analysis|philosophical argument|analisis konsep)\b","results_signalled":r"\b(?:results|findings|dapatan|hasil kajian)\b"}
+        signals=[k for k,v in patterns.items() if re.search(v,plain,re.I)]
+        return {"doi":doi,"status":"ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY","word_count":len(plain.split()),"signals":signals,"full_text_reviewed":False,"findings_verified":False}
+    except Exception as e:return {"doi":doi,"status":"ABSTRACT_CHECK_UNAVAILABLE","error":type(e).__name__,"full_text_reviewed":False}
+
 def practice_transfer(m,n):
     # Different examples across cycles; deterministic check evaluates real tool behavior, not scholarly expertise.
     bad="Dapatan ini diperolehi dari "+("dokumen" if n%2 else "kajian")+" dan ianya menunjukkan bahawa semua responden bersetuju."
@@ -141,6 +160,7 @@ def cycle(c):
         print("NEXUS_SESSION_ALREADY_RECORDED",runid);return
     refs=[source_probe(c["sources"][k]) for k in m["refs"]]
     literature=discover(m["query"])
+    literature["abstract_checks"]=[inspect_abstract(x) for x in literature["records"][:2]]
     transfer=practice_transfer(m,n)
     assert transfer["test_pass"]
     anchor=None
@@ -171,6 +191,7 @@ def cycle(c):
     if literature["records"]:
         report.extend(["","## Rujukan baharu untuk saringan"]+["- "+x["title"]+" — "+x["url"] for x in literature["records"]])
     report.extend(["","Metadata bukan bacaan teks penuh. Saringan relevansi, akses teks, kaedah dan dapatan diperlukan."])
+    for a in literature["abstract_checks"]:report.append("- Semakan abstrak "+a["doi"]+": "+a["status"]+"; isyarat kaedah: "+", ".join(a.get("signals",[])))
     if anchor and anchor.get("metadata"):report.extend(["","## Kajian rujukan awal",anchor["reading_note"],"DOI: "+anchor["metadata"]["doi"]])
     (OUT/"report.md").write_text("\n".join(report)+"\n",encoding="utf-8")
     if os.environ.get("GITHUB_STEP_SUMMARY"):
