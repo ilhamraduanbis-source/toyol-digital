@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M03",
+  "next_module": "M04",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -85,6 +85,62 @@
         "reading_note": "Public article abstract and methodology identify qualitative library/document analysis of Islamic guidance on water consumption in ablution. Normative analysis supports an argument against excess; it does not itself establish measured litres or population prevalence. Verify citation pagination against the specific publication version: publisher PDF opened in this review begins at 849, whereas CV and other copies have inconsistent ranges. No page range is canonicalized here.",
         "review_status": "PUBLIC_ARTICLE_ABSTRACT_AND_METHOD_SECTION_REVIEWED"
       }
+    },
+    {
+      "run_id": "43806657883",
+      "at": "2026-11-16T04:52:24.402995+00:00",
+      "module": "M03",
+      "title": "Analisis konsep dan hujah falsafah",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 1,
+      "mastery_verified": false,
+      "literature": {
+        "query": "philosophical argument analysis",
+        "source": "https://api.crossref.org/works?query.bibliographic=philosophical+argument+analysis&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.2307/2220350",
+            "title": "A Bayesian Analysis of Hume's Argument Concerning Miracles",
+            "year": 1989,
+            "url": "https://doi.org/10.2307/2220350",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.24917/20841043.14.1.2",
+            "title": "Mourning and melancholia: An analysis of the Mothers of the Plaza De Mayo",
+            "year": 2024,
+            "url": "https://doi.org/10.24917/20841043.14.1.2",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/09515080050128141",
+            "title": "A cognitive analysis of the Chinese room argument",
+            "year": 2000,
+            "url": "https://doi.org/10.1080/09515080050128141",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1515/ling.1971.9.67.72",
+            "title": "A NOTE ON TAGMEMIC DISCOURSE ANALYSIS: PHILOSOPHICAL ARGUMENT",
+            "year": 1971,
+            "url": "https://doi.org/10.1515/ling.1971.9.67.72",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1111/j.1468-0114.2012.01432.x",
+            "title": "THE ASSIMILATION ARGUMENT AND THE ROLLBACK ARGUMENT",
+            "year": 2012,
+            "url": "https://doi.org/10.1111/j.1468-0114.2012.01432.x",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "publication_anchor": null
     }
   ]
 }
