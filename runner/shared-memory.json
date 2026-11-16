@@ -786,6 +786,42 @@
       "skippedSteps": [],
       "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
       "incomeInferred": false
+    },
+    {
+      "worker": "wurk-markdown-sales",
+      "runId": 43862418577,
+      "attempt": 1,
+      "completedAt": "2026-11-16T11:59:30Z",
+      "sourceCommit": "5eaa838aa4cd1bd73491111cba592dc0c0b3637e",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "multihopper",
+      "runId": 43862980261,
+      "attempt": 1,
+      "completedAt": "2026-11-16T12:02:32Z",
+      "sourceCommit": "5eaa838aa4cd1bd73491111cba592dc0c0b3637e",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "titan-awards",
+      "runId": 43873059776,
+      "attempt": 1,
+      "completedAt": "2026-11-16T13:09:22Z",
+      "sourceCommit": "0f260804894cdd7b8ad04001e5f383adfef74219",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
     }
   ],
   "actionReceipts": [
