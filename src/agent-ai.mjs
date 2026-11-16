@@ -47,7 +47,21 @@ export function runBatch(requests,{modelDir,python='python3',runner=spawnSync}={
   return {worker:j.worker,purpose:j.purpose,model:MODEL.id,revision:MODEL.revision,proposal:row.text,generatedTokens:row.generatedTokens,status:'UNTRUSTED_DRAFT_REQUIRES_VALIDATION',liveExecutionAuthorized:false,ownerSpend:0,incomeInferred:false};
  });
 }
-export function allAgentRequests(){return roster().map(m=>({worker:m.id,purpose:'plan',task:'Given your current mission and shared skills, propose one useful development or verification step that requires no external transaction or payment. State a concrete test.'}));}
+// Real development probes exercise distinct, mission-relevant model capabilities.
+const missionProbes=Object.freeze({
+ 'aggregator':['code','Design a tiny zero-cost model selection function and specify two unit tests.'],
+ 'frantic-delivery':['plan','Propose a next step to qualify a new funded contract without claiming it.'],
+ 'swarmmemo-qa':['debug','Design an offline regression test for a paginated API client that overwrites a request log.'],
+ 'swarmmemo-data':['research','Specify authoritative evidence for a public-data report and how to check its date.'],
+ 'payment-reconciliation':['review','Review a settlement deduplication design: transaction hash plus log index. Identify one edge case and test.'],
+ 'go-hybrid-4488':['code','Propose a minimal Go test for aggregate quota enforcement across concurrent workers.'],
+ 'wurk-markdown-sales':['write','Draft concise non-promotional documentation for a Markdown table of contents converter with bounded inputs.'],
+ 'tiny-chess-training':['learn','Specify a practice exercise and a correctness test for legal chess move generation.'],
+ 'multihopper':['plan','Propose a read-only test of reconciliation using simulated data without signing or transfers.'],
+ 'leviathan-contracts':['research','Specify three eligibility checks for a public software procurement opportunity; do not claim qualification.'],
+ 'titan-awards':['coordinate','Propose a division of technical review work among existing agents for an AI competition; do not enter or claim funding.']
+});
+export function allAgentRequests(){return roster().map(m=>{const [purpose,task]=missionProbes[m.id]??['plan','Propose one local development test.'];return {worker:m.id,purpose,task};});}
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
  const [op,worker,purpose,...words]=process.argv.slice(2);
  const modelDir=process.env.TOYOL_LOCAL_MODEL_DIR;
