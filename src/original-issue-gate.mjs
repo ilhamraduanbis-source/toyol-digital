@@ -37,6 +37,16 @@ export function evaluateOriginalIssue(task, issue, now=Date.now()) {
   if(issue.locked===true || labels.some(x=>/^(?:[^a-z]*)(?:on hold|hold)(?:\s|$)/i.test(x))) {
     return {...base,original_issue:{status:'RESTRICTED_OR_ON_HOLD'},suitable_for_draft:false,next_action:'REJECT_RESTRICTED_SOURCE'};
   }
+  // An explicit rewarded/paid label is stronger than an index that still says funded.
+  if(labels.some(x=>/^(?:[^a-z]*)(?:rewarded|bounty paid|paid bounty)(?:\s*)$/i.test(x))) {
+    return {...base,original_issue:{status:'ALREADY_REWARDED'},suitable_for_draft:false,next_action:'REJECT_ALREADY_REWARDED'};
+  }
+  // Tenstorrent October 2026 terms sections 2, 5 and 10: assignment is mandatory,
+  // another participant's assignment is ineligible, automated participation can disqualify.
+  // Read-only research remains possible; never auto-claim or present as actionable AI work.
+  if(locateGitHubIssue(task.url)?.owner.toLowerCase()==='tenstorrent') {
+    return {...base,original_issue:{status:'PROGRAM_ASSIGNMENT_AND_AUTOMATION_REVIEW_REQUIRED',terms_url:'https://docs.tenstorrent.com/bounty_terms.html'},suitable_for_draft:false,next_action:'REJECT_AUTONOMOUS_PARTICIPATION_GATE'};
+  }
   const official=(Array.isArray(issue.eligibility_comments)?issue.eligibility_comments:[]).filter(c=>['OWNER','MEMBER','COLLABORATOR'].includes(c?.author_association)||['ubiquity-os[bot]','ubiquity-os-beta[bot]'].includes(c?.user?.login));
   const restriction=official.find(c=>/external contributors are not eligible for rewards|must be a core team member, or an administrator to start this task|we stopped the bounty program|we don.t accept any bounty claims/i.test(String(c.body||'').split('<!--')[0]));
   if(restriction) {
