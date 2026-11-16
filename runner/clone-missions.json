@@ -57,6 +57,18 @@
       "workflow": "toyol-multihopper-watch.yml",
       "mode": "scheduled",
       "purpose": "Long-term Toyol Hopper partner research, public daily terms and developer-doc watch; no campaign expiry on the clone, no signing, spend or revenue inferred. Devnet, actual customer demand and partner approval are separate gates."
+    },
+    {
+      "id": "leviathan-contracts",
+      "workflow": "toyol-leviathan-contracts.yml",
+      "mode": "scheduled",
+      "purpose": "USD500k cumulative target: public enterprise procurement discovery, verify eligibility and actual deliverability before any bid. No registration, owner spending or bid submission."
+    },
+    {
+      "id": "titan-awards",
+      "workflow": "toyol-titan-challenges.yml",
+      "mode": "scheduled",
+      "purpose": "Independent USD500k track: major innovation competitions and eligible institutional funding; distinguish individual prize, shared pool, restricted grants and actual income; no entry without rules and capability gates."
     }
   ]
 }
