@@ -618,6 +618,42 @@
       "skippedSteps": [],
       "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
       "incomeInferred": false
+    },
+    {
+      "worker": "atlas-mega-contracts",
+      "runId": 43804573936,
+      "attempt": 1,
+      "completedAt": "2026-11-16T04:31:13Z",
+      "sourceCommit": "880eb01fa6d3be25d561aac93619cfcfbdcbd485",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "orion-mega-contracts",
+      "runId": 43804574093,
+      "attempt": 1,
+      "completedAt": "2026-11-16T04:31:33Z",
+      "sourceCommit": "880eb01fa6d3be25d561aac93619cfcfbdcbd485",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "ai-model-development",
+      "runId": 43804384478,
+      "attempt": 1,
+      "completedAt": "2026-11-16T04:34:45Z",
+      "sourceCommit": "ff845d887ff36a164b52f70aa5049a719cb4468a",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
     }
   ],
   "actionReceipts": [
@@ -947,6 +983,201 @@
         "exitCode": 0,
         "outputBytes": 723,
         "outputSha256": "476af441ad87c6f037da4b46d24318e5defc92ec0c058bc189ec0f5adabdebb4"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "aggregator",
+      "action": "audit-roster",
+      "runId": 43804384478,
+      "sourceCommit": "ff845d887ff36a164b52f70aa5049a719cb4468a",
+      "completedAt": "2026-11-16T04:34:45Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "records": 13,
+        "sha256": "9444d2a480d30b378fa4393f56147f68f12f73e20ff31aa27219a88b33033305",
+        "findings": 0
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "atlas-mega-contracts",
+      "action": "test-documentation",
+      "runId": 43804384478,
+      "sourceCommit": "ff845d887ff36a164b52f70aa5049a719cb4468a",
+      "completedAt": "2026-11-16T04:34:45Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "67ebb43726db5a2d1491eb3b45436a155f9c7f10e9fc270c3ca94a32cd314b1b"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "frantic-delivery",
+      "action": "test-documentation",
+      "runId": 43804384478,
+      "sourceCommit": "ff845d887ff36a164b52f70aa5049a719cb4468a",
+      "completedAt": "2026-11-16T04:34:45Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "ffd308171cec1d6d5ef40c9abfa4cfde444dcf0b25224067b78b758fb0eadead"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "go-hybrid-4488",
+      "action": "test-documentation",
+      "runId": 43804384478,
+      "sourceCommit": "ff845d887ff36a164b52f70aa5049a719cb4468a",
+      "completedAt": "2026-11-16T04:34:45Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "eed49b9ade7a3753c749df15e7f2b59e4dfc2fc18d8147afa7580d5aeacacc10"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "leviathan-contracts",
+      "action": "audit-roster",
+      "runId": 43804384478,
+      "sourceCommit": "ff845d887ff36a164b52f70aa5049a719cb4468a",
+      "completedAt": "2026-11-16T04:34:45Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "records": 13,
+        "sha256": "9444d2a480d30b378fa4393f56147f68f12f73e20ff31aa27219a88b33033305",
+        "findings": 0
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "multihopper",
+      "action": "test-documentation",
+      "runId": 43804384478,
+      "sourceCommit": "ff845d887ff36a164b52f70aa5049a719cb4468a",
+      "completedAt": "2026-11-16T04:34:45Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "4c0d6d65d10ef11b7dac86b4ca420884ed4c3023c71e1170c7f5a65f58d79b61"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "orion-mega-contracts",
+      "action": "test-documentation",
+      "runId": 43804384478,
+      "sourceCommit": "ff845d887ff36a164b52f70aa5049a719cb4468a",
+      "completedAt": "2026-11-16T04:34:45Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "7a7baaf6a79b1c1396f781e4df58660566d0587e5a57e33fa139b7108f2ba3a0"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "payment-reconciliation",
+      "action": "audit-roster",
+      "runId": 43804384478,
+      "sourceCommit": "ff845d887ff36a164b52f70aa5049a719cb4468a",
+      "completedAt": "2026-11-16T04:34:45Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "records": 13,
+        "sha256": "9444d2a480d30b378fa4393f56147f68f12f73e20ff31aa27219a88b33033305",
+        "findings": 0
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-data",
+      "action": "test-documentation",
+      "runId": 43804384478,
+      "sourceCommit": "ff845d887ff36a164b52f70aa5049a719cb4468a",
+      "completedAt": "2026-11-16T04:34:45Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "a7202544bf45799c1032ec515d305334353609dafc42ba431a80d9ab77651be5"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-qa",
+      "action": "test-documentation",
+      "runId": 43804384478,
+      "sourceCommit": "ff845d887ff36a164b52f70aa5049a719cb4468a",
+      "completedAt": "2026-11-16T04:34:45Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "45ca2627eaa6a84f7ce22057b01875fa84cc69e5ba7fa92b841bd66b21c43c04"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "tiny-chess-training",
+      "action": "test-documentation",
+      "runId": 43804384478,
+      "sourceCommit": "ff845d887ff36a164b52f70aa5049a719cb4468a",
+      "completedAt": "2026-11-16T04:34:45Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "05c7d43182080bb923c246313d7da4be4f0819e527bb78e4e3a467b3b41ecd62"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "titan-awards",
+      "action": "test-documentation",
+      "runId": 43804384478,
+      "sourceCommit": "ff845d887ff36a164b52f70aa5049a719cb4468a",
+      "completedAt": "2026-11-16T04:34:45Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "d7759bc66a04351195a8dd24ad00bfa90c265aaf0c34427c06da96e8da6046d0"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "wurk-markdown-sales",
+      "action": "test-documentation",
+      "runId": 43804384478,
+      "sourceCommit": "ff845d887ff36a164b52f70aa5049a719cb4468a",
+      "completedAt": "2026-11-16T04:34:45Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "5dac171a5b0703a68c996be50a25b15f6b7c28778cf15e1d8a14f07162b722b5"
       },
       "externalAction": false,
       "incomeInferred": false
