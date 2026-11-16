@@ -68,9 +68,39 @@ def practice_transfer(m,n):
       "test_pass":{"BM01","BM02","ARG01"}<={x["rule"] for x in before} and not {"BM01","BM02","ARG01"}&{x["rule"] for x in after},
       "limit":"Synthetic transfer check; no independent model reasoning or mastery claimed."}
 
+def stam_reading(m,round_no):
+    topics=m["topics"]
+    focus=topics[(round_no-1)%len(topics)]
+    result={"focus":focus,"reading_targets":m["reading"],"edition_status":"UNVERIFIED_STAM_2008","full_text_reviewed":False,
+            "source_questions":["Apakah istilah Arab dan definisi asal?","Siapakah pengarang, apakah edisi dan lokasi teks?","Apakah contoh, batas dan kemungkinan perbezaan pendapat?"]}
+    # For the first Nahu session, read a bounded public grammar guide and verify its actual subject headings.
+    if m["id"]=="S106A":
+        url="https://corpus.quran.com/documentation/grammar.jsp"
+        try:
+            from html.parser import HTMLParser
+            class Text(HTMLParser):
+                def __init__(self):super().__init__();self.parts=[];self.skip=0
+                def handle_starttag(self,tag,attrs):
+                    if tag in ("script","style"):self.skip+=1
+                def handle_endtag(self,tag):
+                    if tag in ("script","style") and self.skip:self.skip-=1
+                def handle_data(self,data):
+                    if not self.skip:self.parts.append(data)
+            req=urllib.request.Request(url,headers={"User-Agent":"NexusAcademic/3.0"})
+            with urllib.request.urlopen(req,timeout=15) as f:raw=f.read(400001)
+            if len(raw)>400000:raise ValueError("response limit")
+            parser=Text();parser.feed(raw.decode("utf-8",errors="replace"))
+            txt=" ".join(" ".join(parser.parts).split()).casefold()
+            terms=["subjects and objects","preposition phrases","the verb kāna","adjectives","possessives"]
+            matched=[t for t in terms if t.casefold() in txt]
+            result["source_reading"]={"url":url,"status":"GUIDE_SECTIONS_CHECKED" if len(matched)>=3 else "GUIDE_CONTENT_NOT_CONFIRMED","matched_headings":matched,"full_text_reviewed":False,
+              "note":"The guide describes grammatical roles and case inflection; compare subjects/objects, genitive after prepositions, and kana constructions. No independent mastery inferred." if len(matched)>=3 else "Source headings not sufficiently matched; inspect manually."}
+        except Exception as e:result["source_reading"]={"url":url,"status":"UNAVAILABLE","error":type(e).__name__}
+    return result
+
 def practice(m):
     # Original worked examples are a reference answer, not generated independent answers.
-    check={"alignment":["Masalah","Persoalan","Objektif","Kaedah","Batas"],
+    check=m.get("checks") or {"alignment":["Masalah","Persoalan","Objektif","Kaedah","Batas"],
            "malay":["diperoleh","daripada"],
            "argument":["P1","P2","K:","contoh balas"],
            "primary":["teks asal","edisi","konteks"],
@@ -86,7 +116,10 @@ def practice(m):
     checks={c:c.casefold() in worked.casefold() for c in check}
     return {"exercise":m["exercise"],"reference_answer":worked,"checks":checks,"fixture_pass":all(checks.values()),"audit_before":audit(m["exercise"]),"audit_after":audit(worked),"evaluation":"Checks of reference fixture and rule engine only; not independent model mastery."}
 def selftest(c):
-    assert len(c["modules"])==36 and len({m["id"] for m in c["modules"]})==36
+    assert len(c["modules"])==49 and len({m["id"] for m in c["modules"]})==49
+    stam=[m for m in c["modules"] if m.get("track")=="STAM"]
+    assert len(stam)==13 and len({m["exam_code"] for m in stam})==10
+    assert all(m.get("arabic") and len(m["topics"])>=5 and m["reading"] and m["checks"] for m in stam)
     assert all(m.get("query") for m in c["modules"])
     assert all(m["refs"] and all(k in c["sources"] for k in m["refs"]) for m in c["modules"])
     assert all(practice(m)["fixture_pass"] for m in c["modules"])
@@ -120,17 +153,21 @@ def cycle(c):
         except Exception as e:meta={"status":"METADATA_UNAVAILABLE","error":type(e).__name__}
     result=practice(m)
     assert result["fixture_pass"]
+    stam_result=stam_reading(m,n//len(c["modules"])+1) if m.get("track")=="STAM" else None
     r={"run_id":runid,"at":dt.datetime.now(dt.timezone.utc).isoformat(),"module":m["id"],"title":m["title"],
        "round":n//len(c["modules"])+1,"lesson":m["principle"],"references":refs,"metadata_exercise":meta,
-       "practice":result,"literature":literature,"transfer":transfer,"publication_anchor":anchor,"status":"REFERENCE_PRACTICE_COMPLETED","mastery_verified":False,
+       "practice":result,"stam":stam_result,"literature":literature,"transfer":transfer,"publication_anchor":anchor,"status":"REFERENCE_PRACTICE_COMPLETED","mastery_verified":False,
        "curriculum_sha256":digest(CUR.read_text()),"owner_spend":0,"private_data":False}
     dump(OUT/"session.json",r)
-    old.append({"run_id":runid,"at":r["at"],"module":m["id"],"title":m["title"],"round":r["round"],"status":r["status"],"fixture_pass":True,"sources_reachable":sum(x["status"]=="REACHABLE" for x in refs),"sources_total":len(refs),"mastery_verified":False,"literature":literature,"transfer_test_pass":transfer["test_pass"],"publication_anchor":anchor if anchor and anchor.get("metadata") else None})
+    old.append({"run_id":runid,"at":r["at"],"module":m["id"],"title":m["title"],"round":r["round"],"status":r["status"],"fixture_pass":True,"sources_reachable":sum(x["status"]=="REACHABLE" for x in refs),"sources_total":len(refs),"mastery_verified":False,"literature":literature,"transfer_test_pass":transfer["test_pass"],"stam":stam_result,"publication_anchor":anchor if anchor and anchor.get("metadata") else None})
     state["sessions"]=old
     state["next_module"]=c["modules"][len(old)%len(c["modules"])]["id"]
     dump(STATE,state)
     report=["# NEXUS — Rekod latihan akademik","", "Status: latihan rujukan selesai, penguasaan bebas belum dinilai.","", "**Modul:** "+m["title"],"",m["principle"],"","## Latihan",m["exercise"],"","## Contoh jawapan rujukan",m["worked"],"","## Bukti","Latihan rujukan lulus semakan berstruktur: "+str(sum(result["checks"].values()))+"/"+str(len(result["checks"]))+".","Sumber dapat dicapai: "+str(sum(x["status"]=="REACHABLE" for x in refs))+"/"+str(len(refs))+". Capaian bukan bukti teks penuh telah diperiksa.","","## Seterusnya",state["next_module"],"","Tiada data PhD peribadi. Tiada latihan berat model atau tuntutan penguasaan bebas."]
     (OUT/"report.md").write_text("\n".join(report)+"\n",encoding="utf-8")
+    if stam_result:
+        report.extend(["","## Pengajian STAM","Fokus: "+stam_result["focus"],"Rujukan tambahan (edisi sukatan 2008 belum disahkan):"]+["- "+x for x in stam_result["reading_targets"]])
+        if stam_result.get("source_reading"):report.append("Semakan sumber Arab: "+stam_result["source_reading"]["status"])
     if literature["records"]:
         report.extend(["","## Rujukan baharu untuk saringan"]+["- "+x["title"]+" — "+x["url"] for x in literature["records"]])
     report.extend(["","Metadata bukan bacaan teks penuh. Saringan relevansi, akses teks, kaedah dan dapatan diperlukan."])

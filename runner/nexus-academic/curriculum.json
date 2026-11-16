@@ -1,7 +1,7 @@
 {
-  "version": 2,
+  "version": 3,
   "language": "ms-MY",
-  "purpose": "CV-aligned academic development: 36 modules, continuing public metadata discovery and evidence-bounded practice; no model-weight training, private profile or private research data.",
+  "purpose": "49 modules: 36 academic and 13 STAM disciplines. Preserve prior progress; interleave STAM with academic modules, then continue cycles. Arabic original-text study, public bibliographic discovery and evidence-bounded exercises. Not model-weight training.",
   "sources": {
     "ukm": "https://www.ukm.my/akademik/pelajar-pascasiswazah/",
     "dbp": "https://prpm.dbp.gov.my/Cari1?d=175768&keyword=daripada",
@@ -32,7 +32,15 @@
     "philpapers": "https://philpapers.org/",
     "un_undrip": "https://social.desa.un.org/issues/indigenous-peoples/united-nations-declaration-on-the-rights-of-indigenous-peoples",
     "hadith": "https://sunnah.com/",
-    "quran": "https://quran.com/"
+    "quran": "https://quran.com/",
+    "stam_official": "https://spa.gov.my/?catid=14&id=554%3Akelayakan-stam&view=article",
+    "stam_curriculum_reference": "https://www.spp-jpnt.my/STAM/kurikulum",
+    "stam_2020_reference": "https://anyflip.com/ctwlq/zafi/basic",
+    "arabic_collections": "https://aco.dlib.nyu.edu/",
+    "quran_corpus": "https://corpus.quran.com/documentation/",
+    "quran_grammar": "https://corpus.quran.com/documentation/grammar.jsp",
+    "quran_treebank": "https://corpus.quran.com/treebank.jsp",
+    "azhar": "https://www.azhar.eg/"
   },
   "modules": [
     {
@@ -73,6 +81,41 @@
       "query": "philosophical argument analysis"
     },
     {
+      "id": "S106A",
+      "title": "Nahu (S106)",
+      "arabic": "النحو",
+      "track": "STAM",
+      "exam_code": "S106",
+      "kind": "stam",
+      "refs": [
+        "stam_official",
+        "quran_grammar",
+        "quran_treebank",
+        "arabic_collections"
+      ],
+      "query": "النحو العربي الإعراب المبتدأ والخبر النحو الأجرومية",
+      "topics": [
+        "Jenis kata dan tanda iʿrab",
+        "Jumlah ismiyyah dan fiʿliyyah",
+        "Marfuʿat, mansubat dan majrurat",
+        "Nawasikh: kana dan inna",
+        "Idafah, tawabiʿ, istithnaʾ dan syarat"
+      ],
+      "reading": [
+        "al-Ajurrumiyyah — Ibn Ajurrum",
+        "Qatr al-Nada wa Ball al-Sada — Ibn Hisham"
+      ],
+      "principle": "Bezakan fungsi sintaksis, tanda iʿrab dan sebab perubahan. Mulakan dengan contoh mudah sebelum teks turath.",
+      "exercise": "أعرب: كَتَبَ الطَّالِبُ الدَّرْسَ، ثم حوّل الجملة باستعمال إنّ.",
+      "worked": "كَتَبَ فعل ماضٍ، الطَّالِبُ فاعل مرفوع بالضمة، الدَّرْسَ مفعول به منصوب بالفتحة. Ayat baharu: إِنَّ الطَّالِبَ كَتَبَ الدَّرْسَ. الطَّالِبَ اسم إنّ منصوب، والجملة الفعلية خبر إنّ. Bezakan fāʿil daripada ism inna.",
+      "checks": [
+        "فاعل",
+        "مفعول به",
+        "اسم إنّ"
+      ],
+      "syllabus_status": "SUBJECT_VERIFIED; TOPICS_AND_BOOKS_SUPPLEMENTARY; EXACT_2008_EDITION_UNVERIFIED"
+    },
+    {
       "id": "M04",
       "title": "Penyelidikan Islam dan bacaan turath",
       "refs": [
@@ -83,6 +126,39 @@
       "worked": "Tahan penyamaan sehingga teks asal, edisi, petikan berlokasi, konteks dan perbezaan fungsi istilah diperiksa. Catat terjemahan literal berasingan daripada interpretasi. Status: teks belum diperoleh, maka dakwaan tidak boleh disahkan.",
       "kind": "primary",
       "query": "Islamic studies textual methodology"
+    },
+    {
+      "id": "S106B",
+      "title": "Sarf (S106)",
+      "arabic": "الصرف",
+      "track": "STAM",
+      "exam_code": "S106",
+      "kind": "stam",
+      "refs": [
+        "stam_official",
+        "quran_corpus",
+        "arabic_collections"
+      ],
+      "query": "علم الصرف الميزان الصرفي الإعلال الإبدال المشتقات",
+      "topics": [
+        "Akar dan wazan",
+        "Mujarrad dan mazid",
+        "Tasrif fiʿil dan masdar",
+        "Ism faʿil, ism mafʿul dan derivasi",
+        "Fiʿil sahih/muʿtal, iʿlal dan ibdal"
+      ],
+      "reading": [
+        "Shadha al-ʿArf fi Fann al-Sarf — Ahmad al-Hamalawi"
+      ],
+      "principle": "Analisis akar, pola dan perubahan morfologi. Jangan anggap makna ditentukan oleh wazan sahaja.",
+      "exercise": "حلّل: كَتَبَ، كَاتِبٌ، مَكْتُوبٌ، اِسْتَغْفَرَ.",
+      "worked": "كَتَبَ: akar ك ت ب, wazan فَعَلَ. كَاتِبٌ: اسم فاعل, فَاعِل. مَكْتُوبٌ: اسم مفعول, مَفْعُول. اِسْتَغْفَرَ: akar غ ف ر, pola اِسْتَفْعَلَ. Periksa makna dalam konteks.",
+      "checks": [
+        "اسم فاعل",
+        "اسم مفعول",
+        "اِسْتَفْعَلَ"
+      ],
+      "syllabus_status": "SUBJECT_VERIFIED; TOPICS_AND_BOOKS_SUPPLEMENTARY; EXACT_2008_EDITION_UNVERIFIED"
     },
     {
       "id": "M05",
@@ -98,6 +174,41 @@
       "query": "literature review Islamic philosophy"
     },
     {
+      "id": "S103A",
+      "title": "Tauhid (S103)",
+      "arabic": "التوحيد",
+      "track": "STAM",
+      "exam_code": "S103",
+      "kind": "stam",
+      "refs": [
+        "stam_official",
+        "azhar",
+        "arabic_collections",
+        "religion"
+      ],
+      "query": "علم التوحيد العقيدة علم الكلام الصفات النبوة السمعيات",
+      "topics": [
+        "Asas akidah dan kaedah dalil",
+        "Ilahiyyat dan sifat ketuhanan",
+        "Nubuwwat",
+        "Samʿiyyat",
+        "Perbandingan hujah dan batas tafsiran"
+      ],
+      "reading": [
+        "Umm al-Barahin — Muhammad ibn Yusuf al-Sanusi",
+        "Jawharat al-Tawhid — Ibrahim al-Laqqani"
+      ],
+      "principle": "Bezakan dalil akal dan naqli; baca istilah dalam tradisi teologi dan konteks pengarang.",
+      "exercise": "ما الفرق بين الدليل العقلي والدليل النقلي؟",
+      "worked": "Dalil akal (الدليل العقلي) bergantung pada premis dan inferens rasional. Dalil naqli (الدليل النقلي) bersandar pada sumber wahyu yang difahami melalui kaedah tafsiran. Kedua-duanya boleh berinteraksi; tidak boleh mendakwa suatu rumusan ialah ijmak tanpa bukti.",
+      "checks": [
+        "الدليل العقلي",
+        "الدليل النقلي",
+        "premis"
+      ],
+      "syllabus_status": "SUBJECT_VERIFIED; TOPICS_AND_BOOKS_SUPPLEMENTARY; EXACT_2008_EDITION_UNVERIFIED"
+    },
+    {
       "id": "M06",
       "title": "Penulisan akademik dan kohesi",
       "refs": [
@@ -109,6 +220,40 @@
       "worked": "Dalam korpus rekaan ini, dua pengkaji mengaitkan X dengan Y. Walau bagaimanapun, hubungan tersebut belum memadai untuk menunjukkan sebab akibat. Nyatakan bukti dan batas kajian sebelum menguatkan kesimpulan.",
       "kind": "prose",
       "query": "penulisan akademik bahasa Melayu kohesi koheren laras ilmiah"
+    },
+    {
+      "id": "S103B",
+      "title": "Mantiq (S103)",
+      "arabic": "المنطق",
+      "track": "STAM",
+      "exam_code": "S103",
+      "kind": "stam",
+      "refs": [
+        "stam_official",
+        "logic",
+        "arabic_collections"
+      ],
+      "query": "المنطق التصور التصديق الحد القضية القياس البرهان الاستقراء",
+      "topics": [
+        "Tasawwur dan tasdiq",
+        "Kulliyyat khams dan definisi",
+        "Qadiyyah, pembahagian dan taqabul",
+        "Qiyas dan bentuk inferens",
+        "Burhan, istiqra dan tamthil"
+      ],
+      "reading": [
+        "al-Sullam al-Munawraq — ʿAbd al-Rahman al-Akhdari",
+        "al-Isaghuji — Athir al-Din al-Abhari"
+      ],
+      "principle": "Pisahkan tasawwur, tasdiq, kesahan hujah dan kebenaran premis; semak penggunaan istilah pada teks asal.",
+      "exercise": "كل إنسان فانٍ، وزيد إنسان، فزيد فانٍ. حدّد المقدمتين والنتيجة.",
+      "worked": "Premis utama: كل إنسان فانٍ. Premis kecil: زيد إنسان. Kesimpulan: زيد فانٍ. Bentuk deduktif sah; kebenaran kesimpulan turut bergantung pada premis. Bezakan qiyas daripada istiqra.",
+      "checks": [
+        "Premis utama",
+        "Premis kecil",
+        "Kesimpulan"
+      ],
+      "syllabus_status": "SUBJECT_VERIFIED; TOPICS_AND_BOOKS_SUPPLEMENTARY; EXACT_2008_EDITION_UNVERIFIED"
     },
     {
       "id": "M07",
@@ -125,6 +270,41 @@
       "query": "citation verification bibliography"
     },
     {
+      "id": "S101",
+      "title": "Hifz al-Quran dan Tajwid (S101)",
+      "arabic": "حفظ القرآن والتجويد",
+      "track": "STAM",
+      "exam_code": "S101",
+      "kind": "stam",
+      "refs": [
+        "stam_official",
+        "quran",
+        "quran_corpus"
+      ],
+      "query": "علم التجويد حفظ القرآن مخارج الحروف أحكام النون والميم والمد",
+      "topics": [
+        "Pengenalpastian dan susunan ayat",
+        "Makharij dan sifat huruf",
+        "Nun sakinah/tanwin dan mim sakinah",
+        "Mad, qalqalah, waqaf dan ibtidaʾ",
+        "Latihan ingatan semula teks dan semakan mushaf"
+      ],
+      "reading": [
+        "Mushaf al-Quran dengan riwayat yang dinyatakan",
+        "Tuhfat al-Atfal — Sulayman al-Jamzuri",
+        "al-Muqaddimah al-Jazariyyah — Ibn al-Jazari"
+      ],
+      "principle": "Gunakan teks al-Quran yang disahkan; bezakan semakan bertulis daripada bacaan lisan. Jangan mendakwa talaqqi atau hafazan manusia.",
+      "exercise": "Apakah beza idgham dan ikhfaʾ pada hukum nun sakinah/tanwin?",
+      "worked": "Idgham ialah memasukkan bunyi nun sakinah/tanwin ke dalam huruf berikut mengikut peraturan; ikhfaʾ ialah menyembunyikan bunyi antara izhar dan idgham dengan ghunnah. Aplikasi khusus memerlukan konteks ayat dan riwayat. Sebutan perlu disemak oleh guru.",
+      "checks": [
+        "Idgham",
+        "ikhfaʾ",
+        "ghunnah"
+      ],
+      "syllabus_status": "SUBJECT_VERIFIED; TOPICS_AND_BOOKS_SUPPLEMENTARY; EXACT_2008_EDITION_UNVERIFIED"
+    },
+    {
       "id": "M08",
       "title": "Kaedah kualitatif dan kuantitatif",
       "refs": [
@@ -137,6 +317,42 @@
       "query": "qualitative quantitative research religious studies"
     },
     {
+      "id": "S102",
+      "title": "Fiqh dan Faraid (S102)",
+      "arabic": "الفقه والفرائض",
+      "track": "STAM",
+      "exam_code": "S102",
+      "kind": "stam",
+      "refs": [
+        "stam_official",
+        "azhar",
+        "arabic_collections",
+        "quran",
+        "hadith"
+      ],
+      "query": "الفقه الشافعي العبادات المعاملات الفرائض الميراث",
+      "topics": [
+        "Ibadat dan taharah",
+        "Muamalat",
+        "Munakahat",
+        "Jinayat dan bidang hukum berkaitan",
+        "Faraid: waris, bahagian dan halangan"
+      ],
+      "reading": [
+        "Fath al-Qarib — Ibn Qasim al-Ghazzi",
+        "al-Majmuʿ Sharh al-Muhadhdhab — al-Nawawi"
+      ],
+      "principle": "Nyatakan mazhab, dalil, syarat dan konteks. Faraid memerlukan semua waris serta penyelesaian harta; jangan jadikan latihan fatwa peribadi.",
+      "exercise": "Kes rekaan: seorang mati meninggalkan seorang anak lelaki dan seorang anak perempuan sahaja, selepas hutang dan wasiat yang sah. Harta RM90,000.",
+      "worked": "Dengan andaian tiada waris lain atau halangan, baki dibahagi 2:1 kepada anak lelaki dan perempuan. Anak lelaki RM60,000; anak perempuan RM30,000. Semak fakta sebenar dan hukum setempat sebelum aplikasi.",
+      "checks": [
+        "2:1",
+        "RM60,000",
+        "RM30,000"
+      ],
+      "syllabus_status": "SUBJECT_VERIFIED; TOPICS_AND_BOOKS_SUPPLEMENTARY; EXACT_2008_EDITION_UNVERIFIED"
+    },
+    {
       "id": "M09",
       "title": "Kaedah induktif dan inferens",
       "refs": [
@@ -147,6 +363,42 @@
       "worked": "Kesimpulan melampaui korpus. Hadkan kepada tiga teks yang diperiksa, atau perluaskan persampelan berasaskan justifikasi. Bezakan pemerhatian contoh daripada generalisasi universal.",
       "kind": "induction",
       "query": "induction Islamic philosophy istiqra"
+    },
+    {
+      "id": "S104",
+      "title": "Tafsir dan Ulumuhu (S104)",
+      "arabic": "التفسير وعلوم القرآن",
+      "track": "STAM",
+      "exam_code": "S104",
+      "kind": "stam",
+      "refs": [
+        "stam_official",
+        "quran",
+        "quran_grammar",
+        "arabic_collections"
+      ],
+      "query": "علوم القرآن التفسير أسباب النزول المكي والمدني أصول التفسير",
+      "topics": [
+        "Wahyu dan pengumpulan al-Quran",
+        "Makki/Madani",
+        "Asbab al-nuzul",
+        "Muhkam dan mutashabih, nasikh/mansukh",
+        "Kaedah tafsir dan perbandingan tafsiran"
+      ],
+      "reading": [
+        "al-Itqan fi ʿUlum al-Quran — al-Suyuti",
+        "Tafsir al-Tabari",
+        "Tafsir Ibn Kathir"
+      ],
+      "principle": "Bezakan makna bahasa, tafsiran dan riwayat konteks. Catat surah, ayat, mufassir serta edisi.",
+      "exercise": "Adakah semua ayat mempunyai sebab turun khusus yang diketahui?",
+      "worked": "Tidak. Asbab al-nuzul khusus hanya didakwa dengan riwayat yang boleh dinilai. Bezakan konteks umum daripada peristiwa khusus, semak sumber dan kekuatan riwayat; jangan mencipta sebab turun.",
+      "checks": [
+        "riwayat",
+        "konteks",
+        "sumber"
+      ],
+      "syllabus_status": "SUBJECT_VERIFIED; TOPICS_AND_BOOKS_SUPPLEMENTARY; EXACT_2008_EDITION_UNVERIFIED"
     },
     {
       "id": "M10",
@@ -162,6 +414,41 @@
       "query": "academic research integrity AI"
     },
     {
+      "id": "S105",
+      "title": "Hadith dan Mustolah (S105)",
+      "arabic": "الحديث ومصطلحه",
+      "track": "STAM",
+      "exam_code": "S105",
+      "kind": "stam",
+      "refs": [
+        "stam_official",
+        "hadith",
+        "arabic_collections"
+      ],
+      "query": "مصطلح الحديث الصحيح الحسن الضعيف الإسناد المتن التخريج",
+      "topics": [
+        "Sanad dan matan",
+        "Sahih, hasan dan daʿif",
+        "Mutawatir dan ahad",
+        "Ittisal, ʿadalah, dabt, shudhudh dan ʿillah",
+        "Takhrij dan perbandingan riwayat"
+      ],
+      "reading": [
+        "Nukhbat al-Fikar — Ibn Hajar al-ʿAsqalani",
+        "Muqaddimah Ibn al-Salah"
+      ],
+      "principle": "Bezakan status riwayat, makna dan penggunaan hujah. Jangan menyamakan semua hadis dengan hukum yang sama.",
+      "exercise": "ما الفرق بين الإسناد والمتن؟ وما شروط الحديث الصحيح؟",
+      "worked": "الإسناد ialah rangkaian periwayat; المتن ialah teks riwayat. Syarat umum sahih: sanad bersambung, perawi adil dan dabt, tiada shudhudh dan tiada ʿillah yang mencacatkan. Penilaian hadis tertentu memerlukan takhrij.",
+      "checks": [
+        "الإسناد",
+        "المتن",
+        "shudhudh",
+        "takhrij"
+      ],
+      "syllabus_status": "SUBJECT_VERIFIED; TOPICS_AND_BOOKS_SUPPLEMENTARY; EXACT_2008_EDITION_UNVERIFIED"
+    },
+    {
       "id": "M11",
       "title": "Proposal, bab tesis dan viva",
       "refs": [
@@ -173,6 +460,39 @@
       "worked": "Persoalan ialah hubungan makna dan justifikasi, bukan taburan persepsi. Analisis konsep dan hujah sesuai. Jika kajian ingin mengetahui persepsi, perlu reka bentuk empirikal berasingan. Nyatakan batas pilihan ini.",
       "kind": "viva",
       "query": "philosophy thesis viva methodology"
+    },
+    {
+      "id": "S107A",
+      "title": "Insyaʾ (S107)",
+      "arabic": "الإنشاء",
+      "track": "STAM",
+      "exam_code": "S107",
+      "kind": "stam",
+      "refs": [
+        "stam_official",
+        "arabic_collections",
+        "quran_grammar"
+      ],
+      "query": "الإنشاء العربي التعبير الكتابي المقالة الرسالة الكتابة الأكاديمية",
+      "topics": [
+        "Ayat dan perenggan",
+        "Deskripsi, naratif dan laporan",
+        "Surat dan ucapan",
+        "Hujah dan esei",
+        "Kohesi dan penyuntingan bahasa Arab"
+      ],
+      "reading": [
+        "Bahan latihan insyaʾ STAM yang sah — perlu diperoleh dan disahkan"
+      ],
+      "principle": "Tulis dalam bahasa Arab yang jelas, tepat nahu dan berstruktur; asingkan laras harian daripada laras ilmiah.",
+      "exercise": "اكتب فقرة قصيرة عن أهمية القراءة.",
+      "worked": "القراءةُ وسيلةٌ لاكتساب المعرفة وتوسيع الفكر. يقرأ الطالبُ الكتبَ ليفهم الأفكارَ ويقارن بين الآراء. ولا يكفي جمعُ المعلومات، بل ينبغي فحصُ الأدلةِ ونقدُ الحججِ. Latihan: kenal pasti idea utama dan hubungan alasan.",
+      "checks": [
+        "القراءة",
+        "المعرفة",
+        "الأدلة"
+      ],
+      "syllabus_status": "SUBJECT_VERIFIED; TOPICS_AND_BOOKS_SUPPLEMENTARY; EXACT_2008_EDITION_UNVERIFIED"
     },
     {
       "id": "M12",
@@ -191,6 +511,40 @@
       "query": "academic writing argument evidence"
     },
     {
+      "id": "S107B",
+      "title": "Mutalaʿah (S107)",
+      "arabic": "المطالعة",
+      "track": "STAM",
+      "exam_code": "S107",
+      "kind": "stam",
+      "refs": [
+        "stam_official",
+        "arabic_collections",
+        "quran_grammar"
+      ],
+      "query": "المطالعة فهم المقروء النص العربي الفكرة الرئيسة المفردات",
+      "topics": [
+        "Bacaan literal",
+        "Idea utama dan sokongan",
+        "Inferens dan makna konteks",
+        "Ringkasan dan parafrasa",
+        "Perbandingan dua teks Arab"
+      ],
+      "reading": [
+        "Teks bacaan STAM yang sah — perlu diperoleh",
+        "Kitab al-Bukhalaʾ — al-Jahiz (bacaan lanjutan, bukan teks STAM disahkan)"
+      ],
+      "principle": "Baca teks, kenal pasti dakwaan dan bukti, kemudian ringkaskan tanpa menambah makna.",
+      "exercise": "النص التدريبي: العلمُ يحتاجُ إلى الدليل، وكثرةُ الكلامِ لا تدلُّ على صحّةِ الرأي. استخرج الفكرة الرئيسة.",
+      "worked": "الفكرة الرئيسة: قيمةُ الرأي تتعلّق بالدليل لا بكثرة الكلام. Terjemahan kerja: nilai ketepatan pandangan bergantung pada bukti, bukan banyaknya kata. Bezakan ringkasan daripada tafsiran tambahan.",
+      "checks": [
+        "الفكرة الرئيسة",
+        "الدليل",
+        "ringkasan"
+      ],
+      "syllabus_status": "SUBJECT_VERIFIED; TOPICS_AND_BOOKS_SUPPLEMENTARY; EXACT_2008_EDITION_UNVERIFIED"
+    },
+    {
       "id": "M13",
       "title": "Usuluddin, ilmu kalam dan teologi",
       "kind": "primary",
@@ -203,6 +557,39 @@
       "principle": "Bezakan persoalan ketuhanan, kaedah kalam, premis metafizik dan hujah tekstual; jangan anggap semua aliran sama.",
       "exercise": "Bandingkan dua hujah rekaan mengenai sifat Tuhan.",
       "worked": "Periksa teks asal, edisi dan konteks; asingkan premis akal daripada tafsiran dalil dan batas kesimpulan."
+    },
+    {
+      "id": "S108",
+      "title": "Adab dan Nusus (S108)",
+      "arabic": "الأدب والنصوص",
+      "track": "STAM",
+      "exam_code": "S108",
+      "kind": "stam",
+      "refs": [
+        "stam_official",
+        "arabic_collections"
+      ],
+      "query": "الأدب العربي النصوص الشعر الجاهلي الأموي العباسي النثر",
+      "topics": [
+        "Zaman dan konteks sastera Arab",
+        "Syair dan prosa",
+        "Tema, imej dan gaya",
+        "Analisis teks dan pengarang",
+        "Hubungan konteks sejarah dengan interpretasi"
+      ],
+      "reading": [
+        "al-Bayan wa al-Tabyin — al-Jahiz",
+        "Diwan al-Mutanabbi"
+      ],
+      "principle": "Baca teks menurut genre dan sejarah; jangan mencipta petikan, pengarang atau atribusi syair.",
+      "exercise": "النص التدريبي الأصلي: أطلبُ العلمَ في كلِّ يومٍ، وأجعلُ الصبرَ زادَ الطريقِ. حدّد الموضوع والصورة.",
+      "worked": "Tema: pencarian ilmu dan kesabaran. Imej: kesabaran sebagai bekalan perjalanan. Teks ini ialah contoh asal rekaan, bukan syair yang dinisbahkan kepada tokoh. Jangan membuat atribusi tanpa sumber.",
+      "checks": [
+        "Tema",
+        "Imej",
+        "rekaan"
+      ],
+      "syllabus_status": "SUBJECT_VERIFIED; TOPICS_AND_BOOKS_SUPPLEMENTARY; EXACT_2008_EDITION_UNVERIFIED"
     },
     {
       "id": "M14",
@@ -220,6 +607,38 @@
       "worked": "P1: Yang kontingen memerlukan penjelasan. P2: X kontingen. K: X memerlukan penjelasan. Uji contoh balas, skop dan maksud keperluan."
     },
     {
+      "id": "S109",
+      "title": "ʿArudh dan Qafiyah (S109)",
+      "arabic": "العروض والقافية",
+      "track": "STAM",
+      "exam_code": "S109",
+      "kind": "stam",
+      "refs": [
+        "stam_official",
+        "arabic_collections"
+      ],
+      "query": "علم العروض القافية التفعيلات البحور الزحافات العلل الروي",
+      "topics": [
+        "Kitabah ʿarudiyyah dan suku kata",
+        "Asbab, awtad dan tafʿilah",
+        "Bahr dan pola metrum",
+        "Zihaf dan ʿillah",
+        "Qafiyah, rawi dan kecacatan rima"
+      ],
+      "reading": [
+        "Mizan al-Dhahab fi Sinaʿat Shiʿr al-ʿArab — Ahmad al-Hashimi"
+      ],
+      "principle": "Imbas bunyi yang dilafazkan, bukan ejaan semata-mata. Semak tafʿilah, variasi yang sah dan rawi.",
+      "exercise": "Apakah tafʿilah bagi pola asas bahr al-tawil dan apakah rawi?",
+      "worked": "Pola asas satu hemistich bahr al-tawil: فعولن مفاعيلن فعولن مفاعلن (bentuk biasa dengan variasi yang diiktiraf). Rawi ialah konsonan teras yang mengikat qafiyah. Perlu bezakan pola teori daripada hasil taqtiʿ bait sebenar.",
+      "checks": [
+        "فعولن",
+        "مفاعيلن",
+        "Rawi"
+      ],
+      "syllabus_status": "SUBJECT_VERIFIED; TOPICS_AND_BOOKS_SUPPLEMENTARY; EXACT_2008_EDITION_UNVERIFIED"
+    },
+    {
       "id": "M15",
       "title": "Epistemologi Islam dan teori ilmu",
       "kind": "argument",
@@ -232,6 +651,40 @@
       "principle": "Bezakan sumber, justifikasi, kebenaran, kepastian, shakk, zann dan wahm; istilah Arab memerlukan sumber berlokasi.",
       "exercise": "Adakah yakin bermaksud benar?",
       "worked": "P1: Jika yakin menjamin benar, tiada keyakinan salah. P2: Ada keyakinan salah. K: Yakin tidak menjamin benar. Contoh balas ialah keyakinan salah."
+    },
+    {
+      "id": "S110",
+      "title": "Balaghah (S110)",
+      "arabic": "البلاغة",
+      "track": "STAM",
+      "exam_code": "S110",
+      "kind": "stam",
+      "refs": [
+        "stam_official",
+        "arabic_collections",
+        "quran_grammar"
+      ],
+      "query": "البلاغة العربية علم المعاني البيان البديع التشبيه الاستعارة الكناية",
+      "topics": [
+        "Maʿani: khabar/insyaʾ dan kesesuaian konteks",
+        "Bayan: tasybih, majaz, istiʿarah dan kinayah",
+        "Badiʿ: keindahan makna dan lafaz",
+        "Analisis gaya dan tujuan retorik",
+        "Aplikasi pada teks Arab dan tafsir"
+      ],
+      "reading": [
+        "al-Balaghah al-Wadihah — ʿAli al-Jarim dan Mustafa Amin",
+        "Jawahir al-Balaghah — Ahmad al-Hashimi"
+      ],
+      "principle": "Bezakan bentuk bahasa daripada tujuan retorik dan konteks. Huraikan kesan, bukan sekadar label.",
+      "exercise": "حدّد أركان التشبيه: العلمُ كالنورِ في الهداية.",
+      "worked": "المشبّه: العلم؛ المشبّه به: النور؛ أداة التشبيه: الكاف؛ وجه الشبه: الهداية. Tasybih menerangkan ilmu sebagai pembimbing melalui perbandingan dengan cahaya.",
+      "checks": [
+        "المشبّه",
+        "أداة التشبيه",
+        "وجه الشبه"
+      ],
+      "syllabus_status": "SUBJECT_VERIFIED; TOPICS_AND_BOOKS_SUPPLEMENTARY; EXACT_2008_EDITION_UNVERIFIED"
     },
     {
       "id": "M16",
@@ -524,5 +977,15 @@
     "publisher": "https://hrmars.com/IJARBSS/article/view/4124/Ethics-of-Water-Usage-in-the-Context-of-Ablution-A-Perception-Based-on-the-Concept-of-Excess-in-the-Quran-and-Sunnah",
     "reading_note": "Public article abstract and methodology identify qualitative library/document analysis of Islamic guidance on water consumption in ablution. Normative analysis supports an argument against excess; it does not itself establish measured litres or population prevalence. Verify citation pagination against the specific publication version: publisher PDF opened in this review begins at 849, whereas CV and other copies have inconsistent ranges. No page range is canonicalized here.",
     "status": "PUBLIC_ARTICLE_ABSTRACT_AND_METHOD_SECTION_REVIEWED"
+  },
+  "stam": {
+    "official_subject_count": 10,
+    "discipline_count": 13,
+    "reference": "stam_official",
+    "historical_edition": "2008 syllabus and exact Maahad Johor textbook list not yet verified; 2020 revised assessment reference kept distinct.",
+    "recommended_books_status": "Supplementary classical reading targets, not confirmed STAM textbooks.",
+    "learning_sequence": "One core exercise per module; on subsequent rounds rotate topic focus. Full texts and mastery must be independently verified; oral recitation needs human teacher.",
+    "source_policy": "Arabic text, edition, author, page or verse, meaning, uncertainty. Public metadata only; no private school documents.",
+    "cycle": "STAM interleaved with previous academic curriculum, existing sessions not reset."
   }
 }

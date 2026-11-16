@@ -5,3 +5,7 @@ Mandat: pembangunan kemampuan akademik, bukan pemburuan pendapatan. 12 modul, sa
 ## Pengembangan berdasarkan profil bidang
 
 36 modul: 12 asas, 24 pengkhususan merangkumi usuluddin, falsafah, epistemologi, mantik, akhlak, kelestarian, sosiologi agama, kajian Islam, masyarakat Malaysia, MPU, pedagogi, pentaksiran dan jaminan kualiti. Carian Crossref terhad setiap sesi menghasilkan sehingga lima calon bibliografi baharu dan disimpan dalam kemajuan bersama bukti latihan. Metadata bukan pengesahan dapatan atau bacaan teks penuh. Satu kajian awam etika air/wuduk menjadi titik rujukan awal. Semakan teks asal BM/EN/AR, penilaian bebas dan pertimbangan penyelidik diperlukan. Tiada CV atau butiran peribadi disimpan. Fail kemajuan terdahulu dipelihara. Contoh dan peraturan konteks bukan pengganti kepakaran sebenar.
+
+## Asas STAM
+
+49 modul keseluruhan (36 akademik terdahulu + 13 disiplin bagi 10 mata pelajaran STAM). Nahu, Sarf, Tauhid, Mantiq, Insya', Mutala'ah dipisahkan untuk latihan khusus. Modul STAM diselang-selikan dengan latihan akademik tanpa menghapus sejarah. Setiap modul mempunyai contoh Arab, senarai topik, latihan rujukan, sasaran bacaan turath tambahan, dan carian literatur. Sukatan terperinci serta buku teks Maahad Johor tahun 2008 belum dikenal pasti; teks tambahan bukan buku teks rasmi yang disahkan. Capaian sumber tidak bermakna bacaan penuh. Bacaan lisan, hafazan dan tajwid perlu pengesahan manusia. Nahu bermula dengan semakan tajuk sebenar panduan Quranic Arabic Corpus; bukan pensijilan.

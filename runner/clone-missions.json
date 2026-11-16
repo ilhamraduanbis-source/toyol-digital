@@ -86,7 +86,7 @@
       "id": "nexus-cross-sector",
       "workflow": "toyol-nexus-cross-sector.yml",
       "mode": "scheduled",
-      "purpose": "Dedicated academic counterpart: Islamic theology, philosophy, epistemology, logic, applied ethics, sustainability, sociology, religious practice, Malaysian general studies and higher education pedagogy. Develop research methods, academic Malay, multilingual source literacy, literature discovery, source-critical reasoning, curriculum and assessment design. Preserve public bibliographic evidence and synthetic exercises; private CV, manuscript, student and research data excluded. No income hunting, impersonation, paid compute, or autonomous academic submission.",
+      "purpose": "Dedicated academic counterpart: Islamic theology, philosophy, epistemology, logic, applied ethics, sustainability, sociology, religious practice, Malaysian general studies and higher education pedagogy. Develop research methods, academic Malay, multilingual source literacy, literature discovery, source-critical reasoning, curriculum and assessment design. Preserve public bibliographic evidence and synthetic exercises; private CV, manuscript, student and research data excluded. No income hunting, impersonation, paid compute, or autonomous academic submission. STAM foundation: all ten examination subjects mapped into thirteen disciplines, Arabic textual literacy and classical source study; preserve earlier academic training, no claim of official certification or oral recitation competence.",
       "domain": "academic-development",
       "incomeHunting": false
     }
