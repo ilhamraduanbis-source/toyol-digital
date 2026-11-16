@@ -570,6 +570,185 @@
       "skippedSteps": [],
       "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
       "incomeInferred": false
+    },
+    {
+      "worker": "ai-model-development",
+      "runId": 43802113136,
+      "attempt": 1,
+      "completedAt": "2026-11-16T04:12:24Z",
+      "sourceCommit": "3cfed1b633452314e3ecf51c207946997ae2c928",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    }
+  ],
+  "actionReceipts": [
+    {
+      "worker": "aggregator",
+      "action": "audit-roster",
+      "runId": 43802113136,
+      "sourceCommit": "3cfed1b633452314e3ecf51c207946997ae2c928",
+      "completedAt": "2026-11-16T04:12:24Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "records": 11,
+        "sha256": "37d82fb677d5f95a3197de3f8c6d0fc9dfdbdd2b2c366c52a5d47f3ef99d29cb",
+        "findings": 0
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "frantic-delivery",
+      "action": "test-documentation",
+      "runId": 43802113136,
+      "sourceCommit": "3cfed1b633452314e3ecf51c207946997ae2c928",
+      "completedAt": "2026-11-16T04:12:24Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "45ca2627eaa6a84f7ce22057b01875fa84cc69e5ba7fa92b841bd66b21c43c04"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "go-hybrid-4488",
+      "action": "test-documentation",
+      "runId": 43802113136,
+      "sourceCommit": "3cfed1b633452314e3ecf51c207946997ae2c928",
+      "completedAt": "2026-11-16T04:12:24Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "6c1a2e02f49507ae617d594be78cbec5adcc3ed01b3b688382ba871847944ab4"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "leviathan-contracts",
+      "action": "audit-roster",
+      "runId": 43802113136,
+      "sourceCommit": "3cfed1b633452314e3ecf51c207946997ae2c928",
+      "completedAt": "2026-11-16T04:12:24Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "records": 11,
+        "sha256": "37d82fb677d5f95a3197de3f8c6d0fc9dfdbdd2b2c366c52a5d47f3ef99d29cb",
+        "findings": 0
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "multihopper",
+      "action": "test-documentation",
+      "runId": 43802113136,
+      "sourceCommit": "3cfed1b633452314e3ecf51c207946997ae2c928",
+      "completedAt": "2026-11-16T04:12:24Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "430c8c7c7ef2e2b49d6024b274182bec51102059a2f2eb19209e40c6064b9eae"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "payment-reconciliation",
+      "action": "audit-roster",
+      "runId": 43802113136,
+      "sourceCommit": "3cfed1b633452314e3ecf51c207946997ae2c928",
+      "completedAt": "2026-11-16T04:12:24Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "records": 11,
+        "sha256": "37d82fb677d5f95a3197de3f8c6d0fc9dfdbdd2b2c366c52a5d47f3ef99d29cb",
+        "findings": 0
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-data",
+      "action": "test-documentation",
+      "runId": 43802113136,
+      "sourceCommit": "3cfed1b633452314e3ecf51c207946997ae2c928",
+      "completedAt": "2026-11-16T04:12:24Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "d7759bc66a04351195a8dd24ad00bfa90c265aaf0c34427c06da96e8da6046d0"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-qa",
+      "action": "test-documentation",
+      "runId": 43802113136,
+      "sourceCommit": "3cfed1b633452314e3ecf51c207946997ae2c928",
+      "completedAt": "2026-11-16T04:12:24Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "b34eb209af418f33e4ef5d0d73f133cb48e3a6607b1b356684a9d7b249bdb6d6"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "tiny-chess-training",
+      "action": "test-documentation",
+      "runId": 43802113136,
+      "sourceCommit": "3cfed1b633452314e3ecf51c207946997ae2c928",
+      "completedAt": "2026-11-16T04:12:24Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "4aecb6ae9782c18c779d5f8480c874679f3badf42f5d83ac110b9161487e6963"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "titan-awards",
+      "action": "test-documentation",
+      "runId": 43802113136,
+      "sourceCommit": "3cfed1b633452314e3ecf51c207946997ae2c928",
+      "completedAt": "2026-11-16T04:12:24Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "f69ab621c507d891c3e0befd828f05df81ef705fbea33baa36f0a94274df96e4"
+      },
+      "externalAction": false,
+      "incomeInferred": false
+    },
+    {
+      "worker": "wurk-markdown-sales",
+      "action": "test-documentation",
+      "runId": 43802113136,
+      "sourceCommit": "3cfed1b633452314e3ecf51c207946997ae2c928",
+      "completedAt": "2026-11-16T04:12:24Z",
+      "status": "VERIFIED_LOCAL_ACTION",
+      "evidence": {
+        "exitCode": 0,
+        "outputBytes": 723,
+        "outputSha256": "7cc0356dfed4724e7782157f329fab0915cfede88e419a62cfdac04768a5dcff"
+      },
+      "externalAction": false,
+      "incomeInferred": false
     }
   ]
 }
