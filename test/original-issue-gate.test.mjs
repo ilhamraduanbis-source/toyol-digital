@@ -49,3 +49,17 @@ test('official reward restrictions are hard gates but random comments are not',(
  const bot={user:{login:'ubiquity-os[bot]'},body:'You must be a core team member, or an administrator to start this task'};
  assert.equal(evaluateOriginalIssue(task,{state:'open',eligibility_comments:[bot]}).next_action,'REJECT_REWARD_RESTRICTED');
 });
+
+test('expired explicitly labelled UTC deadline rejects a still-open indexed issue',()=>{
+ const issue={state:'open',body:'## Submission deadline: March 31, 2026 (UTC)\nPayout within 72h of merge verification.'};
+ const result=evaluateOriginalIssue(task,issue,Date.parse('2026-11-16T02:00:00Z'));
+ assert.equal(result.suitable_for_draft,false);
+ assert.equal(result.next_action,'REJECT_EXPIRED_DEADLINE');
+ assert.equal(result.original_issue.deadline_utc,'2026-03-31T23:59:59.000Z');
+});
+test('future explicit deadline and arbitrary historical dates do not disqualify an issue',()=>{
+ const now=Date.parse('2026-11-16T02:00:00Z');
+ for(const body of ['## Submission deadline: December 31, 2026 (UTC)','Earlier work started March 31, 2026 (UTC).','Submission deadline: March 31, 2026 (local time)']){
+  assert.equal(evaluateOriginalIssue(task,{state:'open',body},now).suitable_for_draft,true);
+ }
+});
