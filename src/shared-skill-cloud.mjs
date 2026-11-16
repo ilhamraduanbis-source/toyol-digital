@@ -39,6 +39,29 @@ export function workerContext(worker,query){
  if(!/^[a-z0-9-]{1,70}$/.test(worker))throw Error('INVALID_WORKER');
  return {worker,skills:inventory(),matches:match(query),memory:readMemory(),note:'Shared evidence and code are reusable. Work-specific validation and permission remain mandatory.'};
 }
+/** A bounded decision layer for the existing clone identities.
+ * Observations and mission text are data, not executable instructions.
+ * The result is a local plan, never authorization for a live action.
+ */
+export function agentContext(worker,query='',now=Date.now()){
+ const config=JSON.parse(readFileSync(resolve(root,'runner/clone-missions.json'),'utf8'));
+ if(!Array.isArray(config.missions)||!Number.isFinite(now))throw Error('INVALID_MISSION_CONFIG');
+ const mission=config.missions.find(m=>m.id===worker);
+ if(!mission)throw Error('UNKNOWN_REGISTERED_AGENT');
+ const context=workerContext(worker,query);
+ const own=context.memory.observations.filter(x=>x.worker===worker);
+ const latest=own.at(-1)??null;
+ const expired=typeof mission.deadlineUtc==='string'&&Number.isFinite(Date.parse(mission.deadlineUtc))&&Date.parse(mission.deadlineUtc)<=now;
+ const next=expired?'SEEK_REPLACEMENT_MISSION':
+   latest?.conclusion==='failure'?'REVIEW_FAILURE_BEFORE_RETRY':
+   mission.mode==='adopt'?'REVIEW_EXISTING_RESULT':
+   mission.mode==='scheduled'?'CHECK_OWN_MISSION_AND_SHARED_OPPORTUNITIES':'REVIEW_MISSION';
+ return {...context,mission:{id:mission.id,workflow:mission.workflow,mode:mission.mode,purpose:mission.purpose},
+   ownObservations:own,latestOwnObservation:latest,
+   decision:{next,expired,reason:expired?'Prior deadline passed; reuse skills without retrying expired entry.':latest?.conclusion==='failure'?'Review real failure; do not repeat blindly.':'Use existing mission and shared evidence to choose next bounded work.',
+   liveExecutionAuthorized:false,ownerSpend:0,incomeInferred:false}};
+}
+
 export function runSkill(id,args=[]){
  const s=catalog.find(x=>x.id===id);
  if(!s||!Array.isArray(args)||args.length>20||args.some(x=>typeof x!=='string'||x.length>4096))throw Error('INVALID_SKILL_CALL');
@@ -58,12 +81,22 @@ function selfTest(){
  assert.ok(match('csv').some(x=>x.id==='tabular-conversion'));
  assert.throws(()=>runSkill('../evil',[]),/INVALID_SKILL_CALL/);
  assert.throws(()=>workerContext('../bad','csv'));
+ const missions=JSON.parse(readFileSync(resolve(root,'runner/clone-missions.json'),'utf8')).missions;
+ const agents=missions.map(m=>agentContext(m.id,'research csv',Date.parse('2026-11-16T03:30:00Z')));
+ assert.equal(new Set(agents.map(x=>x.worker)).size,missions.length);
+ assert.ok(agents.every(x=>x.decision.liveExecutionAuthorized===false&&x.decision.ownerSpend===0));
+ assert.ok(agents.every(x=>JSON.stringify(x.skills)===JSON.stringify(a.skills)));
+ assert.ok(agents.every(x=>x.ownObservations.every(o=>o.worker===x.worker)));
+ assert.equal(agents.find(x=>x.worker==='aggregator').decision.next,'SEEK_REPLACEMENT_MISSION');
+ assert.throws(()=>agentContext('unknown-agent'),/UNKNOWN_REGISTERED_AGENT/);
+ console.log('REGISTERED_AGENT_CONTEXT_PASS',agents.length);
  console.log('SHARED_CLOUD_TEST_PASS: clone-a, clone-b and parent resolve identical source hashes and shared memory');
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
  const [op,...args]=process.argv.slice(2);
  if(op==='list')console.log(JSON.stringify(inventory(),null,2));
  else if(op==='context')console.log(JSON.stringify(workerContext(args[0],args.slice(1).join(' ')),null,2));
+ else if(op==='agent')console.log(JSON.stringify(agentContext(args[0],args.slice(1).join(' ')),null,2));
  else if(op==='run')process.exitCode=runSkill(args[0],args.slice(1));
  else if(op==='--self-test')selfTest();
  else throw Error('Use list, context <worker> <query>, run <skill> <args>, --self-test');
