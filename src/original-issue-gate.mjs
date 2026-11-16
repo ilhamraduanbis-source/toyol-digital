@@ -12,7 +12,16 @@ export function locateGitHubIssue(url) {
   return {owner,repo,issue:Number(issue)};
 }
 
-export function evaluateOriginalIssue(task, issue) {
+// Only treat explicitly labelled, unambiguous UTC submission deadlines as hard gates.
+// Do not infer deadlines from arbitrary dates, prose, or an index timestamp.
+export function explicitUtcSubmissionDeadline(body) {
+  const m=String(body??'').match(/^\s*#{0,6}\s*(?:\*\*)?Submission deadline\s*:\s*(?:\*\*)?\s*([A-Za-z]+\s+\d{1,2},\s+\d{4})\s*\(UTC\)\s*(?:\*\*)?\s*$/im);
+  if(!m)return null;
+  const date=Date.parse(m[1]+' 23:59:59 UTC');
+  return Number.isFinite(date)?date:null;
+}
+
+export function evaluateOriginalIssue(task, issue, now=Date.now()) {
   const base={...task};
   if(!issue || !['open','closed'].includes(issue.state)) {
     return {...base,original_issue:{status:'UNVERIFIED'},next_action:'CHECK_ORIGINAL_ISSUE_MANUALLY'};
@@ -32,6 +41,10 @@ export function evaluateOriginalIssue(task, issue) {
   const restriction=official.find(c=>/external contributors are not eligible for rewards|must be a core team member, or an administrator to start this task|we stopped the bounty program|we don.t accept any bounty claims/i.test(String(c.body||'').split('<!--')[0]));
   if(restriction) {
     return {...base,original_issue:{status:'REWARD_RESTRICTION_REPORTED',evidence_url:restriction.html_url??null},suitable_for_draft:false,next_action:'REJECT_REWARD_RESTRICTED'};
+  }
+  const deadline=explicitUtcSubmissionDeadline(issue.body);
+  if(deadline!==null && now>deadline) {
+    return {...base,original_issue:{status:'SUBMISSION_DEADLINE_EXPIRED',deadline_utc:new Date(deadline).toISOString()},suitable_for_draft:false,next_action:'REJECT_EXPIRED_DEADLINE'};
   }
   const warnings=[];
   const comments=Number.isInteger(issue.comments)&&issue.comments>=0?issue.comments:0;
