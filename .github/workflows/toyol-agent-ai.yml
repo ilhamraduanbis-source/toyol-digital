@@ -6,6 +6,9 @@ on:
     paths:
       - 'src/agent-ai.mjs'
       - 'src/agent-action.mjs'
+      - 'src/agent-queue.mjs'
+      - 'src/agent-queue.py'
+      - 'test/test_agent_queue.py'
       - 'test/agent-action.test.mjs'
       - 'src/local-model-inference.py'
       - 'test/agent-ai.test.mjs'
@@ -88,6 +91,27 @@ jobs:
               assert r['externalAction'] is False and r['ownerSpend']==0 and r['incomeInferred'] is False
               print('REAL_AI_ACTION',r['worker'],r['action'],json.dumps(r['evidence'],sort_keys=True))
           print('REAL_AI_ACTION_PASS',len(rows))
+          PY
+      - name: Verify persistent queue fencing, recovery and parallel task claims
+        run: python3 -m unittest discover -s test -p test_agent_queue.py -v
+      - name: Eleven agents independently claim distinct work ranked by the actual AI model
+        run: |
+          set -euo pipefail
+          export PATH="$RUNNER_TEMP/toyol-ai-venv/bin:$PATH"
+          export TOYOL_LOCAL_MODEL_DIR="$RUNNER_TEMP/toyol-qwen"
+          node src/agent-queue.mjs "$RUNNER_TEMP/colony.sqlite" "development-${GITHUB_SHA}" > out/agent-ai/queued-cycle.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('out/agent-ai/queued-cycle.json').read_text())
+          assert len(r['agents'])==11 and len(r['tasks'])==5
+          assert len({t['id'] for t in r['tasks']})==5
+          assert all(t['state']=='done' and t['attempts']==1 and t['receipt']['status']=='VERIFIED_LOCAL_ACTION' for t in r['tasks'])
+          assert len({t['worker'] for t in r['tasks']})==5
+          assert sum(a['status']=='NO_DISTINCT_READY_TASK' for a in r['agents'])==6
+          assert r['ownerSpend']==0 and r['incomeInferred'] is False
+          for t in r['tasks']:print('DISTINCT_AI_TASK_DONE',t['worker'],t['action'],t['id'])
+          print('AI_QUEUE_PASS',len(r['agents']),len(r['tasks']))
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
