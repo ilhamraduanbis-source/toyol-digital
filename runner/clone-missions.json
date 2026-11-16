@@ -51,6 +51,12 @@
       "workflow": "toyol-tiny-chess-round2.yml",
       "mode": "adopt",
       "purpose": "Observe previous competition attempt. Compact standalone practice core tested at 4073 bytes, not a contest entry; official harness and score still required."
+    },
+    {
+      "id": "multihopper",
+      "workflow": "toyol-multihopper-watch.yml",
+      "mode": "scheduled",
+      "purpose": "Long-term Toyol Hopper partner research, public daily terms and developer-doc watch; no campaign expiry on the clone, no signing, spend or revenue inferred. Devnet, actual customer demand and partner approval are separate gates."
     }
   ]
 }
