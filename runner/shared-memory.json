@@ -175,6 +175,18 @@
       "incomeInferred": false
     },
     {
+      "worker": "tiny-chess-training",
+      "runId": 43711886461,
+      "attempt": 1,
+      "completedAt": "2026-11-15T12:18:05Z",
+      "sourceCommit": "e7db845461970e23617d78119c093ba80c452330",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
       "worker": "aggregator",
       "runId": 43712398741,
       "attempt": 1,
@@ -290,6 +302,18 @@
       "incomeInferred": false
     },
     {
+      "worker": "go-hybrid-4488",
+      "runId": 43717933989,
+      "attempt": 1,
+      "completedAt": "2026-11-15T13:14:23Z",
+      "sourceCommit": "f4e9f1bf4392fa9c97667af81cd59b5341b7e467",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
       "worker": "payment-reconciliation",
       "runId": 43725942867,
       "attempt": 1,
@@ -326,6 +350,18 @@
       "incomeInferred": false
     },
     {
+      "worker": "wurk-markdown-sales",
+      "runId": 43752461196,
+      "attempt": 1,
+      "completedAt": "2026-11-15T19:27:32Z",
+      "sourceCommit": "9620a5b31562212a59b8dd74c62553015819ebf8",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
       "worker": "payment-reconciliation",
       "runId": 43757840738,
       "attempt": 1,
@@ -354,6 +390,30 @@
       "runId": 43771377765,
       "attempt": 1,
       "completedAt": "2026-11-15T22:49:30Z",
+      "sourceCommit": "05dddb5db4eb1a044821b49588aa99e4a24ea9b7",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "go-hybrid-4488",
+      "runId": 43773339056,
+      "attempt": 1,
+      "completedAt": "2026-11-15T23:10:38Z",
+      "sourceCommit": "05dddb5db4eb1a044821b49588aa99e4a24ea9b7",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "wurk-markdown-sales",
+      "runId": 43775136843,
+      "attempt": 1,
+      "completedAt": "2026-11-15T23:30:52Z",
       "sourceCommit": "05dddb5db4eb1a044821b49588aa99e4a24ea9b7",
       "conclusion": "success",
       "failedSteps": [],
@@ -422,6 +482,54 @@
       "skippedSteps": [
         "Prepare actual data and notary evidence on code change (no claim)"
       ],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "multihopper",
+      "runId": 43795518741,
+      "attempt": 1,
+      "completedAt": "2026-11-16T03:00:42Z",
+      "sourceCommit": "70a552bf6d4fd4b68edcbf1ba6796817bcbc2f33",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "wurk-markdown-sales",
+      "runId": 43795510377,
+      "attempt": 1,
+      "completedAt": "2026-11-16T03:01:14Z",
+      "sourceCommit": "b3acd2c86aaccef84763c085ba62577ad927e9d4",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "leviathan-contracts",
+      "runId": 43796568257,
+      "attempt": 1,
+      "completedAt": "2026-11-16T03:10:47Z",
+      "sourceCommit": "2d56d984307cd2e1f420a8672e2cf30020deee17",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "titan-awards",
+      "runId": 43796632976,
+      "attempt": 1,
+      "completedAt": "2026-11-16T03:11:26Z",
+      "sourceCommit": "385c25cbfb60eef913c465953833fab89c776560",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
       "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
       "incomeInferred": false
     }
