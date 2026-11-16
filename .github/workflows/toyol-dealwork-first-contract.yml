@@ -65,3 +65,5 @@ jobs:
             }
           }catch(e){emit('SAFE_STOP',{reason:String(e.message).slice(0,160)})}
           JS
+
+# Operator requested fresh direct paid work; exact job and prior-contract gates unchanged.
