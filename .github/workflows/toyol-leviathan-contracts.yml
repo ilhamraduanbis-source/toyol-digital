@@ -1,0 +1,70 @@
+name: Toyol Leviathan — Enterprise contract scout
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-leviathan-contracts.yml']
+  schedule:
+    - cron: '12 */12 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-leviathan-contracts
+  cancel-in-progress: false
+jobs:
+  scout:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Query published procurement notices, no bidding or registration
+        run: |
+          python3 - <<'PY'
+          import datetime,json,os,pathlib,re,urllib.request
+          now=datetime.datetime.now(datetime.timezone.utc)
+          since=(now-datetime.timedelta(days=30)).strftime('%Y%m%d')
+          endpoint='https://api.ted.europa.eu/v3/notices/search'
+          fields=['publication-number','notice-title','buyer-name','buyer-country','notice-type','estimated-value-proc','estimated-value-cur-proc','deadline-receipt-tender-date-lot']
+          def request(query):
+              payload={'query':query,'fields':fields,'limit':25,'page':1,'scope':'ACTIVE','paginationMode':'PAGE_NUMBER','checkQuerySyntax':False}
+              req=urllib.request.Request(endpoint,data=json.dumps(payload).encode(),headers={'Content-Type':'application/json','Accept':'application/json','User-Agent':'ToyolLeviathanResearch/1.0'},method='POST')
+              with urllib.request.urlopen(req,timeout=30) as resp:
+                  raw=resp.read(3000001)
+              if len(raw)>3000000: raise ValueError('RESPONSE_LIMIT')
+              data=json.loads(raw)
+              if not isinstance(data.get('notices'),list) or data.get('timedOut') is True: raise ValueError('INCOMPLETE_SEARCH')
+              return data
+          def flatten(v):
+              if isinstance(v,list): return [x for y in v for x in flatten(y)]
+              if isinstance(v,dict): return flatten(v.get('eng') or next(iter(v.values()),[]))
+              return [str(v)] if v is not None else []
+          def first(v):
+              x=flatten(v);return x[0] if x else None
+          results={};notices={}
+          for label,term in [('ai','artificial intelligence'),('software','software development')]:
+              query='FT~"'+term+'" AND publication-date>='+since+' AND notice-type=cn-standard AND estimated-value-proc>=500000 SORT BY publication-date DESC'
+              try:
+                  j=request(query)
+                  results[label]={'total':j.get('totalNoticeCount'),'returned':len(j['notices']),'query':query}
+                  for n in j['notices']:
+                      id=first(n.get('publication-number'))
+                      if not id or not re.fullmatch(r'\d+-\d{4}',id):continue
+                      # Values are procurement estimates, not contract awards or USD conversions.
+                      notices[id]={'id':id,'title':first(n.get('notice-title')),'buyer':first(n.get('buyer-name')),'country':first(n.get('buyer-country')),'value_raw':n.get('estimated-value-proc'),'currency_raw':n.get('estimated-value-cur-proc'),'deadline_raw':n.get('deadline-receipt-tender-date-lot'),'url':'https://ted.europa.eu/en/notice/-/detail/'+id,'status':'LEAD_ONLY_REVIEW_ELIGIBILITY','verified_income_usd':0}
+              except Exception as e:
+                  results[label]={'error':str(e)[:200],'query':query}
+          result={'at':now.isoformat(),'target_usd':500000,'mode':'PUBLIC_CONTRACT_DISCOVERY','sources':results,'leads':list(notices.values()),'bids_submitted':0,'contracts_awarded':0,'verified_income_usd':0,'owner_spend':0,'next_gate':'Verify exact notice, currency, deadline, supplier nationality and registration, references, security, subcontracting, delivery capacity and terms. No bid without owner approval and genuine capability.'}
+          pathlib.Path('out').mkdir(exist_ok=True)
+          pathlib.Path('out/leviathan-contracts.json').write_text(json.dumps(result,indent=2)+'\n')
+          print('LEVIATHAN_STATUS',json.dumps({k:v for k,v in result.items() if k!='leads'}))
+          for n in notices.values():print('ENTERPRISE_LEAD',json.dumps(n))
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write('## Enterprise contract discovery\n\n'+str(len(notices))+' distinct published procurement leads; values in original currencies. No verified eligible bid, award or income. See artifact.\n')
+          if all('error' in v for v in results.values()):raise SystemExit('ALL_SEARCHES_FAILED')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: leviathan-contracts
+          path: out/leviathan-contracts.json
+          retention-days: 30
+          if-no-files-found: error
