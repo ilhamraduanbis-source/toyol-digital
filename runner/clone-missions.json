@@ -81,6 +81,12 @@
       "workflow": "toyol-orion-mega-contracts.yml",
       "mode": "scheduled",
       "purpose": "USD5 million individual contract-value target: discover civil software, data and digital transformation procurement through official UK Find a Tender OCDS releases; verify latest source, eligibility, currency, scope and realistic subcontract delivery before bid. No owner spend, registration or bid submission."
+    },
+    {
+      "id": "nexus-cross-sector",
+      "workflow": "toyol-nexus-cross-sector.yml",
+      "mode": "scheduled",
+      "purpose": "Independent cross-sector paid-work discovery: academia, research software, education, data, translation, accessibility, business and civil public services. Prioritize explicit cash bounties and executable deliverables; distinguish procurement estimates, funding and awards. Prepare evidence-backed next actions; no ghostwriting, impersonation, duplicate claims, owner spend or unapproved external write."
     }
   ],
   "continuityPolicy": {

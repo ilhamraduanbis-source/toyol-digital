@@ -1,0 +1,36 @@
+name: Toyol Nexus — Cross-sector paid opportunity scout
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['src/nexus-cross-sector.py', '.github/workflows/toyol-nexus-cross-sector.yml']
+  schedule:
+    - cron: '23 */6 * * *'
+permissions:
+  contents: read
+  issues: read
+concurrency:
+  group: toyol-nexus-cross-sector
+  cancel-in-progress: false
+jobs:
+  scout:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Test cash evidence and eligibility gates
+        run: python3 src/nexus-cross-sector.py --test
+      - name: Hunt cross-sector paid work and preserve evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 src/nexus-cross-sector.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: nexus-cross-sector
+          path: out/nexus-cross-sector.json
+          retention-days: 14
+          if-no-files-found: error
