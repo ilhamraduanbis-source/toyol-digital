@@ -1,0 +1,106 @@
+name: Toyol — SwarmMemo round 11 offline history bug
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-swarmmemo-round11-history.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-swarmmemo-round11-history
+  cancel-in-progress: false
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Reproduce a local CLI pagination defect against official source, never production
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          mkdir -p swarm-round11
+          cd swarm-round11
+          curl -fsSL --max-time 25 https://raw.githubusercontent.com/Hugo0/swarmmemo/a807b2318fc99d03645dfd7aafb7db313553eed6/clients/python/swarmmemo.py -o swarmmemo.py
+          curl -fsSL --max-time 25 https://raw.githubusercontent.com/Hugo0/swarmmemo/a807b2318fc99d03645dfd7aafb7db313553eed6/clients/python/test_tool_history.py -o test_tool_history.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          b=Path('swarmmemo.py').read_bytes()
+          assert hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()=='89cd4c4ed03d7af39dc78e27fc5b59741bcdf8f1'
+          print('OFFICIAL_SOURCE_PIN_VERIFIED')
+          PY
+          python3 -m venv .venv
+          .venv/bin/pip -q install --disable-pip-version-check cryptography==44.0.3
+          cat > reproduce.py <<'PY'
+          import contextlib, io, json, tempfile
+          from pathlib import Path
+          from unittest.mock import patch
+          import swarmmemo as m
+          def trial(save, paged=True):
+              calls=[]
+              with tempfile.TemporaryDirectory() as d:
+                  p=Path(d)
+                  key=p/'throwaway.json'
+                  m.keygen(key)
+                  target=p/'request.json'
+                  def fake_request(self,path,body=None):
+                      assert path=='/v1/command' and body['operation']=='service.calls'
+                      assert body.get('signature'), 'expected signed local fixture'
+                      calls.append(body.get('cursor',''))
+                      return {'ok':True,'data':{'schema':1,'calls':[{'call_id': 'a' if len(calls)==1 else 'b'}],**({'next_cursor':'c1'} if len(calls)==1 and paged else {})}}
+                  argv=['--key',str(key)]+(['--save-request',str(target)] if save else [])+['history','--all','--limit','1']
+                  out,err=io.StringIO(),io.StringIO()
+                  with patch.object(m.Client,'_request',fake_request),contextlib.redirect_stdout(out),contextlib.redirect_stderr(err):
+                      try: rc=m.main(argv)
+                      except SystemExit as e: rc=e.code
+                  result={'exit':rc,'calls':calls,'saved':target.exists(),'stderr':err.getvalue().strip().splitlines()[-1:] ,'json':json.loads(out.getvalue()) if out.getvalue().strip() else None}
+                  return result
+          baseline=trial(False)
+          assert baseline['exit']==0 and baseline['calls']==['','c1'] and len(baseline['json']['calls'])==2
+          print('BASELINE_TWO_PAGES',json.dumps(baseline))
+          broken=trial(True)
+          print('ORIGINAL_SAVE_AND_ALL',json.dumps(broken))
+          assert broken['exit']==1 and broken['calls']==[''] and broken['saved'] and broken['json'] is None
+          assert 'FileExistsError' in ' '.join(broken['stderr'])
+          print('REPRO_CONFIRMED: first request saved, second page never sent, no complete history')
+          PY
+          .venv/bin/python reproduce.py | tee evidence.txt
+          .venv/bin/python -m unittest -v test_tool_history.py 2>&1 | tee -a evidence.txt
+          # Fail before a partial history fetch: same single-file safeguard as the existing post --claim guard.
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('swarmmemo.py')
+          s=p.read_text()
+          marker='    if args.action == "post" and args.claim and args.save_request:'
+          assert s.count(marker)==1
+          s=s.replace(marker,'    if args.action == "history" and args.all and args.save_request:\n        parser.error("--save-request cannot be combined with history --all; fetch one page at a time")\n'+marker,1)
+          p.write_text(s)
+          PY
+          .venv/bin/python - <<'PY' | tee -a evidence.txt
+          import contextlib, io, tempfile
+          from pathlib import Path
+          from unittest.mock import patch
+          import swarmmemo as m
+          with tempfile.TemporaryDirectory() as d:
+              dest=Path(d)/'request.json'
+              calls=[]
+              def fake(*args,**kwargs):
+                  calls.append(1)
+                  raise AssertionError('network call forbidden')
+              err=io.StringIO()
+              with patch.object(m.Client,'_request',fake),contextlib.redirect_stderr(err):
+                  try: m.main(['--save-request',str(dest),'history','--all','--limit','1'])
+                  except SystemExit as exc: assert exc.code==2
+                  else: raise AssertionError('expected parser failure')
+              assert not calls and not dest.exists() and 'fetch one page at a time' in err.getvalue()
+              print('PATCH_PASS: exit 2, zero requests, no partial file, actionable error')
+          PY
+          .venv/bin/python -m unittest -v test_tool_history.py 2>&1 | tee -a evidence.txt
+          echo 'OFFLINE_EVIDENCE_VERIFIED' | tee -a evidence.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: swarm-round11-history-evidence
+          path: ${{ runner.temp }}/swarm-round11/evidence.txt
+          retention-days: 7
+          if-no-files-found: ignore
