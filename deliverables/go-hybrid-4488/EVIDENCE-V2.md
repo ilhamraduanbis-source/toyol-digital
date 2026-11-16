@@ -14,6 +14,8 @@ for p in 1 2 4; do GOMAXPROCS=$p go test -race -count=1 -v ./...; done
 
 The repository file is a compact rendering of the original standalone Go test source. Earlier local execution on 15 November 2026 passed all three configurations. Per configuration: 100 controlled result orders of five workers yielded identical canonical plans under cap 5 and 100 aggregate rejections under cap 4; nine adversarial families times 20 orders yielded 180 deterministic rejection checks; overflow, missing identity and empty plan cases passed. Across three configurations: 300 controlled orders, 300 over-cap rejections, and 540 additional adversarial rejection checks. Seeded orders repeat and do not exhaust all possible schedules.
 
+Independent repeat execution on 16 November 2026 using the original standalone evidence bundle (Go 1.23.2, linux/amd64): `go test -race -count=1 -v ./...` passed at GOMAXPROCS 1, 2 and 4. Each run recorded 100 controlled orders, 100 aggregate rejections and 180 adversarial rejection checks. Runtime including race detector: 1.025s, 1.023s and 1.034s, respectively. These are controlled seeded checks, not exhaustive interleaving coverage. No new claim or payment is implied.
+
 ## Scope and additional design
 
 Fixed 128-bit resource identifiers; operation and uint64 allowance stored as values. Whole-batch error priority: identity, grant, conflict, budget. Subtract from remaining cap to avoid overflow. Sort valid plans by stable worker ID. No external effects are executed by the model.
