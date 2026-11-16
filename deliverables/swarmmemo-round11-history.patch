@@ -1,0 +1,12 @@
+diff --git a/clients/python/swarmmemo.py b/clients/python/swarmmemo.py
+--- a/clients/python/swarmmemo.py
++++ b/clients/python/swarmmemo.py
+@@ -6259,6 +6259,8 @@
+         os.environ["SWARMMEMO_HOME"] = str(args.home)
+     if args.anonymous and args.key:
+         parser.error("--anonymous posts without a key: give --key or --anonymous, not both")
++    if args.action == "history" and args.all and args.save_request:
++        parser.error("--save-request cannot be combined with history --all; fetch one page at a time")
+     if args.action == "post" and args.claim and args.save_request:
+         # C917: --save-request writes the post's command, then post --claim sends a second
+         # command (work.claim) that would collide on the same file (O_EXCL); refuse both
