@@ -63,3 +63,18 @@ test('future explicit deadline and arbitrary historical dates do not disqualify 
   assert.equal(evaluateOriginalIssue(task,{state:'open',body},now).suitable_for_draft,true);
  }
 });
+
+test('rewarded label beats stale index funding',()=>{
+ const result=evaluateOriginalIssue(task,{state:'open',labels:[{name:'💰 Rewarded'}]});
+ assert.equal(result.suitable_for_draft,false);
+ assert.equal(result.next_action,'REJECT_ALREADY_REWARDED');
+ assert.equal(evaluateOriginalIssue(task,{state:'open',labels:[{name:'Bounty'}]}).suitable_for_draft,true);
+});
+test('Tenstorrent terms gate autonomous participation without suppressing unrelated projects',()=>{
+ for(const issue of [{state:'open',assignees:[{login:'someone'}]},{state:'open',assignees:[]}]){
+  const result=evaluateOriginalIssue({...task,url:'https://github.com/tenstorrent/tt-metal/issues/62681'},issue);
+  assert.equal(result.suitable_for_draft,false);
+  assert.equal(result.next_action,'REJECT_AUTONOMOUS_PARTICIPATION_GATE');
+ }
+ assert.equal(evaluateOriginalIssue({...task,url:'https://github.com/example/tenstorrent/issues/1'},{state:'open'}).suitable_for_draft,true);
+});
