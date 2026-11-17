@@ -78,3 +78,6 @@ jobs:
         env:
           TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
         run: node src/wurk-markdown-toc-worker.mjs
+
+# Operator-requested recovery check after WURK HTTP 503 on read-only order overview.
+# The existing script still validates exact identity and any order before delivery.
