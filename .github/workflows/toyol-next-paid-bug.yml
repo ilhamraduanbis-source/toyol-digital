@@ -1,0 +1,30 @@
+name: Toyol — Proven Original Bug Paid-Round Watch
+on:
+  schedule:
+    - cron: '2,17,32,47 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/swarmmemo-next-paid-bug.py'
+      - '.github/workflows/toyol-next-paid-bug.yml'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-future-swarmmemo-bug-cash
+  cancel-in-progress: false
+jobs:
+  only-on-new-funded-original-bug:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Check real USDC bounty seats and submit only verified distinct offline evidence
+        env:
+          TOYOL_SWARMMEMO_SIGNER_JSON: ${{ secrets.TOYOL_SWARMMEMO_SIGNER_JSON }}
+        run: |
+          python3 -m py_compile src/swarmmemo-next-paid-bug.py src/swarmmemo-updates-follow-bug.py
+          python3 src/swarmmemo-next-paid-bug.py
