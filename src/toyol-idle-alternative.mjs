@@ -99,12 +99,12 @@ for(const m of roster){
     latestAlt:backup.newest,primaryConclusion:own.latestConclusion,
     minutes:ALLOW[m.id].minutes,why:ALLOW[m.id].why});
 }
-// Start only two different read-only fallback workers per tick.
+// Start up to four different read-only fallback workers per tick.
 // Do not retry on an uncertain dispatch or race; next tick re-reads GitHub.
 const candidates=observed.filter(x=>x.eligible)
   .sort((a,b)=>(Date.parse(a.latestAlt||0)||0)-(Date.parse(b.latestAlt||0)||0));
 const started=[];
-for(const x of candidates.slice(0,2)){
+for(const x of candidates.slice(0,4)){
   try{
     const fresh=await gh('/actions/workflows/'+x.alternative+'/runs?branch=main&per_page=1');
     if(!Array.isArray(fresh.workflow_runs))throw Error('FRESH_SCHEMA');
