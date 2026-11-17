@@ -8,7 +8,7 @@ on:
       - 'src/wurk-markdown-toc-worker.mjs'
       - 'deliverables/taskmarket-toc-20261115/toc.py'
   schedule:
-    - cron: '37 * * * *'
+    - cron: '7,22,37,52 * * * *'
 permissions:
   contents: read
 concurrency:
