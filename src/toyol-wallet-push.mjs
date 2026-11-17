@@ -104,6 +104,7 @@ async function run(){
   if(end<state.cursor)throw Error('FINALIZED_BLOCK_REGRESSION');
   if(end-state.cursor>100000)throw Error('GAP_TOO_LARGE_REQUIRES_REVIEW_NO_SKIP');
   const seen=new Set(state.seen);
+  const fromCursor=state.cursor;
   let alerts=0,scanned=0;
   for(let start=state.cursor+1;start<=end;start+=1000){
     const last=Math.min(end,start+999);
@@ -140,7 +141,7 @@ async function run(){
     state.seen=[...seen].slice(-300);
     await gh('/issues/comments/'+current.id,'PATCH',{body:body(state)});
   }
-  console.log('WALLET_PUSH_CHECK '+JSON.stringify({from:current?state.cursor:0,to:end,blocks:end-state.cursor,
+  console.log('WALLET_PUSH_CHECK '+JSON.stringify({from:fromCursor,to:end,blocks:end-fromCursor,
     chunks:scanned,alerts,notProofOfEarnedIncome:true}));
 }
 if(process.argv.includes('--self-test')){
