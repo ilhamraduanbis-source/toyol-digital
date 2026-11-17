@@ -105,33 +105,85 @@ def frantic_paid():
                     "task_url":"https://gofrantic.com/bounties/" + str(n)})
     return out
 
+def swarmmemo_discovered_tasks():
+    """Discover new reward-bearing rounds, without assuming a claimed award or payment.
+
+    The public earn/rewarded indexes are bounded, not a complete historical
+    ledger. The known-task fallback below preserves older receipts.
+    """
+    found = {}
+    for kind in ("earn", "rewarded"):
+        try:
+            payload = read_json("https://swarmmemo.com/api/works?kind=" + kind + "&limit=100")
+            rows = (payload.get("data") or {}).get("works", payload.get("works"))
+            if payload.get("ok") is not True or not isinstance(rows, list):
+                raise RuntimeError("Unexpected public index schema")
+            for work in rows:
+                if not isinstance(work, dict):
+                    continue
+                taskid = str(work.get("id") or "")
+                if not re.fullmatch(r"[a-f0-9]{32}", taskid):
+                    continue
+                standing = work.get("standing") or {}
+                tiers = standing.get("tiers") or []
+                monetary = any(isinstance(t, dict) and
+                               str(t.get("usdc") or "").strip() not in ("", "0", "0.00")
+                               for t in tiers)
+                monetary = monetary or bool(work.get("reward_usdc"))
+                if monetary:
+                    found.setdefault(taskid, "SwarmMemo " + str(work.get("title") or taskid)[:90])
+            print("SwarmMemo discovery " + kind + ": " + str(len(rows)) +
+                  " indexed entries; " + str(len(found)) + " unique cash candidates",
+                  flush=True)
+        except Exception as err:
+            print("SwarmMemo dynamic index unavailable: " + kind + " " +
+                  type(err).__name__, flush=True)
+    return found
+
+
 def paid_to_toyol():
     receipts = []
-    for label, taskid in TASKS.items():
-        payload = read_json("https://swarmmemo.com/api/work/" + taskid)
-        if not payload.get("ok"):
-            raise RuntimeError("Unverified task API response")
-        task = payload.get("data", {}).get("work") or {}
-        if task.get("id") != taskid:
-            raise RuntimeError("Unexpected source work identity")
-        for result in task.get("results") or []:
-            payout = (result.get("money") or {}).get("usdc") or {}
-            if payout.get("state") != "paid":
-                continue
-            if str(payout.get("pay_to") or "").lower() != ADDRESS.lower():
-                continue
-            tx = str(payout.get("tx_hash") or "")
-            if not TX_RE.fullmatch(tx):
-                continue
-            try:
-                amount = Decimal(str(payout.get("amount")))
-            except (TypeError, ValueError, InvalidOperation):
-                continue
-            if not amount.is_finite() or not (0 < amount <= 100):
-                continue
-            receipts.append({"task": label, "amount": amount, "tx": tx,
-                             "result_url": "https://swarmmemo.com/e/" + str(result.get("result_id") or ""),
-                             "task_url": "https://swarmmemo.com/work/" + taskid})
+    # De-duplicate legacy labels that point to the same task. New future rounds
+    # are discovered from public indexes automatically; no manually added ID.
+    tasks = {taskid: label for label, taskid in TASKS.items()}
+    for taskid, label in swarmmemo_discovered_tasks().items():
+        tasks.setdefault(taskid, label)
+    print("SwarmMemo unique tasks inspected: " + str(len(tasks)), flush=True)
+    for taskid, label in tasks.items():
+        try:
+            payload = read_json("https://swarmmemo.com/api/work/" + taskid)
+            if not payload.get("ok"):
+                raise RuntimeError("Unverified task API response")
+            task = payload.get("data", {}).get("work") or {}
+            if task.get("id") != taskid:
+                raise RuntimeError("Unexpected source work identity")
+            results = task.get("results")
+            if not isinstance(results, list):
+                raise RuntimeError("Missing payout result list")
+            for result in results:
+                payout = (result.get("money") or {}).get("usdc") or {}
+                if payout.get("state") != "paid":
+                    continue
+                if str(payout.get("pay_to") or "").lower() != ADDRESS.lower():
+                    continue
+                tx = str(payout.get("tx_hash") or "")
+                if not TX_RE.fullmatch(tx):
+                    continue
+                try:
+                    amount = Decimal(str(payout.get("amount")))
+                except (TypeError, ValueError, InvalidOperation):
+                    continue
+                if not amount.is_finite() or not (0 < amount <= 100):
+                    continue
+                rid = str(result.get("result_id") or "")
+                if not re.fullmatch(r"[a-f0-9]{32}", rid):
+                    continue
+                receipts.append({"task": label, "amount": amount, "tx": tx,
+                                 "result_url": "https://swarmmemo.com/e/" + rid,
+                                 "task_url": "https://swarmmemo.com/work/" + taskid})
+        except Exception as err:
+            print("SwarmMemo work read unavailable: " + taskid + " " +
+                  type(err).__name__, flush=True)
     return receipts
 
 def taskmarket_paid():
@@ -215,7 +267,13 @@ def main():
         except Exception as err:
             print("Source unavailable: " + reader.__name__ + " " + type(err).__name__, flush=True)
     paid = []
+    checked = set()
     for item in candidates:
+        # Multiple indexes may surface the same settlement. Check only once.
+        key = (item["tx"].lower(), str(item["amount"]))
+        if key in checked:
+            continue
+        checked.add(key)
         try:
             if check_base_transfer(item["tx"], item["amount"]):
                 paid.append(item)
