@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "S103B",
+  "next_module": "M07",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -613,6 +613,88 @@
       },
       "transfer_test_pass": true,
       "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44054171535",
+      "at": "2026-11-17T09:17:18.638964+00:00",
+      "module": "S103B",
+      "title": "Mantiq (S103)",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 3,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "المنطق التصور التصديق الحد القضية القياس البرهان الاستقراء",
+        "source": "https://api.crossref.org/works?query.bibliographic=%D8%A7%D9%84%D9%85%D9%86%D8%B7%D9%82+%D8%A7%D9%84%D8%AA%D8%B5%D9%88%D8%B1+%D8%A7%D9%84%D8%AA%D8%B5%D8%AF%D9%8A%D9%82+%D8%A7%D9%84%D8%AD%D8%AF+%D8%A7%D9%84%D9%82%D8%B6%D9%8A%D8%A9+%D8%A7%D9%84%D9%82%D9%8A%D8%A7%D8%B3+%D8%A7%D9%84%D8%A8%D8%B1%D9%87%D8%A7%D9%86+%D8%A7%D9%84%D8%A7%D8%B3%D8%AA%D9%82%D8%B1%D8%A7%D8%A1&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.35471/1268-000-052-017",
+            "title": "الاستدلال النحوي:, من مركزية الاستقراء إلى حتمية القياس",
+            "year": 2023,
+            "url": "https://doi.org/10.35471/1268-000-052-017",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.36317/0826-010-035-016",
+            "title": "التصور والتصديق في المنطق والنحو والبلاغة",
+            "year": 2018,
+            "url": "https://doi.org/10.36317/0826-010-035-016",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.36317/0826-009-027-016",
+            "title": "التصور والتصديق في المنطق الإسلامي :, دراسة تحليلية",
+            "year": 2016,
+            "url": "https://doi.org/10.36317/0826-009-027-016",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.12816/0027314",
+            "title": "المنطق التقليدي : فحص ابستمي في وظائف التصور",
+            "year": 2014,
+            "url": "https://doi.org/10.12816/0027314",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.59743/jau.v7i.253",
+            "title": "ما وراء المنطق بحث في أسس التصور والتصديق",
+            "year": 2007,
+            "url": "https://doi.org/10.59743/jau.v7i.253",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.35471/1268-000-052-017",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.36317/0826-010-035-016",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": {
+        "focus": "Tasawwur dan tasdiq",
+        "reading_targets": [
+          "al-Sullam al-Munawraq — ʿAbd al-Rahman al-Akhdari",
+          "al-Isaghuji — Athir al-Din al-Abhari"
+        ],
+        "edition_status": "UNVERIFIED_STAM_2008",
+        "full_text_reviewed": false,
+        "source_questions": [
+          "Apakah istilah Arab dan definisi asal?",
+          "Siapakah pengarang, apakah edisi dan lokasi teks?",
+          "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
+        ]
+      },
       "publication_anchor": null
     }
   ]
