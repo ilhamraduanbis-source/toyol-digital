@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M07",
+  "next_module": "S101",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -695,6 +695,75 @@
           "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
         ]
       },
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44072686965",
+      "at": "2026-11-17T11:17:49.589041+00:00",
+      "module": "M07",
+      "title": "Pengesahan sitasi dan bibliografi",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 2,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "citation verification bibliography",
+        "source": "https://api.crossref.org/works?query.bibliographic=citation+verification+bibliography&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.1007/bf02018238",
+            "title": "Scientometrics: A citation based bibliography, 1990",
+            "year": 1996,
+            "url": "https://doi.org/10.1007/bf02018238",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1007/bf02016910",
+            "title": "Scientometrics: A citation based bibliography, 1991",
+            "year": 1996,
+            "url": "https://doi.org/10.1007/bf02016910",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1007/bf02126650",
+            "title": "Scientometrics: A citation based bibliography, 1992",
+            "year": 1996,
+            "url": "https://doi.org/10.1007/bf02126650",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.7176/ikm/9-9-04",
+            "title": "Bibliography, Referencing and Bibliographic Citation: What Makes a Difference in Academic/Scholarly Writing?",
+            "year": 2019,
+            "url": "https://doi.org/10.7176/ikm/9-9-04",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1111/j.1399-6576.1965.tb00559.x",
+            "title": "BIBLIOGRAPHY AND CITATION INDEX",
+            "year": 1965,
+            "url": "https://doi.org/10.1111/j.1399-6576.1965.tb00559.x",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.1007/bf02018238",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.1007/bf02016910",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
       "publication_anchor": null
     }
   ]
