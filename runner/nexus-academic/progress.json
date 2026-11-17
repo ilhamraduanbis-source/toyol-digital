@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M05",
+  "next_module": "S103A",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -381,6 +381,78 @@
           "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
         ]
       },
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44012304522",
+      "at": "2026-11-17T03:44:47.536339+00:00",
+      "module": "M05",
+      "title": "Sorotan literatur dan jurang kajian",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 2,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "literature review Islamic philosophy",
+        "source": "https://api.crossref.org/works?query.bibliographic=literature+review+Islamic+philosophy&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.65190/636442",
+            "title": "Khaled El-Rouayheb and His Contribution to Islamic Philosophy: A Book Literature Review",
+            "year": 2024,
+            "url": "https://doi.org/10.65190/636442",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.5840/islamicphil2023141",
+            "title": "Editorial",
+            "year": 2023,
+            "url": "https://doi.org/10.5840/islamicphil2023141",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.5840/islamicphil200955",
+            "title": "A Philosopher’s Toolkit: A Review Essay",
+            "year": 2009,
+            "url": "https://doi.org/10.5840/islamicphil200955",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.59373/academicus.v5i2.154",
+            "title": "A Conceptual Model of Islamic Religious Education Learning Based on Islamic Educational Philosophy: A Literature Review",
+            "year": 2026,
+            "url": "https://doi.org/10.59373/academicus.v5i2.154",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.61132/wjilt.v1i4.119",
+            "title": "Literature Review on the Nature of Learners In the Philosophy of Islamic Education",
+            "year": 2024,
+            "url": "https://doi.org/10.61132/wjilt.v1i4.119",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.65190/636442",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.5840/islamicphil2023141",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 0,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
       "publication_anchor": null
     }
   ]
