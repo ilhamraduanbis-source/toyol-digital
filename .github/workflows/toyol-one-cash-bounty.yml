@@ -21,7 +21,7 @@ jobs:
           import json,urllib.request,urllib.error
           from urllib.parse import quote
           base='https://agent-forge-hb.fly.dev'
-          id='0x9eb7843432ba7c0577545b2a0f2ed640fddf50c01978751b71b5fa119385ac83'
+          id='0xd572e2b59a844021a26e725408d63ab9dacc9386ec7fe3e471c66d1d9f0b22ab'
           def read(url):
               req=urllib.request.Request(url,headers={'Accept':'application/json','User-Agent':'ToyolPaidExecution/1.0'})
               with urllib.request.urlopen(req,timeout=18) as r:
@@ -33,13 +33,13 @@ jobs:
               t=task.get('task',task)
               print('PAYMENT_GATE',json.dumps({k:t.get(k) for k in ('id','status','reward','rewardToken','stakeRequired','escrow','pendingActions','description')},ensure_ascii=False)[:7500])
               if t.get('status')!='open' or t.get('stakeRequired') is True:raise Exception('NOT_ELIGIBLE_NO_DEPOSIT')
-              p=read(base+'/v1/repos/football-manager-2/packets/matchday-flow')
+              p=read(base+'/v1/repos/tilefall/packets/tf-06')
               print('TARGET_PACKET',json.dumps(p,ensure_ascii=False)[:26000])
               ref=p.get('main')
               if not isinstance(ref,str) or not ref:raise Exception('MAIN_REF_MISSING')
-              for path in ['src/season.mjs','.plan/checks/matchday-flow.test.mjs','docs/CONTRACTS.md']:
+              for path in ['src/season.mjs','.plan/checks/tf-06.test.mjs','docs/CONTRACTS.md']:
                   try:
-                      d=read(base+'/v1/repos/football-manager-2/blob?ref='+quote(ref,safe='')+'&path='+quote(path,safe=''))
+                      d=read(base+'/v1/repos/tilefall/blob?ref='+quote(ref,safe='')+'&path='+quote(path,safe=''))
                       print('TARGET_FILE '+json.dumps({'path':path,'body':str(d.get('text',''))[:23000],'keys':list(d)},ensure_ascii=False)[:24000])
                   except Exception as e:print('TARGET_FILE_MISSING '+path+' '+str(e)[:170])
           except Exception as e:
