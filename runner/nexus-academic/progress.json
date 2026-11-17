@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M08",
+  "next_module": "S102",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -847,6 +847,78 @@
           "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
         ]
       },
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44113416625",
+      "at": "2026-11-17T15:21:54.107128+00:00",
+      "module": "M08",
+      "title": "Kaedah kualitatif dan kuantitatif",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 1,
+      "mastery_verified": false,
+      "literature": {
+        "query": "qualitative quantitative research religious studies",
+        "source": "https://api.crossref.org/works?query.bibliographic=qualitative+quantitative+research+religious+studies&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.1111/ijcs.12450",
+            "title": "Affect as a driver to religious‐based consumer boycotts: Evidence from qualitative and quantitative research in the United States",
+            "year": 2018,
+            "url": "https://doi.org/10.1111/ijcs.12450",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1097/00006199-198411000-00022",
+            "title": "Qualitative Vs. Quantitative Research or Qualitative and Quantitative Research?",
+            "year": 1984,
+            "url": "https://doi.org/10.1097/00006199-198411000-00022",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1162/qss_e_00061",
+            "title": "Bridging the divide between qualitative and quantitative science studies",
+            "year": 2020,
+            "url": "https://doi.org/10.1162/qss_e_00061",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1162/qss_a_00056",
+            "title": "Against method: Exploding the boundary between qualitative and quantitative studies of science",
+            "year": 2020,
+            "url": "https://doi.org/10.1162/qss_a_00056",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.58418/ijeqqr.v2i1.29",
+            "title": "Cultivating Religious Character through School Culture",
+            "year": 2023,
+            "url": "https://doi.org/10.58418/ijeqqr.v2i1.29",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.1111/ijcs.12450",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 145,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.1097/00006199-198411000-00022",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
       "publication_anchor": null
     }
   ]
