@@ -1,0 +1,74 @@
+name: Toyol — Independent AI Brain for Every Clone
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 */6 * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-clone-brains.yml'
+      - 'src/toyol-brain-cycle.mjs'
+      - 'src/toyol-brain-persist.mjs'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-independent-ai-brains
+  cancel-in-progress: false
+jobs:
+  independent-model-cycles:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 27
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Validate independent per-clone contexts without model download
+        run: |
+          node --check src/toyol-brain-cycle.mjs
+          node --check src/toyol-brain-persist.mjs
+          node src/toyol-brain-cycle.mjs --self-test
+      - name: Install independent local CPU model runtime (never invoke paid inference)
+        env:
+          HF_HUB_DISABLE_TELEMETRY: '1'
+          HF_HUB_DISABLE_IMPLICIT_TOKEN: '1'
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/toyol-brain-venv"
+          "$RUNNER_TEMP/toyol-brain-venv/bin/pip" install --disable-pip-version-check --no-input --index-url https://download.pytorch.org/whl/cpu 'torch==2.6.0'
+          "$RUNNER_TEMP/toyol-brain-venv/bin/pip" install --disable-pip-version-check --no-input 'transformers==4.51.3' 'huggingface-hub==0.30.2' 'safetensors==0.5.3'
+          "$RUNNER_TEMP/toyol-brain-venv/bin/python" - <<'PY'
+          import os,pathlib
+          from huggingface_hub import snapshot_download
+          dest=pathlib.Path(os.environ['RUNNER_TEMP'])/'toyol-brains-qwen'
+          snapshot_download(repo_id='Qwen/Qwen2.5-0.5B-Instruct',
+            revision='c89bee90d9f811437d9735454613c35b4a3c4dc8',
+            local_dir=str(dest),token=False,
+            allow_patterns=['config.json','generation_config.json','model.safetensors','tokenizer.json','tokenizer_config.json','vocab.json','merges.txt','LICENSE'])
+          for name in ('model.safetensors','config.json','tokenizer.json','tokenizer_config.json'):
+            if not (dest/name).is_file():raise SystemExit('PINNED_QWEN_MISSING_'+name)
+          print('INDEPENDENT_AI_MODEL_READY')
+          PY
+      - name: Run one real local Qwen inference with separate context for each registered clone
+        env:
+          HF_HUB_OFFLINE: '1'
+          TRANSFORMERS_OFFLINE: '1'
+        run: |
+          set -euo pipefail
+          export PATH="$RUNNER_TEMP/toyol-brain-venv/bin:$PATH"
+          export TOYOL_LOCAL_MODEL_DIR="$RUNNER_TEMP/toyol-brains-qwen"
+          node src/toyol-brain-cycle.mjs
+      - name: Save separated AI memory without touching any existing task worker
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node src/toyol-brain-persist.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: toyol-independent-clone-brain-evidence
+          path: out/brains/
+          retention-days: 7
+          if-no-files-found: ignore
