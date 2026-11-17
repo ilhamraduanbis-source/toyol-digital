@@ -2,7 +2,7 @@ name: Toyol — Independent AI Brain for Every Clone
 on:
   workflow_dispatch:
   schedule:
-    - cron: '41 */6 * * *'
+    - cron: '41 * * * *'
   push:
     branches: [main]
     paths:
