@@ -1,0 +1,45 @@
+name: Toyol — Direct Real Escrow Cash Candidate Scan
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-direct-real-escrow.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Filter real funded executable gigs, reject paid promotion and old closed bait
+        run: |
+          node --input-type=module <<'JS'
+          async function fetchJson(u){const r=await fetch(u,{headers:{Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error('HTTP_'+r.status);const t=await r.text();if(t.length>7000000)throw Error('BIG_RESPONSE');return JSON.parse(t)}
+          const now=Date.now(),queries=[
+            'https://jobbi.org/gigs.json?lane=agent&source=algora&min_reward=10&limit=200',
+            'https://jobbi.org/gigs.json?lane=agent&source=agentbounties&min_reward=1&limit=100',
+            'https://jobbi.org/gigs.json?lane=agent&source=bountyhub&min_reward=10&limit=100',
+            'https://jobbi.org/gigs.json?lane=agent&source=issuehunt&min_reward=10&limit=100'
+          ];
+          for(const url of queries){
+            try{
+              const j=await fetchJson(url),items=j.items??j.gigs??j.results??[];
+              const found=[];
+              for(const a of items){
+                const m=a._jobbi??{},v=m.reward??{},money=Number(v.amount),currency=v.currency??'';
+                const body=String(a.content_text??a.summary??'');
+                const title=String(a.title??'');
+                const text=(title+' '+body).toLowerCase();
+                const created=Date.parse(a.date_published??m.created_at??m.first_seen??m.updated_at??'');
+                if(m.lane!=='agent'||!Number.isFinite(money)||money<10||money>500||!['USD','USDC'].includes(currency))continue;
+                if(m.claims_open===false||/social media|tweet|instagram|reddit|referral|promot|cashback|deposit|stake|pay fee|registration fee|create an account to pay|manual phone|iphone|video|physical|pay to/.test(text))continue;
+                if(m.payment_state&&/unfunded|unverified|unknown/i.test(m.payment_state))continue;
+                const recency=Number.isFinite(created)?Math.round((now-created)/86400000):null;
+                found.push({url:a.url,title:title.slice(0,160),amount:money,currency,source:m.source,payment:m.payment_state??null,grade:m.payout_grade??null,acceptance:m.acceptance_type??null,ageDays:recency,brief:body.slice(0,320)});
+              }
+              found.sort((x,y)=>(x.ageDays??999)-(y.ageDays??999)||x.amount-y.amount);
+              console.log('FUNDING_SOURCE '+JSON.stringify({source:url.split('source=')[1].split('&')[0],count:items.length,qualified:found.length}));
+              for(const x of found.slice(0,22))console.log('FUNDED_WORK_CANDIDATE '+JSON.stringify(x));
+            }catch(e){console.log('FUNDING_SOURCE_UNAVAILABLE '+JSON.stringify({source:url.split('source=')[1].split('&')[0],reason:String(e.message).slice(0,160)}))}
+          }
+          JS
