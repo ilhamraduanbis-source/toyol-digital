@@ -1,6 +1,24 @@
 name: Toyol — Idle Clone Alternative Work
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - 'Toyol — Frantic Delivery Executor'
+      - 'Toyol — First External Paid QA (0.10 USDC, no deposit)'
+      - 'Toyol — Real Paid Data Brief (0.02 USDC)'
+      - 'Toyol — WURK Markdown TOC service'
+      - 'Toyol — Verified USDC Receipt Watch'
+      - 'Toyol — Go-Hybrid 4488 official verdict watch'
+      - 'Toyol — Makefun aggregator official entry'
+      - 'Toyol — Chess round 2 improve and enter'
+      - 'Toyol Hopper — Long-term MultiHopper partner watch'
+      - 'Toyol Leviathan — Enterprise contract scout'
+      - 'Toyol Titan — Major innovation award scout'
+      - 'Toyol Atlas — USD5M civil software contract scout'
+      - 'Toyol Orion — USD5M civil software contract scout'
+      - 'Toyol Nexus — Academic research and intellectual development'
+    types: [completed]
+    branches: [main]
   schedule:
     - cron: '*/5 * * * *'
   push:
@@ -16,7 +34,13 @@ concurrency:
   cancel-in-progress: false
 jobs:
   dispatch-verified-alternatives:
-    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    if: >-
+      github.repository == 'ilhamraduanbis-source/toyol-digital' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.event != 'pull_request'))
     runs-on: ubuntu-24.04
     timeout-minutes: 4
     steps:
@@ -27,7 +51,7 @@ jobs:
         run: |
           node --check src/toyol-idle-alternative.mjs
           node src/toyol-idle-alternative.mjs --self-test
-      - name: Dispatch up to two eligible independent read-only tasks without pausing originals
+      - name: Dispatch up to four eligible independent read-only tasks without pausing originals
         env:
           GH_TOKEN: ${{ github.token }}
         run: node src/toyol-idle-alternative.mjs
