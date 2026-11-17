@@ -1,0 +1,33 @@
+name: Toyol — Idle Clone Alternative Work
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'src/toyol-idle-alternative.mjs'
+      - '.github/workflows/toyol-idle-alternative.yml'
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: toyol-idle-alternative-dispatch
+  cancel-in-progress: false
+jobs:
+  dispatch-verified-alternatives:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify per-clone alternative work isolation and non-overlap
+        run: |
+          node --check src/toyol-idle-alternative.mjs
+          node src/toyol-idle-alternative.mjs --self-test
+      - name: Dispatch up to two eligible independent read-only tasks without pausing originals
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node src/toyol-idle-alternative.mjs
