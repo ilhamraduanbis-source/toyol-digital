@@ -1,0 +1,33 @@
+name: Toyol — Direct Base Wallet Push (ntfy)
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/toyol-wallet-push.mjs'
+      - '.github/workflows/toyol-wallet-push.yml'
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: toyol-wallet-push-independent
+  cancel-in-progress: false
+jobs:
+  finalized-wallet-events:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify wallet notifier invariants
+        run: |
+          node --check src/toyol-wallet-push.mjs
+          node src/toyol-wallet-push.mjs --self-test
+      - name: Watch finalized inbound Base USDC and deliver Android push independently
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node src/toyol-wallet-push.mjs
