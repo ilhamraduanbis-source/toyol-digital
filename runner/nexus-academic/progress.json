@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M10",
+  "next_module": "S105",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -1153,6 +1153,78 @@
           "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
         ]
       },
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44199962299",
+      "at": "2026-11-17T23:30:40.624975+00:00",
+      "module": "M10",
+      "title": "Integriti, ketulenan dan penggunaan AI",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "academic research integrity AI",
+        "source": "https://api.crossref.org/works?query.bibliographic=academic+research+integrity+AI&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.21275/sr261012234009",
+            "title": "From AI Detection to AI Literacy-Rethinking Academic Integrity in Higher Education",
+            "year": 2026,
+            "url": "https://doi.org/10.21275/sr261012234009",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.36948/ijfmr.2025.v07i02.40365",
+            "title": "The Quest for Academic Integrity During the Onslaught of Unregulated Generative AI Use: Integrating Integrity into AI Use via Policy at Laguna State Polytechnic University",
+            "year": 2025,
+            "url": "https://doi.org/10.36948/ijfmr.2025.v07i02.40365",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1016/j.ssaho.2025.101299",
+            "title": "Reassessing academic integrity in the age of AI: A systematic literature review on AI and academic integrity",
+            "year": 2025,
+            "url": "https://doi.org/10.1016/j.ssaho.2025.101299",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.56975/tijer.v13i5.162708",
+            "title": "Challenges of Maintaining Academic Integrity in the AI Era",
+            "year": 2026,
+            "url": "https://doi.org/10.56975/tijer.v13i5.162708",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.36948/ijfmr.2026.v08i04.85690",
+            "title": "Generative AI and Academic Integrity: A Sociological Perspective",
+            "year": 2026,
+            "url": "https://doi.org/10.36948/ijfmr.2026.v08i04.85690",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.21275/sr261012234009",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.36948/ijfmr.2025.v07i02.40365",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 232,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
       "publication_anchor": null
     }
   ]
