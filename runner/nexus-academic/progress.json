@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "S101",
+  "next_module": "M08",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -764,6 +764,89 @@
       },
       "transfer_test_pass": true,
       "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44091569932",
+      "at": "2026-11-17T13:19:35.622472+00:00",
+      "module": "S101",
+      "title": "Hifz al-Quran dan Tajwid (S101)",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 3,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "علم التجويد حفظ القرآن مخارج الحروف أحكام النون والميم والمد",
+        "source": "https://api.crossref.org/works?query.bibliographic=%D8%B9%D9%84%D9%85+%D8%A7%D9%84%D8%AA%D8%AC%D9%88%D9%8A%D8%AF+%D8%AD%D9%81%D8%B8+%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86+%D9%85%D8%AE%D8%A7%D8%B1%D8%AC+%D8%A7%D9%84%D8%AD%D8%B1%D9%88%D9%81+%D8%A3%D8%AD%D9%83%D8%A7%D9%85+%D8%A7%D9%84%D9%86%D9%88%D9%86+%D9%88%D8%A7%D9%84%D9%85%D9%8A%D9%85+%D9%88%D8%A7%D9%84%D9%85%D8%AF&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.35779/1718-007-001-015",
+            "title": "مخارج الحروف بين علماء التجويد والدرس الصوتي الحديث",
+            "year": 2021,
+            "url": "https://doi.org/10.35779/1718-007-001-015",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.35269/1452-000-039-006",
+            "title": "الدراسات الصوتية عند علماء التجويد وعلم الأصوات :, مخارج الحروف نموذجا",
+            "year": 2017,
+            "url": "https://doi.org/10.35269/1452-000-039-006",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.32894/1911-019-001-005",
+            "title": "مخارج الحروف وصفاتها في \"أرجوزة التجويد\" للدكتور عبدالستار فاضل النعيمي:, توثيق ودراسة",
+            "year": 2024,
+            "url": "https://doi.org/10.32894/1911-019-001-005",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.25130/jtuh.31.6.2024.19",
+            "title": "أثر برنامج الكتروني قائم على الذكاء الاصطناعي في إتقان مخارج الحروف ( التجويد والترتيل ) لمادة التلاوة والحفظ لدى طالبات قسم علوم القرآن والتربية الإسلامية وتنمية مهاراتهن الصوتية",
+            "year": 2024,
+            "url": "https://doi.org/10.25130/jtuh.31.6.2024.19",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.34277/1460-012-003-059",
+            "title": "منهج علماء التجويد في تناول الدرس الصوتي:, مخارج الحروف أنموذجاً عند أبي عمرو الداني ومكي بن أبي طالب القيسي",
+            "year": 2024,
+            "url": "https://doi.org/10.34277/1460-012-003-059",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.35779/1718-007-001-015",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.35269/1452-000-039-006",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": {
+        "focus": "Pengenalpastian dan susunan ayat",
+        "reading_targets": [
+          "Mushaf al-Quran dengan riwayat yang dinyatakan",
+          "Tuhfat al-Atfal — Sulayman al-Jamzuri",
+          "al-Muqaddimah al-Jazariyyah — Ibn al-Jazari"
+        ],
+        "edition_status": "UNVERIFIED_STAM_2008",
+        "full_text_reviewed": false,
+        "source_questions": [
+          "Apakah istilah Arab dan definisi asal?",
+          "Siapakah pengarang, apakah edisi dan lokasi teks?",
+          "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
+        ]
+      },
       "publication_anchor": null
     }
   ]
