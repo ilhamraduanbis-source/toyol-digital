@@ -1,0 +1,28 @@
+name: Toyol — Original SwarmMemo Paid Bug Attempt
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/swarmmemo-updates-follow-bug.py'
+      - '.github/workflows/toyol-swarmmemo-updates-follow-bug.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: toyol-swarmmemo-original-follow-bug
+  cancel-in-progress: false
+jobs:
+  prove-and-claim:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Reproduce one distinct offline bug and submit only if same-day eligibility and paid slot are verified
+        env:
+          TOYOL_SWARMMEMO_SIGNER_JSON: ${{ secrets.TOYOL_SWARMMEMO_SIGNER_JSON }}
+        run: |
+          python3 -m py_compile src/swarmmemo-updates-follow-bug.py
+          python3 src/swarmmemo-updates-follow-bug.py
