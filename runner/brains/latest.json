@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "source": "Independent Qwen local model; each clone has its own bounded context and state",
+  "lastRunId": null,
+  "updatedAt": null,
+  "agents": {}
+}
