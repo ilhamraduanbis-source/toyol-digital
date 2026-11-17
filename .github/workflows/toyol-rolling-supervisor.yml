@@ -1,0 +1,36 @@
+name: Toyol — Rolling Nonstop Supervisor
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-rolling-supervisor.yml'
+      - 'src/toyol-rolling-supervisor.mjs'
+      - 'src/toyol-idle-alternative.mjs'
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: toyol-rolling-supervisor-main
+  cancel-in-progress: false
+jobs:
+  rolling-clone-work:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 19
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Validate local task policy and rotating supervision rules
+        run: |
+          node --check src/toyol-idle-alternative.mjs
+          node src/toyol-idle-alternative.mjs --self-test
+          node --check src/toyol-rolling-supervisor.mjs
+          node src/toyol-rolling-supervisor.mjs --self-test
+      - name: Supervise all 14 clone lanes, launch safe alternatives and hand off to next runner
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node src/toyol-rolling-supervisor.mjs
