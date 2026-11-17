@@ -1,0 +1,47 @@
+name: Toyol — Immediate Frantic Cash Eligibility Check
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-immediate-frantic-cash.yml']
+permissions:
+  contents: read
+jobs:
+  gate:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Read legitimate paid Frantic contract details and exact worker account readiness
+        env:
+          FRANTIC_AGENT_TOKEN: ${{ secrets.FRANTIC_AGENT_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const root='https://gofrantic.com',token=process.env.FRANTIC_AGENT_TOKEN,kid='agent-65c3b0';
+          if(!/^fr_agent_[A-Za-z0-9_-]+$/.test(token||''))throw Error('FRANTIC_ACCOUNT_NOT_READY');
+          async function get(path){
+            const r=await fetch(root+path,{headers:{Authorization:'Bearer '+token,Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(16000)});
+            if(!r.ok)throw Error('HTTP_'+r.status+'_'+path);
+            return r.json();
+          }
+          const s=await get('/v1/agents/'+kid+'/status');
+          if(s.agent?.kid!==kid)throw Error('ACCOUNT_ID_MISMATCH');
+          console.log('WORKER_READINESS '+JSON.stringify({
+            claimEligible:s.agent?.claimEligibility?.eligible??null,
+            sworn:s.verification?.sworn??null,payoutReady:s.agent?.onboarding?.payout?.set??null,
+            active:(s.work?.open??[]).map(x=>({n:x.bounty?.number,stage:x.stage,claimId:x.claimId,deliveryDue:x.deliver_deadline_at})),
+            settled:(s.work?.settled??[]).map(x=>({n:x.bounty?.number,stage:x.stage}))}));
+          for(const n of [147,149,128,97]){
+            try{
+              const j=await get('/v1/bounties/'+n),b=j.bounty??j;
+              console.log('EXACT_FUNDED_CONTRACT '+JSON.stringify({
+                n,title:b.title,price:b.price_usd,cents:b.price_cents,
+                funded:b.funded,public:b.visibility,
+                workStatus:b.work_status,claim_progress:b.claim_progress,
+                criteria:b.criteria,description:String(b.description??'').slice(0,11000),
+                delivery_contract:b.delivery_contract,eligibility:b.eligibility,
+                terms:b.terms??null
+              }).slice(0,23000));
+            }catch(e){console.log('CONTRACT_CHECK_UNAVAILABLE '+JSON.stringify({n,error:String(e.message).slice(0,170)}));}
+          }
+          JS
