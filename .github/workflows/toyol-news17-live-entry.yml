@@ -1,0 +1,133 @@
+name: Toyol — News17 USDC real entry
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-news17-live-entry.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-news17-entry
+  cancel-in-progress: false
+jobs:
+  enter:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 36
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Download official kit, check zero entry fee, install free AI harness
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/news17"
+          mkdir -p "$root/entry" "$root/evidence" "$root/home" "$root/tools"
+          curl -fsSL --max-time 25 https://make.fun/api/competitions/news-image-20261117/requirements -o "$root/requirements.json"
+          python3 - "$root/requirements.json" <<'PY'
+          import json,sys
+          j=json.load(open(sys.argv[1]))
+          assert j['competition']['slug']=='news-image-20261117' and j['competition']['status']=='open'
+          f=j.get('entry_fee') or {}
+          assert not f.get('required') and float(f.get('amount_usd') or f.get('amount') or 0)==0,'ENTRY_FEE_REFUSED'
+          print('FREE_LIVE_CONTEST_VERIFIED')
+          PY
+          curl -fsSL --max-time 45 https://make.fun/c/news-image-20261117/kit -o "$root/kit.tar.gz"
+          python3 - "$root" <<'PY'
+          import tarfile,pathlib,sys
+          p=pathlib.Path(sys.argv[1])
+          with tarfile.open(p/'kit.tar.gz') as t:
+              a=t.getmembers()
+              assert sum(x.size for x in a)<100000000
+              assert all(not x.name.startswith('/') and '..' not in pathlib.PurePosixPath(x.name).parts and (x.isfile() or x.isdir()) for x in a)
+              t.extractall(p,filter='data')
+          PY
+          npm install --prefix "$root/tools" --no-audit --no-fund @opencode/cli@2.3.0
+          python3 -m pip install -q --disable-pip-version-check --target "$root/py" Pillow==11.3.0
+          echo "$root/tools/node_modules/.bin" >> "$GITHUB_PATH"
+      - name: Make actual original entry in recorded free model sessions, then official check
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/news17"
+          kit="$root/news-image-20261117-kit"
+          export HOME="$root/home" XDG_DATA_HOME="$root/home/.local/share" XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_CACHE_HOME="$root/home/.cache"
+          export PYTHONPATH="$root/py" OPENCODE_DISABLE_AUTOSHARE=true
+          unset GITHUB_TOKEN GH_TOKEN OPENAI_API_KEY ANTHROPIC_API_KEY OPENCODE_API_KEY
+          cd "$root/entry"
+          node "$kit/cli/makefun.mjs" init --competition news-image-20261117 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT
+          if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then git init -q; fi
+          printf '%s\n' 'Aku tak kira! Nak jugak sebelum 8 jam akan datang mana yg ada peluang tu hantar jugak klon yg ada' > "$root/owner-prompt.txt"
+          printf '%s\n' 'withheld: assistant system instructions cannot be republished' > "$root/system-prompt.txt"
+          timeout 75 opencode models --standalone > "$root/models.txt"
+          curl -fsSL --max-time 20 https://models.dev/api.json -o "$root/prices.json"
+          MODEL=$(python3 - "$root" <<'PY'
+          import json,re,sys,pathlib
+          p=pathlib.Path(sys.argv[1])
+          a=set(re.findall(r'opencode/[a-zA-Z0-9_.-]+',(p/'models.txt').read_text()))
+          d=json.loads((p/'prices.json').read_text()).get('opencode',{}).get('models',{})
+          c=[k for k,v in d.items() if ('opencode/'+k) in a and (k.endswith('-free') or k=='big-pickle') and v.get('cost',{}).get('input')==0 and v.get('cost',{}).get('output')==0]
+          if not c:raise SystemExit('NO_VERIFIED_FREE_MODEL')
+          print('opencode/'+('big-pickle' if 'big-pickle' in c else c[0]))
+          PY
+          )
+          echo "FREE_AI_MODEL $MODEL"
+          python3 - "$MODEL" <<'PY'
+          import json,sys
+          json.dump({"model":sys.argv[1],"small_model":sys.argv[1],"share":"disabled","autoupdate":False,"permission":{"edit":"allow","read":"allow","bash":"allow","webfetch":"deny","websearch":"deny","external_directory":"allow"}},open('opencode.json','w'))
+          PY
+          git add -A
+          git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm 'Initialize news illustration'
+          for n in 1 2 3; do
+            if test "$n" -eq 1; then
+              prompt="Real owner asked Toyol to enter paid competitions. Read official RULES.txt at $kit and requirements at $root/requirements.json. NOW CREATE original build script tools/draw.py using Python Pillow (Pillow available through PYTHONPATH) to draw a striking polished 1024x1024 news editorial image assets/entry.png below 1 MiB, with prominent date 17 NOV 2026. Five factual news motifs: Iran-US conflict near Bahrain (AP, November 17), Trump Asia diplomacy in Manila/APEC Shenzhen (AP), COP31 climate negotiations (Reuters), Ukraine air-defense appeals (Guardian), AI/chips industry disruption (Reuters). Make creative strong visual hierarchy with map/globe illustration, geometric light, unique custom vector drawings and readable labels, no scraped images or third party trademarks. Write main.py using stdlib to copy assets/entry.png to /output/entry.png at runtime, deterministic. Write LICENSE MIT and docs/sources.md with links to https://apnews.com/article/582e0b5d51be06f0ed630fac24f39b72 and https://www.reuters.com/sustainability/cop31-off-rocky-start-2026-11-17/ and https://apnews.com/article/c94386cd092482d94dca38fc8b8d51a7. Execute draw.py. Make real changes immediately. Do not use paid models, wallets, secrets or submit."
+              timeout --kill-after=5s 290s opencode run --standalone --model "$MODEL" --format json "$prompt" </dev/null > "$root/evidence/agent-1.jsonl" 2> "$root/evidence/agent-1.stderr" || echo "FIRST_AGENT_STOP"
+            else
+              prompt="Improve original news image layout, make illustrations elegant and information accurate and readable; inspect source files, modify tools/draw.py significantly, rerun it and verify assets/entry.png 1024x1024 under 1 MiB. Test main.py, make sure it writes identical PNG bytes twice with network disabled. Follow kit requirements. Do not submit or fake tests."
+              timeout --kill-after=5s 290s opencode run --standalone --continue --model "$MODEL" --format json "$prompt" </dev/null > "$root/evidence/agent-$n.jsonl" 2> "$root/evidence/agent-$n.stderr" || echo "REVISION_AGENT_STOP"
+            fi
+            git add -A
+            if ! git diff --cached --quiet; then git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm "Original agent image revision $n"; fi
+          done
+          python3 - <<'PY'
+          import pathlib,struct,hashlib
+          b=pathlib.Path('assets/entry.png').read_bytes()
+          assert b[:8]==b'\x89PNG\r\n\x1a\n' and struct.unpack('>II',b[16:24])==(1024,1024) and len(b)<1048576,'IMAGE_INVALID'
+          assert pathlib.Path('main.py').is_file()
+          print('IMAGE_READY',len(b),hashlib.sha256(b).hexdigest())
+          PY
+          node "$kit/cli/makefun.mjs" bundle --repo "$root/entry" --out "$root/transcripts.tar.gz" --opencode-dir "$XDG_DATA_HOME/opencode" --harness opencode --harness-version 2.3.0 --model "$MODEL" --provider opencode --prompt-file "$root/owner-prompt.txt" --prompt-origin handed-off --prompt-via 'Owner instruction in ChatGPT to Toyol clones' --system-prompt "$root/system-prompt.txt" --instructions none --effort default --mcp none
+          node "$kit/cli/makefun.mjs" check --kit "$kit" --repo "$root/entry" --transcripts "$root/transcripts.tar.gz" --json > "$root/evidence/check.json"
+          git bundle create "$root/evidence/source.bundle" HEAD
+          echo 'NEWS17_OFFICIAL_GATE_PASS'
+      - name: Submit checked entry using existing Solana identity, no payment
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/news17"
+          kit="$root/news-image-20261117-kit"
+          export HOME="$root/submit-home"
+          mkdir -p "$HOME"
+          chmod 700 "$HOME"
+          test "$(date -u +%Y%m%d%H%M)" -lt 202611190000 || { echo 'CLOSED'; exit 0; }
+          test -s "$root/transcripts.tar.gz" && test -s "$root/evidence/check.json"
+          test -n "$TOYOL_SOLANA_KEYPAIR_JSON"
+          umask 077
+          key="$HOME/key.json"
+          trap 'rm -f "$key"; rm -rf "$HOME/.makefun"' EXIT
+          printf '%s' "$TOYOL_SOLANA_KEYPAIR_JSON" > "$key"
+          unset TOYOL_SOLANA_KEYPAIR_JSON
+          node "$kit/cli/makefun.mjs" register --keypair "$key" --origin https://make.fun --name Toyol-Digital --json > "$HOME/auth.json"
+          cd "$root/entry"
+          node "$kit/cli/makefun.mjs" submit --competition news-image-20261117 --source "$root/entry" --commit "$(git rev-parse HEAD)" --bundle "$root/transcripts.tar.gz" --keypair "$key" --origin https://make.fun --title 'Toyol 17 November World News' --json > "$HOME/receipt.json"
+          python3 - "$HOME/receipt.json" <<'PY'
+          import json,sys
+          j=json.load(open(sys.argv[1]))
+          print('OFFICIAL_SUBMISSION_RECEIPT',json.dumps({k:v for k,v in j.items() if k in ('id','submission_id','entry_id','status','stage','outcome','success')}))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: news17-source-and-check-evidence
+          path: ${{ runner.temp }}/news17/evidence/
+          retention-days: 7
+          if-no-files-found: ignore
