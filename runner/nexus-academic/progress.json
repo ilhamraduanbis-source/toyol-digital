@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "S105",
+  "next_module": "M11",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -1225,6 +1225,88 @@
       },
       "transfer_test_pass": true,
       "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44216571286",
+      "at": "2026-11-18T01:32:31.819227+00:00",
+      "module": "S105",
+      "title": "Hadith dan Mustolah (S105)",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 3,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "مصطلح الحديث الصحيح الحسن الضعيف الإسناد المتن التخريج",
+        "source": "https://api.crossref.org/works?query.bibliographic=%D9%85%D8%B5%D8%B7%D9%84%D8%AD+%D8%A7%D9%84%D8%AD%D8%AF%D9%8A%D8%AB+%D8%A7%D9%84%D8%B5%D8%AD%D9%8A%D8%AD+%D8%A7%D9%84%D8%AD%D8%B3%D9%86+%D8%A7%D9%84%D8%B6%D8%B9%D9%8A%D9%81+%D8%A7%D9%84%D8%A5%D8%B3%D9%86%D8%A7%D8%AF+%D8%A7%D9%84%D9%85%D8%AA%D9%86+%D8%A7%D9%84%D8%AA%D8%AE%D8%B1%D9%8A%D8%AC&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.34028/1069-024-003-003",
+            "title": "منهج الإمام البخاري في تطبيقات أحاديث الرواة الذين خف ضبطهم من خلال كتابه الجامع الصحيح:, الحديث الحسن عند بعض المحدثين",
+            "year": 2024,
+            "url": "https://doi.org/10.34028/1069-024-003-003",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.46313/1707-028-004-014",
+            "title": "العلاقة بين صحة الإسناد وصحة المتن عند المحدثين:, دراسة نظرية",
+            "year": 2024,
+            "url": "https://doi.org/10.46313/1707-028-004-014",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.55625/0535-018-045-007",
+            "title": "فوح الأريج في تحقيق مصطلح التخريج",
+            "year": 2022,
+            "url": "https://doi.org/10.55625/0535-018-045-007",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.51837/0827-000-066-036",
+            "title": "اتصال الإسناد وانقطاعه عند أئمة نقد الحديث:, دراسة في صيغ الإسناد ودلالاتها",
+            "year": 2022,
+            "url": "https://doi.org/10.51837/0827-000-066-036",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.54191/2320-000-003-004",
+            "title": "مصطلح التناص في النقد الحديث",
+            "year": 2011,
+            "url": "https://doi.org/10.54191/2320-000-003-004",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.34028/1069-024-003-003",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.46313/1707-028-004-014",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": {
+        "focus": "Sanad dan matan",
+        "reading_targets": [
+          "Nukhbat al-Fikar — Ibn Hajar al-ʿAsqalani",
+          "Muqaddimah Ibn al-Salah"
+        ],
+        "edition_status": "UNVERIFIED_STAM_2008",
+        "full_text_reviewed": false,
+        "source_questions": [
+          "Apakah istilah Arab dan definisi asal?",
+          "Siapakah pengarang, apakah edisi dan lokasi teks?",
+          "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
+        ]
+      },
       "publication_anchor": null
     }
   ]
