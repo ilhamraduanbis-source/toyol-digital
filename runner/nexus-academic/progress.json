@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M14",
+  "next_module": "S109",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -1782,6 +1782,84 @@
           "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
         ]
       },
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44327004061",
+      "at": "2026-11-18T14:41:39.663697+00:00",
+      "module": "M14",
+      "title": "Falsafah Islam klasik dan kontemporari",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 3,
+      "sources_total": 4,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Islamic philosophy Avicenna al Ghazali Ibn Rushd metaphysics",
+        "source": "https://api.crossref.org/works?query.bibliographic=Islamic+philosophy+Avicenna+al+Ghazali+Ibn+Rushd+metaphysics&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.71456/jis.v3i3.1492",
+            "title": "Epistemologi Ibnu Rusyd, Al-Ghazali, dan Ibnu Sina: Perspektif Filsafat Islam",
+            "year": 2025,
+            "url": "https://doi.org/10.71456/jis.v3i3.1492",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1558/cis.v3i2.247",
+            "title": "Al-Farabi and Ibn-Rushd on the Correlation between Philosophy and Religion",
+            "year": 2007,
+            "url": "https://doi.org/10.1558/cis.v3i2.247",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1353/pew.2008.0020",
+            "title": "God and Humans in Islamic Thought: 'Abd al-Jabbar, Ibn Sina and al-Ghazali (review)",
+            "year": 2008,
+            "url": "https://doi.org/10.1353/pew.2008.0020",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.21580/teo.2021.32.1.8330",
+            "title": "Counter-Discourse on The Criticism of Ibn Rushd Toward al-Ghazali",
+            "year": 2021,
+            "url": "https://doi.org/10.21580/teo.2021.32.1.8330",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1093/jis/etaf035",
+            "title": "<i>Coherence of the Incoherence: Between al-Ghazali and Ibn Rushd on Nature and the Cosmos</i>\n                    By\n                    <scp>Edward Omar Moad</scp>",
+            "year": 2025,
+            "url": "https://doi.org/10.1093/jis/etaf035",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.71456/jis.v3i3.1492",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 178,
+            "signals": [
+              "qualitative",
+              "document_analysis"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.1558/cis.v3i2.247",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 163,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
       "publication_anchor": null
     }
   ]
