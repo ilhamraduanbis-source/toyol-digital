@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "S108",
+  "next_module": "M14",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -1700,6 +1700,88 @@
       },
       "transfer_test_pass": true,
       "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44305946578",
+      "at": "2026-11-18T12:39:20.995999+00:00",
+      "module": "S108",
+      "title": "Adab dan Nusus (S108)",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 2,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "الأدب العربي النصوص الشعر الجاهلي الأموي العباسي النثر",
+        "source": "https://api.crossref.org/works?query.bibliographic=%D8%A7%D9%84%D8%A3%D8%AF%D8%A8+%D8%A7%D9%84%D8%B9%D8%B1%D8%A8%D9%8A+%D8%A7%D9%84%D9%86%D8%B5%D9%88%D8%B5+%D8%A7%D9%84%D8%B4%D8%B9%D8%B1+%D8%A7%D9%84%D8%AC%D8%A7%D9%87%D9%84%D9%8A+%D8%A7%D9%84%D8%A3%D9%85%D9%88%D9%8A+%D8%A7%D9%84%D8%B9%D8%A8%D8%A7%D8%B3%D9%8A+%D8%A7%D9%84%D9%86%D8%AB%D8%B1&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.46968/0326-014-002-017",
+            "title": "قافية الشعر العربي و محاولة الخروج عليها من العص الجاهلي حتى أواسط العصر العباسي",
+            "year": 1988,
+            "url": "https://doi.org/10.46968/0326-014-002-017",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.51405/0639-002-001-003",
+            "title": "البعدان الطبيعي والمادي للعمران في الشعر العربي من العصر الجاهلي إلى نهاية العصر الأموي",
+            "year": 2005,
+            "url": "https://doi.org/10.51405/0639-002-001-003",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.21608/fehrst.2007.412222",
+            "title": "عروض موقعة: الأسرة العربية في الأدب العربي: العصر الجاهلي، العصر العباسي",
+            "year": 2007,
+            "url": "https://doi.org/10.21608/fehrst.2007.412222",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.36317/0826-012-046-030",
+            "title": "جمالية التعبير عن طول الليل في الشعر العربي من العصر الجاهلي حتى نهاية العصر العباسي",
+            "year": 2020,
+            "url": "https://doi.org/10.36317/0826-012-046-030",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.34120/ajh.v21i81.1901",
+            "title": "من إشكاليات المنهج في تاريخ الأدب العربي: الشعر العباسي نموذجاً.",
+            "year": 2003,
+            "url": "https://doi.org/10.34120/ajh.v21i81.1901",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.46968/0326-014-002-017",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.51405/0639-002-001-003",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": {
+        "focus": "Zaman dan konteks sastera Arab",
+        "reading_targets": [
+          "al-Bayan wa al-Tabyin — al-Jahiz",
+          "Diwan al-Mutanabbi"
+        ],
+        "edition_status": "UNVERIFIED_STAM_2008",
+        "full_text_reviewed": false,
+        "source_questions": [
+          "Apakah istilah Arab dan definisi asal?",
+          "Siapakah pengarang, apakah edisi dan lokasi teks?",
+          "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
+        ]
+      },
       "publication_anchor": null
     }
   ]
