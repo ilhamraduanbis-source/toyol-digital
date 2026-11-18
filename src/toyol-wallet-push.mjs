@@ -102,16 +102,20 @@ async function run(){
   const state=parseBody(current.body);
   if(!state)throw Error('STATE_MISSING');
   if(end<state.cursor)throw Error('FINALIZED_BLOCK_REGRESSION');
-  if(end-state.cursor>100000)throw Error('GAP_TOO_LARGE_REQUIRES_REVIEW_NO_SKIP');
+  // Catch up in bounded, contiguous ranges. Never advance past an unchecked block.
+  // Also inspect the latest finalized blocks immediately so a genuine new payment
+  // can notify the owner even while the older cursor is catching up.
+  const MAX_BACKLOG_BLOCKS=120000;
+  const scanEnd=Math.min(end,state.cursor+MAX_BACKLOG_BLOCKS);
   const seen=new Set(state.seen);
   const fromCursor=state.cursor;
-  let alerts=0,scanned=0;
-  for(let start=state.cursor+1;start<=end;start+=1000){
-    const last=Math.min(end,start+999);
+  let alerts=0,scanned=0,recentBlocksChecked=0;
+  async function inspect(start,last,lane){
+    if(start>last)return;
     const rows=await rpc('eth_getLogs',[{address:TOKEN,
       fromBlock:'0x'+start.toString(16),toBlock:'0x'+last.toString(16),
       topics:[TRANSFER,null,addressTopic]}]);
-    if(!Array.isArray(rows))throw Error('INVALID_LOG_SET');
+    if(!Array.isArray(rows))throw Error('INVALID_LOG_SET_'+lane);
     for(const x of rows){
       if(x.removed||String(x.address).toLowerCase()!==TOKEN||
          String(x.topics?.[0]).toLowerCase()!==TRANSFER||
@@ -128,21 +132,33 @@ async function run(){
         usdc+' USDC diterima pada Base. Sumber transaksi belum disahkan sebagai pendapatan. Tx '+tx.slice(0,12)+'... Klik untuk bukti.',
         'https://basescan.org/tx/'+tx);
       seen.add(id);alerts++;
-      // Save each published push before moving the scan cursor. Failed ntfy
-      // responses leave the event eligible for a later check (no false success).
       state.seen=[...seen].slice(-300);
       await gh('/issues/comments/'+current.id,'PATCH',{body:body(state)});
-      console.log('NEW_WALLET_PUSH '+JSON.stringify({tx,logIndex:index,usdc,ack}));
+      console.log('NEW_WALLET_PUSH '+JSON.stringify({tx,logIndex:index,usdc,ack,lane}));
     }
+  }
+  // Fast path for new transactions; it never changes the historical cursor.
+  // Once the contiguous scan reaches these blocks, seen IDs prevent re-alerts.
+  const recentStart=Math.max(fromCursor+1,end-3599);
+  if(recentStart<=end){
+    await inspect(recentStart,end,'recent_finalized');
+    recentBlocksChecked=end-recentStart+1;
+  }
+  for(let start=fromCursor+1;start<=scanEnd;start+=1000){
+    const last=Math.min(scanEnd,start+999);
+    await inspect(start,last,'contiguous_catchup');
     scanned++;
+    // Persist each verified 10,000-block checkpoint. If a later RPC fails,
+    // next run resumes without gaps, skips, or stale false-success.
+    if(last===scanEnd || last-state.cursor>=10000){
+      state.cursor=last;
+      state.seen=[...seen].slice(-300);
+      await gh('/issues/comments/'+current.id,'PATCH',{body:body(state)});
+    }
   }
-  if(state.cursor!==end){
-    state.cursor=end;
-    state.seen=[...seen].slice(-300);
-    await gh('/issues/comments/'+current.id,'PATCH',{body:body(state)});
-  }
-  console.log('WALLET_PUSH_CHECK '+JSON.stringify({from:fromCursor,to:end,blocks:end-fromCursor,
-    chunks:scanned,alerts,notProofOfEarnedIncome:true}));
+  console.log('WALLET_PUSH_CHECK '+JSON.stringify({from:fromCursor,to:scanEnd,
+    finalizedEnd:end,remaining:end-scanEnd,chunks:scanned,recentBlocksChecked,
+    alerts,catchupComplete:scanEnd===end,notProofOfEarnedIncome:true}));
 }
 if(process.argv.includes('--self-test')){
   const s={version:1,wallet:WALLET,cursor:58000000,seen:[]};
