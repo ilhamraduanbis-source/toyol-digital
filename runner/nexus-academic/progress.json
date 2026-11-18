@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M16",
+  "next_module": "M17",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -2106,6 +2106,75 @@
           "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
         ]
       },
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44422459292",
+      "at": "2026-11-18T23:38:32.033334+00:00",
+      "module": "M16",
+      "title": "Mantik, burhan dan istiqra",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 3,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "istiqra induction burhan mantiq الاستقراء البرهان المنطق",
+        "source": "https://api.crossref.org/works?query.bibliographic=istiqra+induction+burhan+mantiq+%D8%A7%D9%84%D8%A7%D8%B3%D8%AA%D9%82%D8%B1%D8%A7%D8%A1+%D8%A7%D9%84%D8%A8%D8%B1%D9%87%D8%A7%D9%86+%D8%A7%D9%84%D9%85%D9%86%D8%B7%D9%82&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.21608/armin.2009.82253",
+            "title": "فعالیة وحدة مقترحة فی المنطق الریاضی وأثرها على البرهان الریاضی والاستدلال المنطقی لتلامیذ الصف الثانی الإعدادی",
+            "year": 2009,
+            "url": "https://doi.org/10.21608/armin.2009.82253",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.21608/maed.2023.359267",
+            "title": "إستخدام الخرائط الذهنية الإلكترونية وقواعد المنطق في تنمية مهارات البرهان الرياضي لدى تلاميذ المرحلة الإعدادية",
+            "year": 2023,
+            "url": "https://doi.org/10.21608/maed.2023.359267",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.26389/ajsrp.n170526",
+            "title": "من الجدل إلى البرهان: أثر المنطق في بنية الاستدلال الكلامي عند التفتازاني",
+            "year": 2026,
+            "url": "https://doi.org/10.26389/ajsrp.n170526",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.70470/holyquran/2026/015",
+            "title": "THE ASPECTS OF QUR'ANIC DISCOURSE IN AL-BURHAN AND AL-ITQAN (A COMPARATIVE ANALYTICAL STUDY)",
+            "year": 2026,
+            "url": "https://doi.org/10.70470/holyquran/2026/015",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.24239/istq.v4i2.207.221-238",
+            "title": "LINGKUNGAN PENDIDIKAN DALAM ALQUR’AN (Pengaruhnya dalam Proses Pendidikan)",
+            "year": 2016,
+            "url": "https://doi.org/10.24239/istq.v4i2.207.221-238",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.21608/armin.2009.82253",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.21608/maed.2023.359267",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
       "publication_anchor": null
     }
   ]
