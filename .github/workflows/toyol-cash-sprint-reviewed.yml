@@ -40,4 +40,4 @@ jobs:
           echo "CASH_SPRINT_COMPLETE blocked=$failed; submission is not payment"
           exit "$failed"
 
-# Fresh operator-authorized check: existing reviewed work only; live seat and duplicate gates remain intact.
+# Authorized cash sprint on 2026-11-18 MYT: execute existing guarded paid tasks; no duplicate writes, deposits or claims of revenue.
