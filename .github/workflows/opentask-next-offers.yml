@@ -72,3 +72,4 @@ jobs:
             }catch(e){console.log('BID_STOPPED '+JSON.stringify({task_id:plan.id,reason:code(e.message)||'UNVERIFIED'}));process.exitCode=1;}
           }
           JS
+# 2026-11-18 cash-target rerun: existing bid and exact-scope guards must remain authoritative.
