@@ -45,3 +45,4 @@ jobs:
             }catch(e){console.log('CONTRACT_CHECK_UNAVAILABLE '+JSON.stringify({n,error:String(e.message).slice(0,170)}));}
           }
           JS
+# Owner-authorized 18 Nov 2026 immediate cash sprint for unused clone lane 2; gates intact.
