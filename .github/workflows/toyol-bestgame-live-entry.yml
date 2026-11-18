@@ -1,0 +1,226 @@
+name: Toyol — Best Game 1000 USDC original entry
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-bestgame-live-entry.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-bestgame-live-entry
+  cancel-in-progress: false
+jobs:
+  build-and-enter:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Obtain public challenge kit and current official CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/makefun"
+          cd "$RUNNER_TEMP/makefun"
+          curl --fail --silent --show-error --location --max-time 45 https://make.fun/c/best-game-01/kit -o kit.tgz
+          python3 - <<'PY'
+          import tarfile,pathlib
+          with tarfile.open("kit.tgz") as z:
+              a=z.getmembers()
+              if sum(x.size for x in a)>100_000_000 or any(x.name.startswith("/") or ".." in pathlib.PurePosixPath(x.name).parts or not(x.isfile() or x.isdir()) for x in a):raise SystemExit("UNSAFE_KIT")
+              z.extractall(".",filter="data")
+          PY
+          curl --fail --silent --show-error --max-time 25 https://make.fun/api/competitions/best-game-01/requirements -o requirements.json
+          test -s requirements.json
+          node --version
+          npm install --prefix "$RUNNER_TEMP/makefun/tools" --no-audit --no-fund @opencode/cli@2.3.0 playwright@1.56.1 three@0.187.0
+          "$RUNNER_TEMP/makefun/tools/node_modules/.bin/playwright" install --with-deps chromium
+          node --input-type=module - "$RUNNER_TEMP/makefun/tools/node_modules/playwright/index.mjs" <<'JS'
+          const {chromium}=await import(process.argv[2]);
+          const b=await chromium.launch({headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+          try {const p=await b.newPage();if(!await p.evaluate(()=>!!document.createElement('canvas').getContext('webgl2')))throw Error('WEBGL2_REQUIRED');console.log('NODE_AND_WEBGL2_PREREQUISITES_PASS');} finally {await b.close();}
+          JS
+          echo "$RUNNER_TEMP/makefun/tools/node_modules/.bin" >> "$GITHUB_PATH"
+          mkdir -p "$RUNNER_TEMP/makefun/evidence"
+      - name: Record actual free coding-agent sessions in a fresh anchored source repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset GITHUB_TOKEN GH_TOKEN OPENAI_API_KEY ANTHROPIC_API_KEY OPENCODE_API_KEY
+          export HOME="$RUNNER_TEMP/makefun/isolated-home"
+          export XDG_DATA_HOME="$HOME/.local/share"
+          export XDG_CONFIG_HOME="$HOME/.config"
+          export XDG_STATE_HOME="$HOME/.local/state"
+          export XDG_CACHE_HOME="$HOME/.cache"
+          export OPENCODE_DISABLE_AUTOSHARE=true
+          mkdir -p "$HOME" "$RUNNER_TEMP/makefun/entry"
+          kit="$RUNNER_TEMP/makefun/best-game-01-kit"
+          entry="$RUNNER_TEMP/makefun/entry"
+          cd "$entry"
+          node "$kit/cli/makefun.mjs" init --competition best-game-01 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT
+          test -f "$kit/RULES.txt"
+          helper=$(find "$kit" -type f -name makefun-game.ts -print -quit)
+          test -n "$helper"
+          mkdir -p vendor game screenshots
+          if [ -d "$kit/starter" ]; then cp -r "$kit/starter/." .; fi
+          cp "$helper" vendor/makefun-game.ts
+          three="$RUNNER_TEMP/makefun/tools/node_modules/three/build"
+          cp "$three/three.core.js" game/three.core.min.js
+          sed 's|\./three\.core\.js|./three.core.min.js|g' "$three/three.module.js" > game/three.module.min.js
+          git add vendor game
+          if [ -f main.ts ]; then git add main.ts; fi
+          git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm 'Import official helper and pinned three.js runtime'
+          timeout 90 opencode models --standalone > "$RUNNER_TEMP/makefun/models.txt"
+          # Verify a zero-priced model from the public pricing catalog AND the actual local model list.
+          curl --fail --silent --show-error --max-time 20 https://models.dev/api.json -o "$RUNNER_TEMP/makefun/prices.json"
+          MODEL=$(python3 - "$RUNNER_TEMP/makefun/models.txt" "$RUNNER_TEMP/makefun/prices.json" <<'PY'
+          import json,sys,re
+          avail=set(re.findall(r"opencode/[A-Za-z0-9_.-]+",open(sys.argv[1]).read()))
+          data=json.load(open(sys.argv[2])).get("opencode",{}).get("models",{})
+          choices=[]
+          for mid,row in data.items():
+              cost=row.get("cost",{})
+              if "opencode/"+mid in avail and (mid.endswith("-free") or mid=="big-pickle") and cost.get("input")==0 and cost.get("output")==0:
+                  choices.append(mid)
+          if not choices:raise SystemExit("NO_VERIFIED_FREE_MODEL")
+          order=["deepseek-v4.1-flash-free","minimax-m3.1-flash-free","big-pickle","glm-5.3-flash-free"]
+          choices.sort(key=lambda x:(order.index(x) if x in order else len(order),x))
+          print("opencode/"+choices[0])
+          PY
+          )
+          echo "VERIFIED_FREE_MODEL $MODEL"
+          python3 - "$MODEL" <<'PY'
+          import json,sys
+          json.dump({"$schema":"https://opencode.ai/config.json","model":sys.argv[1],"small_model":sys.argv[1],"share":"disabled","autoupdate":False,"permission":{"edit":"allow","read":"allow","bash":"allow","webfetch":"deny","websearch":"deny","external_directory":"allow"}},open("opencode.json","w"))
+          PY
+          # Narrow work into independent phases; preserve actual source even when a model call times out.
+          for n in 1 2 3 4 5; do
+            case "$n" in
+              1) prompt="FIRST run node $kit/cli/makefun.mjs init --competition best-game-01 --wallet At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ --license MIT for the official anchor and read the kit RULES.txt, helper and complete requirements. BUILD IMMEDIATELY an original offline browser game called SALTWIND RESCUE: pilot a luminous rescue skiff among a flooded archipelago, steer with WASD, navigate channels, collect survivors, dodge hazardous waves and debris, deliver passengers to shelters. High-quality polished 3D-isometric Three.js world, lively colors, strong HUD. Write real game/index.html, game/game.js and source now and test basic syntax. No copying existing games, no keys, no submission.";;
+              2) prompt="Add complete engaging gameplay to the skiff rescue game: time-limited rounds, rescue goals, five increasingly hard sectors, victory and loss conditions, dramatic wave surges, collision, lives, score/combo, checkpoint progress, menu/start screen, mouse controls and reliable replay/restart. Preserve offline and source boundaries. Implement immediately rather than describing a plan.";;
+              3) prompt="Polish dramatic unique visuals for SALTWIND RESCUE: layered sky and ocean, animated water geometry, islands, rescue flares, particle foam, weather changes, elegant typographic UI, satisfying visual feedback, accessible instructions. Prioritize actual working JavaScript, no third-party art, audio, or runtime network. Test changes.";;
+              4) prompt="Read exact official kit rules and requirements. Implement main.ts, use the official vendor/makefun-game.ts helper unchanged, generate genuine screenshots by testing real game through installed Playwright Chromium headless with SwiftShader, at least 3 screenshots showing start, gameplay, score/win/lose under screenshots/. Ensure dossier if required and distinct meaningful screenshots, no fabricated evidence.";;
+              5) prompt="Final real code review against all official checks; fix browser errors and broken game mechanics, play-test keyboard and restart through Playwright and re-render genuine screenshots. Ensure main.ts actually writes required out/ for the official intake and all assets local. Commit meaningful revisions, do not edit logs or vendor files. No submission from the coding agent.";;
+            esac
+            args=()
+            if [ "$n" -gt 1 ]; then args+=(--continue); fi
+            set +e
+            timeout --kill-after=15s 420 opencode run --standalone "${args[@]}" --model "$MODEL" --format json "$prompt" > "$RUNNER_TEMP/makefun/turn-$n.jsonl"
+            rc=$?
+            set -e
+            echo "PHASE_EXIT phase=$n code=$rc"
+            # Only preserve source; no home directory, settings, credentials or raw session files.
+            git add -- main.ts game vendor screenshots 2>/dev/null || git add -- game vendor screenshots
+            if ! git diff --cached --quiet; then
+              git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm "BestGame source checkpoint phase $n"
+            fi
+            git bundle create "$RUNNER_TEMP/makefun/evidence/training-source.bundle" HEAD
+            git rev-parse HEAD > "$RUNNER_TEMP/makefun/evidence/training-commit.txt"
+            printf 'phase=%s exit=%s\n' "$n" "$rc" >> "$RUNNER_TEMP/makefun/evidence/phases.txt"
+            if [ "$rc" -ne 0 ] && [ ! -s game/index.html ]; then
+              echo 'NO_USABLE_BASELINE; STOP_WITH_CHECKPOINT'
+              exit 1
+            fi
+          done
+          git diff --check
+          test -f main.ts
+          test -f game/index.html
+          cmp "$helper" vendor/makefun-game.ts
+          cmp "$three/three.core.js" game/three.core.min.js
+          sed 's|\./three\.core\.js|./three.core.min.js|g' "$three/three.module.js" | cmp - game/three.module.min.js
+          test "$(find screenshots -type f -name '*.png' | wc -l)" -ge 3
+          git add main.ts game vendor screenshots
+          if ! git diff --cached --quiet; then git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' commit -qm 'Recorded original rescue game and gameplay screenshots'; fi
+          echo "SOURCE_COMMIT $(git rev-parse HEAD)"
+          # Collect the harness-native records with the official bundler; do not edit the records.
+          printf '%s\n' 'Aku tak kira! Nak jugak sebelum 8 jam akan datang mana yg ada peluang tu hantar jugak klon yg ada' > "$RUNNER_TEMP/makefun/owner-prompt.txt"
+          printf '%s\n' 'withheld: upstream system instructions are not available for release' > "$RUNNER_TEMP/makefun/system-prompt.txt"
+          node "$kit/cli/makefun.mjs" bundle --repo "$entry" --out "$RUNNER_TEMP/makefun/transcripts.tar.gz" --opencode-dir "$XDG_DATA_HOME/opencode" --harness opencode --harness-version 2.3.0 --model "$MODEL" --provider opencode --prompt-file "$RUNNER_TEMP/makefun/owner-prompt.txt" --prompt-origin handed-off --prompt-via "Owner instruction to existing Toyol clones inside ChatGPT." --system-prompt "$RUNNER_TEMP/makefun/system-prompt.txt" --instructions none --effort default --mcp none
+          test -s "$RUNNER_TEMP/makefun/transcripts.tar.gz"
+          node "$kit/cli/makefun.mjs" check --kit "$kit" --repo "$entry" --transcripts "$RUNNER_TEMP/makefun/transcripts.tar.gz" --json > "$RUNNER_TEMP/makefun/evidence/check.json"
+          python3 - "$RUNNER_TEMP/makefun/evidence/check.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1])); rows=[]
+          def walk(v):
+              if isinstance(v,dict):
+                  if 'check' in v and 'status' in v: rows.append(v)
+                  for w in v.values(): walk(w)
+              elif isinstance(v,list):
+                  for w in v: walk(w)
+          walk(x)
+          assert rows and all(r['status'] in ('pass','skip','submission') for r in rows)
+          assert any(r['check']=='thinking_reproduces' and r['status']=='pass' for r in rows)
+          print('LOCAL_ENTRY_GATE_PASSED',len(rows))
+          PY
+      - name: Execute entry and preserve verified deliverables
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/makefun"
+          cd "$root/entry"
+          timeout 120 node main.ts
+          test -d out
+          git diff --quiet HEAD -- main.ts game vendor screenshots
+          mkdir -p "$root/evidence"
+          git bundle create "$root/evidence/source.bundle" HEAD
+          git rev-parse HEAD > "$root/evidence/commit.txt"
+          cp "$root/transcripts.tar.gz" "$root/evidence/transcripts.tar.gz"
+          echo 'BESTGAME_LOCAL_CHECK_COMPLETE; SUBMISSION_NEXT'
+      - name: Submit once after passing verified local checks, zero owner capital
+        shell: bash
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/makefun"
+          kit="$root/best-game-01-kit"
+          export HOME="$root/submit-home"
+          mkdir -p "$HOME"
+          chmod 700 "$HOME"
+          test "$(date -u +%Y%m%d%H%M)" -lt 202611181800 || { echo "CONTEST_ENTRY_DEADLINE_PASSED"; exit 0; }
+          test -s "$root/transcripts.tar.gz" && test -s "$root/evidence/check.json" && test -s "$root/entry/main.ts"
+          test -n "$TOYOL_SOLANA_KEYPAIR_JSON"
+          python3 - "$root/requirements.json" <<'PY'
+          import json,sys
+          j=json.load(open(sys.argv[1]))
+          assert j.get('competition',{}).get('slug')=='best-game-01'
+          fee=j.get('entry_fee') or {}
+          assert not fee.get('required') and float(fee.get('amount_usd') or fee.get('amount') or 0)==0,'ENTRY_FEE_REFUSED'
+          print('BESTGAME_FREE_ENTRY_GATE_PASS')
+          PY
+          umask 077
+          key="$HOME/key.json"
+          trap 'rm -f "$key"; rm -rf "$HOME/.makefun"' EXIT
+          printf '%s' "$TOYOL_SOLANA_KEYPAIR_JSON" > "$key"
+          unset TOYOL_SOLANA_KEYPAIR_JSON
+          node "$kit/cli/makefun.mjs" register --keypair "$key" --origin https://make.fun --name Toyol-Digital --json > "$HOME/auth.json"
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const raw=JSON.parse(fs.readFileSync(process.env.HOME+'/.makefun/credentials','utf8'));
+          const out=[];
+          function find(x){if(typeof x==='string'&&/^af_[A-Za-z0-9_-]+$/.test(x))out.push(x);else if(x&&typeof x==='object')for(const v of Object.values(x))find(v);}
+          find(raw);const keys=[...new Set(out)];
+          if(keys.length!==1)throw Error('KEY_SCHEMA');
+          const r=await fetch('https://make.fun/api/agents/me',{headers:{'x-api-key':keys[0],Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(15000)});
+          if(!r.ok)throw Error('PROFILE_HTTP_'+r.status);
+          const j=await r.json();
+          if(!Array.isArray(j.entries))throw Error('PROFILE_SCHEMA');
+          if(j.entries.some(x=>JSON.stringify(x).includes('best-game-01')))throw Error('EXISTING_ENTRY_NO_DUPLICATE');
+          console.log('BESTGAME_DUPLICATE_CHECK_PASSED');
+          JS
+          cd "$root/entry"
+          node "$kit/cli/makefun.mjs" submit --competition best-game-01 --source "$root/entry" --commit "$(git rev-parse HEAD)" --bundle "$root/transcripts.tar.gz" --keypair "$key" --origin https://make.fun --title 'Toyol Digital — Saltwind Rescue' --json > "$HOME/entry-receipt.json"
+          python3 - "$HOME/entry-receipt.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1]))
+          print('BESTGAME_OFFICIAL_ENTRY_RECEIPT',json.dumps({k:v for k,v in x.items() if k in ('id','submission_id','entry_id','status','stage','success','outcome')}))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: toyol-saltwind-bestgame-evidence
+          path: ${{ runner.temp }}/makefun/evidence/
+          retention-days: 7
+          if-no-files-found: ignore
