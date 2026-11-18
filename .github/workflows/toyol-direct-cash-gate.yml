@@ -77,3 +77,4 @@ jobs:
             }catch(e){console.log('DIRECT_READ_UNAVAILABLE '+JSON.stringify({u,error:String(e.message).slice(0,100)}))}
           }
           JS
+# Owner-authorized 18 Nov 2026 immediate cash sprint for unused clone lane 3; gates intact.
