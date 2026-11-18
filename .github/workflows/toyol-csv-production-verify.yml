@@ -19,6 +19,7 @@ jobs:
           const request=(path,opts={})=>fetch(base+path,{...opts,redirect:'error',signal:AbortSignal.timeout(20000)});
           const health=await request('/health');assert.equal(health.status,200);assert.equal((await health.json()).ok,true);
           const root=await request('/');assert.equal(root.status,200);const meta=await root.json();assert.equal(meta.service,'Toyol CSV Evidence');
+          const sampleDemo=await request('/sample');assert.equal(sampleDemo.status,200);const sampleJson=await sampleDemo.json();assert.ok(sampleJson.input?.csv);assert.ok(sampleJson.result?.schema);console.log('TOYOL_PUBLIC_SAMPLE_VERIFIED '+JSON.stringify({status:sampleDemo.status,records:sampleJson.result.records,findings:sampleJson.result.totalFindings,paid:false}));
           const post=(body,headers={})=>request('/v1/csv/audit',{method:'POST',headers:{'content-type':'application/json',...headers},body:JSON.stringify(body)});
           const sample={csv:'id,name\n1,Ada\n',required:['name'],unique:['id']};
           const r=await post(sample);assert.equal(r.status,402);
