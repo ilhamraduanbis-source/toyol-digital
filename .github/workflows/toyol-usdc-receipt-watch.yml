@@ -84,3 +84,4 @@ jobs:
               "accounting": "Separate verified chain receipts, net MYR equivalents and actual MYR cashout; this clock is not payment evidence."
           }))
           PY
+# Owner-confirmed urgent inbound transfer audit on 2026-11-18 MYT; read-only wallet verification.
