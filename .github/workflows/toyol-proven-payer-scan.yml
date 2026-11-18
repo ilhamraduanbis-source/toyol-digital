@@ -35,3 +35,5 @@ jobs:
             console.log('OPEN_PAID_THREAD '+JSON.stringify({id,count:rows.length,messages:rows.slice(-35).map(x=>({id:x.id,text:String(x.text??'').slice(0,1600)}))}).slice(0,24000));
           }
           JS
+
+# 18-Nov-2026 immediate same-day direct-income pursuit lane 6; use existing verified no-fee guards.
