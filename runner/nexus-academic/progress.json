@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M23",
+  "next_module": "M24",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -2620,6 +2620,87 @@
             "word_count": 102,
             "signals": [
               "survey",
+              "results_signalled"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44528332514",
+      "at": "2026-11-19T12:55:11.957094+00:00",
+      "module": "M23",
+      "title": "Al-Quran, tafsir dan takhrij hadis",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 3,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Quran hermeneutics hadith takhrij methodology Islamic studies",
+        "source": "https://api.crossref.org/works?query.bibliographic=Quran+hermeneutics+hadith+takhrij+methodology+Islamic+studies&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.15575/jth.v2i1.23315",
+            "title": "The Childfree Phenomenon in Indonesia in Contemporary Islamic Studies: Study of Takhrij and Syarah Hadith",
+            "year": 2023,
+            "url": "https://doi.org/10.15575/jth.v2i1.23315",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.51875/islamictexts.v1i1.841",
+            "title": "VALIDITAS DATA HADIS DALAM PRAKTIK TAKHRIJ HADIS MENGGUNAKAN CHATGPT",
+            "year": 2025,
+            "url": "https://doi.org/10.51875/islamictexts.v1i1.841",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.15575/jth.v1i2.22863",
+            "title": "Introvert Self Disclosure and Al-Haya in Islamic Perspective: Study of Takhrij and Syarah Hadith",
+            "year": 2022,
+            "url": "https://doi.org/10.15575/jth.v1i2.22863",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.15575/jth.v1i1.19890",
+            "title": "Takhrij Hadith the Importance of Silaturahmi in the Islamic World",
+            "year": 2022,
+            "url": "https://doi.org/10.15575/jth.v1i1.19890",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.15575/jth.v3i2.37950",
+            "title": "Entrepreneurial Empowerment in Hadith Perspective: A Study of Hadith Takhrij and Syarah",
+            "year": 2024,
+            "url": "https://doi.org/10.15575/jth.v3i2.37950",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.15575/jth.v2i1.23315",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 107,
+            "signals": [
+              "qualitative",
+              "results_signalled"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.51875/islamictexts.v1i1.841",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 190,
+            "signals": [
+              "qualitative",
               "results_signalled"
             ],
             "full_text_reviewed": false,
