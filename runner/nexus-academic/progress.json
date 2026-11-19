@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M18",
+  "next_module": "M19",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -2242,6 +2242,83 @@
             "doi": "10.21146/2949-1126-2025-3-1-129-142",
             "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
             "word_count": 259,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44453156965",
+      "at": "2026-11-19T03:41:24.561129+00:00",
+      "module": "M18",
+      "title": "Pandangan alam, relativisme dan pascamodenisme",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 2,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Islamic worldview epistemic relativism postmodernism intellectual humility",
+        "source": "https://api.crossref.org/works?query.bibliographic=Islamic+worldview+epistemic+relativism+postmodernism+intellectual+humility&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.37547/ajsshr/volume06issue06-23",
+            "title": "Intellectual Humility as A Predictor of Students’ Epistemic Maturity in Higher Education",
+            "year": 2026,
+            "url": "https://doi.org/10.37547/ajsshr/volume06issue06-23",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.31436/id.v34i1.2512",
+            "title": "Islamic Worldview, Economics and Islamic Economics",
+            "year": 2026,
+            "url": "https://doi.org/10.31436/id.v34i1.2512",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1017/epi.2012.11",
+            "title": "HIGHER-ORDER EPISTEMIC ATTITUDES AND INTELLECTUAL HUMILITY",
+            "year": 2012,
+            "url": "https://doi.org/10.1017/epi.2012.11",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.11612/resphil.2016.93.3.2",
+            "title": "From Epistemic Anti-Individualism to Intellectual Humility",
+            "year": 2016,
+            "url": "https://doi.org/10.11612/resphil.2016.93.3.2",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/02691728.2023.2258093",
+            "title": "Epistemic Autonomy and Intellectual Humility: Mutually Supporting Virtues",
+            "year": 2023,
+            "url": "https://doi.org/10.1080/02691728.2023.2258093",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.37547/ajsshr/volume06issue06-23",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 167,
+            "signals": [
+              "results_signalled"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.31436/id.v34i1.2512",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 191,
             "signals": [],
             "full_text_reviewed": false,
             "findings_verified": false
