@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M26",
+  "next_module": "M27",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -2852,6 +2852,78 @@
             ],
             "full_text_reviewed": false,
             "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44593958209",
+      "at": "2026-11-19T19:02:04.718058+00:00",
+      "module": "M26",
+      "title": "Kenegaraan, Aspirasi Negara Bangsa dan kewarganegaraan",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Malaysia nation building citizenship constitution national identity social integration",
+        "source": "https://api.crossref.org/works?query.bibliographic=Malaysia+nation+building+citizenship+constitution+national+identity+social+integration&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.2478/iclr-2018-0025",
+            "title": "Constitutions, Citizenship and the Challenge of National Integration and Nation-Building in Africa",
+            "year": 2018,
+            "url": "https://doi.org/10.2478/iclr-2018-0025",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.3366/swc.2002.8.2.244",
+            "title": "The Church's Ministry of Nation Building and National Integration in Malaysia",
+            "year": 2002,
+            "url": "https://doi.org/10.3366/swc.2002.8.2.244",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1016/s0966-6923(97)00021-5",
+            "title": "Airlines as instruments for nation building and national identity: case study of Malaysia and Singapore",
+            "year": 1997,
+            "url": "https://doi.org/10.1016/s0966-6923(97)00021-5",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1017/nps.2020.81",
+            "title": "Citizenship, National Identity, and Nation-Building in Azerbaijan: Between the Legacy of the Past and the Spirit of Independence",
+            "year": 2021,
+            "url": "https://doi.org/10.1017/nps.2020.81",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.5539/ass.v8n4p115",
+            "title": "Re-building the Concept of Nation Building in Malaysia",
+            "year": 2012,
+            "url": "https://doi.org/10.5539/ass.v8n4p115",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.2478/iclr-2018-0025",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 254,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.3366/swc.2002.8.2.244",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
           }
         ]
       },
