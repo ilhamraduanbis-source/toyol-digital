@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M27",
+  "next_module": "M28",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -2924,6 +2924,83 @@
             "doi": "10.3366/swc.2002.8.2.244",
             "status": "ABSTRACT_UNAVAILABLE",
             "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44614721539",
+      "at": "2026-11-19T21:02:34.320017+00:00",
+      "module": "M27",
+      "title": "Integriti, antirasuah dan etika institusi",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 2,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Malaysia integrity anti corruption education institutional ethics",
+        "source": "https://api.crossref.org/works?query.bibliographic=Malaysia+integrity+anti+corruption+education+institutional+ethics&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.1080/10999922.2020.1830541",
+            "title": "Absolute Power, Absolute Venality: The Politics of Corruption and Anti-corruption in Malaysia",
+            "year": 2020,
+            "url": "https://doi.org/10.1080/10999922.2020.1830541",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.54783/ijsoc.v6i3.1216",
+            "title": "Governance and Corruption: Evaluating Anti-Corruption Policies and Their Effectiveness in Strengthening Institutional Integrity",
+            "year": 2024,
+            "url": "https://doi.org/10.54783/ijsoc.v6i3.1216",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/17449626.2014.973995",
+            "title": "Corruption as a global hindrance to promoting ethics, integrity, and sustainable development in Tanzania: the role of the anti-corruption agency",
+            "year": 2014,
+            "url": "https://doi.org/10.1080/17449626.2014.973995",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.36433/kacla.2026.9.1.111",
+            "title": "A Cost Estimation and Cost-Benefit Analysis of Legislating Integrity Rights Education Support",
+            "year": 2026,
+            "url": "https://doi.org/10.36433/kacla.2026.9.1.111",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.36433/kacla.2026.9.1.79",
+            "title": "Necessity of legal regulation according to the limitations of domestic integrity education",
+            "year": 2026,
+            "url": "https://doi.org/10.36433/kacla.2026.9.1.79",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.1080/10999922.2020.1830541",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.54783/ijsoc.v6i3.1216",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 205,
+            "signals": [
+              "qualitative",
+              "document_analysis",
+              "interview",
+              "results_signalled"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
           }
         ]
       },
