@@ -2,18 +2,6 @@
   "version": 1,
   "observations": [
     {
-      "worker": "multihopper",
-      "runId": 44253686987,
-      "attempt": 1,
-      "completedAt": "2026-11-18T06:45:39Z",
-      "sourceCommit": "209528144ea6399e82dde9886b9874bea06d7b0f",
-      "conclusion": "success",
-      "failedSteps": [],
-      "skippedSteps": [],
-      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
-      "incomeInferred": false
-    },
-    {
       "worker": "titan-awards",
       "runId": 44257519709,
       "attempt": 1,
@@ -1445,6 +1433,20 @@
       "failedSteps": [],
       "skippedSteps": [
         "Read-only live availability probe (push and manual only)"
+      ],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-data",
+      "runId": 44457780084,
+      "attempt": 1,
+      "completedAt": "2026-11-19T04:21:50Z",
+      "sourceCommit": "71f7abc6b60ac523d15adf069302af1d4a0a694f",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [
+        "Prepare actual data and notary evidence on code change (no claim)"
       ],
       "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
       "incomeInferred": false
