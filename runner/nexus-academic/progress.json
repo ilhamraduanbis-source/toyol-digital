@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M25",
+  "next_module": "M26",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -2777,6 +2777,81 @@
             "doi": "10.1080/01419870.2015.1095324",
             "status": "ABSTRACT_UNAVAILABLE",
             "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44572177287",
+      "at": "2026-11-19T16:59:29.567424+00:00",
+      "module": "M25",
+      "title": "Etika dan peradaban, sejarah dan tamadun",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Malay civilization ethics civilization Ibn Khaldun Malaysia",
+        "source": "https://api.crossref.org/works?query.bibliographic=Malay+civilization+ethics+civilization+Ibn+Khaldun+Malaysia&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.36657/ihcd.2018.45",
+            "title": "Multiplexity in Civilization Studies: Insights from Ibn Khaldun and Said Halim Pash",
+            "year": 2018,
+            "url": "https://doi.org/10.36657/ihcd.2018.45",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.17576/jkukm-2023-si6(1)-02",
+            "title": "An Exploratory Analysis of the Definition and Conceptualization of Cultural Landscape",
+            "year": 2023,
+            "url": "https://doi.org/10.17576/jkukm-2023-si6(1)-02",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.17576/geo-2023-1903-05",
+            "title": "The benefits of traditional Malay architecture in the traditional settlement",
+            "year": 2023,
+            "url": "https://doi.org/10.17576/geo-2023-1903-05",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.7186/bgsm72202116",
+            "title": "Geochemistry And Mineralogy Of Prehistoric Pottery Shards Found At Gua Jaya, Nenggiri Valley, Kelantan, Malaysia",
+            "year": 2021,
+            "url": "https://doi.org/10.7186/bgsm72202116",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/13629387.2015.1070463",
+            "title": "Applying Ibn Khaldun: the recovery of a lost tradition in sociology / Makers of Islamic civilization: Ibn Khaldun",
+            "year": 2015,
+            "url": "https://doi.org/10.1080/13629387.2015.1070463",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.36657/ihcd.2018.45",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.17576/jkukm-2023-si6(1)-02",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 215,
+            "signals": [
+              "qualitative",
+              "results_signalled"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
           }
         ]
       },
