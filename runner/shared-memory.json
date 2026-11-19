@@ -2,120 +2,6 @@
   "version": 1,
   "observations": [
     {
-      "worker": "leviathan-contracts",
-      "runId": 44237534387,
-      "attempt": 1,
-      "completedAt": "2026-11-18T04:28:22Z",
-      "sourceCommit": "3650a0e37f3b6ea8ccb6c5ec21344c5e5b026680",
-      "conclusion": "success",
-      "failedSteps": [],
-      "skippedSteps": [],
-      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
-      "incomeInferred": false
-    },
-    {
-      "worker": "go-hybrid-4488",
-      "runId": 44237537427,
-      "attempt": 1,
-      "completedAt": "2026-11-18T04:28:31Z",
-      "sourceCommit": "3650a0e37f3b6ea8ccb6c5ec21344c5e5b026680",
-      "conclusion": "success",
-      "failedSteps": [],
-      "skippedSteps": [],
-      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
-      "incomeInferred": false
-    },
-    {
-      "worker": "swarmmemo-qa",
-      "runId": 44238501559,
-      "attempt": 1,
-      "completedAt": "2026-11-18T04:36:37Z",
-      "sourceCommit": "3650a0e37f3b6ea8ccb6c5ec21344c5e5b026680",
-      "conclusion": "success",
-      "failedSteps": [],
-      "skippedSteps": [
-        "Read-only live availability probe (push and manual only)"
-      ],
-      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
-      "incomeInferred": false
-    },
-    {
-      "worker": "swarmmemo-data",
-      "runId": 44238708697,
-      "attempt": 1,
-      "completedAt": "2026-11-18T04:38:31Z",
-      "sourceCommit": "9ba12aa29bf0210c540cc8f1669cf94b520279a9",
-      "conclusion": "success",
-      "failedSteps": [],
-      "skippedSteps": [
-        "Prepare actual data and notary evidence on code change (no claim)"
-      ],
-      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
-      "incomeInferred": false
-    },
-    {
-      "worker": "nexus-cross-sector",
-      "runId": 44245398791,
-      "attempt": 1,
-      "completedAt": "2026-11-18T05:36:34Z",
-      "sourceCommit": "a26b6e4e50aa4d6ceb24e3f10b91220531a6c2b7",
-      "conclusion": "success",
-      "failedSteps": [],
-      "skippedSteps": [],
-      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
-      "incomeInferred": false
-    },
-    {
-      "worker": "titan-awards",
-      "runId": 44246341887,
-      "attempt": 1,
-      "completedAt": "2026-11-18T05:44:43Z",
-      "sourceCommit": "209528144ea6399e82dde9886b9874bea06d7b0f",
-      "conclusion": "success",
-      "failedSteps": [],
-      "skippedSteps": [],
-      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
-      "incomeInferred": false
-    },
-    {
-      "worker": "leviathan-contracts",
-      "runId": 44248062484,
-      "attempt": 1,
-      "completedAt": "2026-11-18T05:59:49Z",
-      "sourceCommit": "209528144ea6399e82dde9886b9874bea06d7b0f",
-      "conclusion": "success",
-      "failedSteps": [],
-      "skippedSteps": [],
-      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
-      "incomeInferred": false
-    },
-    {
-      "worker": "atlas-mega-contracts",
-      "runId": 44250284641,
-      "attempt": 1,
-      "completedAt": "2026-11-18T06:18:05Z",
-      "sourceCommit": "209528144ea6399e82dde9886b9874bea06d7b0f",
-      "conclusion": "success",
-      "failedSteps": [],
-      "skippedSteps": [],
-      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
-      "incomeInferred": false
-    },
-    {
-      "worker": "orion-mega-contracts",
-      "runId": 44252150435,
-      "attempt": 1,
-      "completedAt": "2026-11-18T06:33:36Z",
-      "sourceCommit": "209528144ea6399e82dde9886b9874bea06d7b0f",
-      "conclusion": "failure",
-      "failedSteps": [
-        "Discover official notices and validate dollar estimates"
-      ],
-      "skippedSteps": [],
-      "lesson": "Inspect failed step before retry; change approach instead of duplicating work.",
-      "incomeInferred": false
-    },
-    {
       "worker": "multihopper",
       "runId": 44253686987,
       "attempt": 1,
@@ -1450,6 +1336,116 @@
       "conclusion": "success",
       "failedSteps": [],
       "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "nexus-cross-sector",
+      "runId": 44453156965,
+      "attempt": 1,
+      "completedAt": "2026-11-19T03:41:30Z",
+      "sourceCommit": "149aae9bbe10a764a5b8a74ad1eb0a2031a4ab23",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "titan-awards",
+      "runId": 44453636997,
+      "attempt": 1,
+      "completedAt": "2026-11-19T03:45:31Z",
+      "sourceCommit": "34fd78593d3a4c491b4ab3887ea396214048968a",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "leviathan-contracts",
+      "runId": 44453639941,
+      "attempt": 1,
+      "completedAt": "2026-11-19T03:45:34Z",
+      "sourceCommit": "34fd78593d3a4c491b4ab3887ea396214048968a",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "multihopper",
+      "runId": 44453642239,
+      "attempt": 1,
+      "completedAt": "2026-11-19T03:45:41Z",
+      "sourceCommit": "34fd78593d3a4c491b4ab3887ea396214048968a",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "atlas-mega-contracts",
+      "runId": 44453644773,
+      "attempt": 1,
+      "completedAt": "2026-11-19T03:45:42Z",
+      "sourceCommit": "34fd78593d3a4c491b4ab3887ea396214048968a",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "go-hybrid-4488",
+      "runId": 44454112258,
+      "attempt": 1,
+      "completedAt": "2026-11-19T03:49:52Z",
+      "sourceCommit": "34fd78593d3a4c491b4ab3887ea396214048968a",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "payment-reconciliation",
+      "runId": 44455783998,
+      "attempt": 1,
+      "completedAt": "2026-11-19T04:05:11Z",
+      "sourceCommit": "34fd78593d3a4c491b4ab3887ea396214048968a",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "orion-mega-contracts",
+      "runId": 44457106671,
+      "attempt": 1,
+      "completedAt": "2026-11-19T04:16:07Z",
+      "sourceCommit": "34fd78593d3a4c491b4ab3887ea396214048968a",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-qa",
+      "runId": 44457392381,
+      "attempt": 1,
+      "completedAt": "2026-11-19T04:18:32Z",
+      "sourceCommit": "34fd78593d3a4c491b4ab3887ea396214048968a",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [
+        "Read-only live availability probe (push and manual only)"
+      ],
       "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
       "incomeInferred": false
     }
