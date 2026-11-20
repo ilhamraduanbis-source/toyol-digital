@@ -50,10 +50,19 @@ export async function generateDemos(){
  const scenarios=[
   {id:'duplicate-import-key',question:'Why were rows duplicated on import?',csv:'id,name\nA1,Ada\nA1,Amin\n',options:{unique:['id']},expected:'DUPLICATE_VALUE'},
   {id:'missing-required',question:'Which rows are missing a required value?',csv:'id,email\n01,\n02,user@example.test\n',options:{required:['email']},expected:'MISSING_REQUIRED'},
-  {id:'broken-row-width',question:'Which record has too few CSV fields?',csv:'sku,qty\nA1,2\nB2\n',options:{},expected:'ROW_WIDTH'}
+  {id:'broken-row-width',question:'Which record has too few CSV fields?',csv:'sku,qty\nA1,2\nB2\n',options:{},expected:'ROW_WIDTH'},
+  {id:'csv-content-not-mime',question:'Will a CSV file with broken quotation marks be rejected instead of trusting its MIME type?',csv:'id,name\n1,"unclosed',options:{},expectedError:'Unclosed quoted field'}
  ];
  const demos=[];
  for(const s of scenarios){
+  if(s.expectedError){
+   let rejection=null;
+   try{await auditCsv(s.csv,s.options);}catch(e){rejection=String(e.message);}
+   if(!rejection?.includes(s.expectedError))throw Error('INVALID_CSV_WAS_NOT_REJECTED');
+   demos.push({id:s.id,question:s.question,input:s.csv,rules:s.options,verifiedByLocalEngine:true,
+    result:{pass:false,rejected:true,reason:'INVALID_CSV_CONTENT',paymentNotAttempted:true}});
+   continue;
+  }
   const result=await auditCsv(s.csv,s.options);
   if((result.counts[s.expected]??0)<1||result.pass||!result.sha256)throw Error('DEMO_VALIDATION_FAILED_'+s.id);
   demos.push({id:s.id,question:s.question,input:s.csv,rules:s.options,verifiedByLocalEngine:true,
