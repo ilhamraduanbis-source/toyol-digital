@@ -7,6 +7,7 @@ TARGET=Decimal("5000000")
 NOW=dt.datetime.now(dt.timezone.utc)
 TED="https://api.ted.europa.eu/v3/notices/search"
 UK="https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages"
+CF="https://www.contractsfinder.service.gov.uk/Published/Notices/OCDS/Search"
 FX="https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml"
 RELEVANT=re.compile(r"software|information system|digital platform|data platform|cloud computing|information technology|IT services|digital transformation|application development|cybersecurity|artificial intelligence",re.I)
 EXCLUDED=re.compile(r"\b(?:defen[cs]e|military|weapon|munition|surveillance|biometric|police|intelligence service|clinical equipment|medical equipment|construction works|hardware supply|staffing|recruitment)\b",re.I)
@@ -108,9 +109,9 @@ def uk():
     """Use a seven-day official release window; fall back to a labelled 24-hour sample if unavailable."""
     end=NOW.strftime("%Y-%m-%dT%H:%M:%S")
     latest={};sources=[]
-    for days,page_size in ((7,40),(1,10)):
+    for days,page_size in ((1,12),(7,12)):
         start=(NOW-dt.timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%S")
-        url=UK+"?"+urllib.parse.urlencode({"updatedFrom":start,"updatedTo":end,"stages":"tender","limit":page_size})
+        url=UK+"?"+urllib.parse.urlencode({"updatedFrom":start,"updatedTo":end,"limit":page_size})
         successful=0
         for page in range(1,5):
             try:
@@ -135,13 +136,39 @@ def uk():
         # Do not re-issue equivalent queries once the primary page has succeeded.
         if successful:break
         sources.append({"fallback":"PREVIOUS_WINDOW_UNAVAILABLE","next_window_days":1})
+    # If the Find a Tender service is unavailable, use the separate official
+    # Contracts Finder OCDS endpoint. This is a DIFFERENT, narrower UK source;
+    # its results must never be presented as Find a Tender notices.
+    if not any("count" in x for x in sources):
+        for days in (2,7):
+            start=(NOW-dt.timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%S")
+            url=CF+"?"+urllib.parse.urlencode({"publishedFrom":start,"publishedTo":end,"stages":"tender","limit":12})
+            try:
+                j=json.loads(fetch(url))
+                releases=j.get("releases")
+                if not isinstance(releases,list):raise ValueError("CONTRACTS_FINDER_SCHEMA")
+                sources.append({"source":"UK Contracts Finder (fallback)","window_days":days,"count":len(releases)})
+                for n in releases:
+                    i=n.get("ocid")
+                    if not isinstance(i,str) or not re.fullmatch(r"ocds-[a-zA-Z0-9-]{4,100}",i):continue
+                    rid=str(n.get("id") or "").rsplit("-",1)[0]
+                    n["_source"]="UK Contracts Finder (fallback)"
+                    if re.fullmatch(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",rid):
+                        n["_url"]="https://www.contractsfinder.service.gov.uk/Notice/"+rid
+                    old=latest.get(i)
+                    if old is None or str(n.get("date",""))>str(old.get("date","")):latest[i]=n
+                # An empty, valid response is not a claim that all UK tenders
+                # were inspected. It only establishes this bounded page worked.
+                break
+            except Exception as e:
+                sources.append({"source":"UK Contracts Finder (fallback)","window_days":days,"error":str(e)[:150]})
     rows=[]
     for i,n in latest.items():
         t=n.get("tender") or {}
         if t.get("status")!="active" or "tender" not in n.get("tag",[]) and "tenderUpdate" not in n.get("tag",[]) and "tenderAmendment" not in n.get("tag",[]):continue
         v=t.get("value") or {}
         d=date((t.get("tenderPeriod") or {}).get("endDate"))
-        rows.append({"id":i,"source":"UK Find a Tender","title":str(t.get("title") or ""),"description":str(t.get("description") or "")[:2000],"buyer":str((n.get("buyer") or {}).get("name") or ""),"value":v.get("amount"),"currency":v.get("currency"),"deadline":d,"url":"https://www.find-tender.service.gov.uk/procurement/"+i})
+        rows.append({"id":i,"source":n.get("_source","UK Find a Tender"),"title":str(t.get("title") or ""),"description":str(t.get("description") or "")[:2000],"buyer":str((n.get("buyer") or {}).get("name") or ""),"value":v.get("amount") or v.get("amountGross"),"currency":v.get("currency"),"deadline":d,"url":n.get("_url") or "https://www.find-tender.service.gov.uk/procurement/"+i})
     return rows,sources
 def main():
     mode=sys.argv[1]
