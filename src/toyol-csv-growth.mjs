@@ -20,9 +20,13 @@ export function classifyRequest(item,now=Date.now()){
  if(!item||item.pull_request||item.state!=='open')return null;
  const created=Date.parse(item.created_at),updated=Date.parse(item.updated_at);
  if(!Number.isFinite(created)||!Number.isFinite(updated)||updated>now+AGE_MS||now-updated>120*AGE_MS)return null;
- const text=String(item.title??'')+' '+String(item.body??'').slice(0,3500);
- if(!/\bcsv\b/i.test(text))return null;
- if(!/(validat|quality|duplicate|missing field|missing value|schema|data clean|consisten|import error|audit)/i.test(text))return null;
+ const title=String(item.title??'');
+ const text=title+' '+String(item.body??'').slice(0,3500);
+ // Require the problem to be central to the issue title. Incidental body
+ // mentions of CSV must not create misleading "buyer" leads.
+ if(!/\bcsv\b/i.test(title))return null;
+ if(!/(validat|quality|duplicate|missing|schema|import|audit|corrupt|error|checking)/i.test(title))return null;
+ if(!/(need|want|request|support|please|should|could|ability|fail|broken|error|problem|add|implement|fix)/i.test(text))return null;
  if(/(?:password|secret|keypair|medical|patient|surveillance|scrap(?:e|ing) private|student record|private data)/i.test(text))return null;
  if(/^\[(?:solved|closed|done)\]/i.test(item.title??''))return null;
  const comments=Number(item.comments)||0;
