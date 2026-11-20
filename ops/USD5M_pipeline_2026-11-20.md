@@ -7,8 +7,10 @@ Checked 2026-11-20 (MYT). This is a sourced lead and qualification register, NOT
 - Official TED: https://ted.europa.eu/en/notice/-/detail/807168-2026
 - Official Irish eTenders: https://www.etenders.gov.ie/epps/cft/prepareViewCfTWS.do?resourceId=9517554
 - Public documents: https://www.etenders.gov.ie/epps/cft/listContractDocuments.do?resourceId=9517554
-- Tender notice reported 2026-11-18. Estimated EUR6,500,000, 60-month service contract. Submissions due 2026-12-22 12:00 in notice; verify original time zone and any amendments. English submissions and electronic tendering required.
-- Source corroboration: https://ie.openprocurements.com/tender/provision-of-it-software-application-and-development-support-services/
+- Official Irish eTenders workspace confirms procurement ID FSAI/2026/009, open procedure, MEAT evaluation, estimated EUR6,500,000, 60-month single-contract service (no lots). Published 2026-11-19 06:00. Tender deadline 2026-12-22 12:00 as displayed (portal timezone to be verified), clarification deadline 2026-12-15 12:00. English submissions and electronic tendering required. Official workspace states 'Multiple tenders will be accepted: No'; prefer the authoritative workspace over contrary third-party summaries.
+- Original official workspace: https://www.etenders.gov.ie/epps/cft/prepareViewCfTWS.do?resourceId=9517554
+- Five tender files shown by official portal: ESPD.docx, RFT - FSAI - ITSWDEV Services 2026.docx, FSAI services-contract.docx, Tender Response Document (TRD).docx and tender XML. These files have NOT been downloaded or checked for detailed supplier selection conditions.
+- Third-party corroboration only: https://ie.openprocurements.com/tender/provision-of-it-software-application-and-development-support-services/
 - Gate: obtain complete tender/selection docs; check minimum turnover, prior delivery references, vendor nationality/registration, data processing, insurance, service coverage and whether subcontractors may be proposed. Direct solo bid is NOT qualified.
 
 2. Italy — Transport and Navigation Department information-system management, operation, maintenance and evolution
