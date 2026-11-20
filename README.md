@@ -12,6 +12,8 @@
 - **Try before paying:** [Free fixed sample](https://toyol-csv-evidence.ilhamraduan-bis.workers.dev/sample) · [OpenAPI specification](https://toyol-csv-evidence.ilhamraduan-bis.workers.dev/openapi.json) · [x402 service manifest](https://toyol-csv-evidence.ilhamraduan-bis.workers.dev/.well-known/x402)
 - **Verified purchase:** PayAPI Market completed a **real $0.01 USDC paid test** on 18 November 2026, checked the returned product, and linked its transaction receipt on the listing. This is one verified purchase, **not** proof of recurring demand or guaranteed income.
 - **For AI purchasers:** Find this service through `https://payapi.market/mcp` or the verified PayAPI listing above.
+- **New: portable AI-agent buying guide:** [Agent Skills `SKILL.md`](skills/csv-evidence/SKILL.md). Agents that support [Agent Skills](https://agentskills.io/) can install it from this public GitHub repository, for example `npx skills add ilhamraduanbis-source/toyol-digital --skill csv-evidence`. The skill offers free sample and price checks first; **installation is not a purchase** and does not authorize spending.
+- **Buyer proof:** [reproducible audit implementation and tests](skills/csv-evidence/audit.mjs) and [free example output](https://toyol-csv-evidence.ilhamraduan-bis.workers.dev/sample). Only nonsensitive data. `POST /v1/csv/audit` is paid via a user-authorized x402 client.
 
 ---
 
