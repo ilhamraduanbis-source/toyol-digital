@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M01",
+  "next_module": "M02",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -3645,6 +3645,81 @@
           },
           {
             "doi": "10.46313/1707-029-002-003",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44776901198",
+      "at": "2026-11-20T16:47:50.734681+00:00",
+      "module": "M01",
+      "title": "Reka bentuk dan penjajaran kajian",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "research design philosophy Islamic studies",
+        "source": "https://api.crossref.org/works?query.bibliographic=research+design+philosophy+Islamic+studies&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.21474/ijar01/21326",
+            "title": "SADIYYA SHAIKHS FEMINIST APPROACH THROUGH HER INTERPRETATION OF SUFI THOUGHT IN IBN ARABI",
+            "year": 2025,
+            "url": "https://doi.org/10.21474/ijar01/21326",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.28918/hikmatuna.v5i1.1855",
+            "title": "Educational Philosophy in Islam in The Curriculum Design of Integrated Islamic Education in Malaysia",
+            "year": 2019,
+            "url": "https://doi.org/10.28918/hikmatuna.v5i1.1855",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1016/j.destud.2014.12.006",
+            "title": "Philosophy applied to design: A design research teaching method",
+            "year": 2015,
+            "url": "https://doi.org/10.1016/j.destud.2014.12.006",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.21474/ijar01/15032",
+            "title": "THE CONCEPT OF MEDIATION IN ALTERNATIVE DISPUTE RESOLUTION (ADR) AND ITS IMPLEMENTATION AGAINST RELIGIOUS CONFLICT MANAGEMENT",
+            "year": 2022,
+            "url": "https://doi.org/10.21474/ijar01/15032",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1093/jis/1.1.73",
+            "title": "ORIENTALISM AND THE STUDY OF ISLAMIC PHILOSOPHY",
+            "year": 1990,
+            "url": "https://doi.org/10.1093/jis/1.1.73",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.21474/ijar01/21326",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 216,
+            "signals": [
+              "qualitative",
+              "results_signalled"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.28918/hikmatuna.v5i1.1855",
             "status": "ABSTRACT_UNAVAILABLE",
             "full_text_reviewed": false
           }
