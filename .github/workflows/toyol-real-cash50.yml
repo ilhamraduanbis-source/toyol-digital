@@ -28,6 +28,8 @@ jobs:
           node --check src/toyol-real-cash50.mjs
           node --test test/toyol-real-cash50.test.mjs
       - name: Independently qualify current cash listings against primary issue metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: node src/toyol-real-cash50.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
