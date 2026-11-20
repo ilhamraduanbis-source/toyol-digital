@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M36",
+  "next_module": "M01",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -3573,6 +3573,78 @@
           },
           {
             "doi": "10.1080/02602930801956075",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44756483850",
+      "at": "2026-11-20T14:45:34.265878+00:00",
+      "module": "M36",
+      "title": "Pemetaan kajian sendiri dan agenda PhD",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 3,
+      "sources_total": 5,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Islamic philosophy epistemology induction Islamic environmental ethics Malaysia",
+        "source": "https://api.crossref.org/works?query.bibliographic=Islamic+philosophy+epistemology+induction+Islamic+environmental+ethics+Malaysia&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.5617/jais.9368",
+            "title": "Dialectics of Ethics",
+            "year": 2022,
+            "url": "https://doi.org/10.5617/jais.9368",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.46313/1707-029-002-003",
+            "title": "Islamic Environmental Philosophy:, The Interaction Between Islamic Ethics And Contemporary Environmental Challenges",
+            "year": 2025,
+            "url": "https://doi.org/10.46313/1707-029-002-003",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.5840/islamicphil2008417",
+            "title": "On Ghazālīan Epistemology: A Theory",
+            "year": 2008,
+            "url": "https://doi.org/10.5840/islamicphil2008417",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.58932/mulf0017",
+            "title": "On The Prerequisites Of Islamic Environmental Ethics",
+            "year": 2024,
+            "url": "https://doi.org/10.58932/mulf0017",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.70177/jnis.v3i1.3489",
+            "title": "PHILOSOPHY AND WESTERN THOUGHT: COMPARATIVE APPROACHES TO EPISTEMOLOGY AND ETHICS",
+            "year": 2026,
+            "url": "https://doi.org/10.70177/jnis.v3i1.3489",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.5617/jais.9368",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 289,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.46313/1707-029-002-003",
             "status": "ABSTRACT_UNAVAILABLE",
             "full_text_reviewed": false
           }
