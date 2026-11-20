@@ -1,5 +1,5 @@
 ---
-name: toyol-csv-evidence
+name: csv-evidence
 description: Inspect CSV data quality with a free example before deciding whether to purchase a real 0.01 USDC x402 audit on Base. For duplicate headers or records, missing required values, duplicate identifiers, row widths, and reproducible SHA-256 evidence. Never send sensitive CSV or authorize payments without user approval.
 metadata:
   author: Toyol Digital
