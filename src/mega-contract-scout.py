@@ -105,27 +105,36 @@ def ted():
         except Exception as e:sources.append({"term":term,"error":str(e)[:150]})
     return rows,sources
 def uk():
-    start=(NOW-dt.timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%S")
+    """Use a seven-day official release window; fall back to a labelled 24-hour sample if unavailable."""
     end=NOW.strftime("%Y-%m-%dT%H:%M:%S")
-    url=UK+"?"+urllib.parse.urlencode({"updatedFrom":start,"updatedTo":end,"stages":"tender","limit":40})
     latest={};sources=[]
-    for page in range(1,5):
-        try:
-            j=json.loads(fetch(url))
-            releases=j.get("releases")
-            if not isinstance(releases,list):raise ValueError("UK_SCHEMA")
-            sources.append({"page":page,"count":len(releases)})
-            for n in releases:
-                i=n.get("ocid")
-                if not isinstance(i,str) or not re.fullmatch(r"ocds-[a-zA-Z0-9-]{4,100}",i):continue
-                old=latest.get(i)
-                if old is None or str(n.get("date",""))>str(old.get("date","")):latest[i]=n
-            next_url=(j.get("links") or {}).get("next")
-            if not next_url:break
-            url=urllib.parse.urljoin(UK,next_url)
-            u=urllib.parse.urlsplit(url)
-            if u.scheme!="https" or u.hostname!="www.find-tender.service.gov.uk" or u.path!="/api/1.0/ocdsReleasePackages" or u.username or u.password:raise ValueError("UNAPPROVED_PAGINATION")
-        except Exception as e:sources.append({"page":page,"error":str(e)[:150]});break
+    for days,page_size in ((7,40),(1,10)):
+        start=(NOW-dt.timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%S")
+        url=UK+"?"+urllib.parse.urlencode({"updatedFrom":start,"updatedTo":end,"stages":"tender","limit":page_size})
+        successful=0
+        for page in range(1,5):
+            try:
+                j=json.loads(fetch(url))
+                releases=j.get("releases")
+                if not isinstance(releases,list):raise ValueError("UK_SCHEMA")
+                successful+=1
+                sources.append({"window_days":days,"page_limit":page_size,"page":page,"count":len(releases)})
+                for n in releases:
+                    i=n.get("ocid")
+                    if not isinstance(i,str) or not re.fullmatch(r"ocds-[a-zA-Z0-9-]{4,100}",i):continue
+                    old=latest.get(i)
+                    if old is None or str(n.get("date",""))>str(old.get("date","")):latest[i]=n
+                next_url=(j.get("links") or {}).get("next")
+                if not next_url:break
+                url=urllib.parse.urljoin(UK,next_url)
+                u=urllib.parse.urlsplit(url)
+                if u.scheme!="https" or u.hostname!="www.find-tender.service.gov.uk" or u.path!="/api/1.0/ocdsReleasePackages" or u.username or u.password:raise ValueError("UNAPPROVED_PAGINATION")
+            except Exception as e:
+                sources.append({"window_days":days,"page_limit":page_size,"page":page,"error":str(e)[:150]})
+                break
+        # Do not re-issue equivalent queries once the primary page has succeeded.
+        if successful:break
+        sources.append({"fallback":"PREVIOUS_WINDOW_UNAVAILABLE","next_window_days":1})
     rows=[]
     for i,n in latest.items():
         t=n.get("tender") or {}
