@@ -1,0 +1,74 @@
+name: Toyol — CSV Customer Growth (Aggregator Clone)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '37 */4 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'src/toyol-csv-growth.mjs'
+      - 'test/toyol-csv-growth.test.mjs'
+      - '.github/workflows/toyol-csv-growth.yml'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: toyol-csv-growth-aggregator
+  cancel-in-progress: false
+jobs:
+  inspect-aggregator:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    outputs:
+      idle: ${{ steps.gate.outputs.idle }}
+    steps:
+      - name: Protect primary clone and public-free-runner status
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'JS'
+          import {appendFileSync} from 'node:fs';
+          const repo='ilhamraduanbis-source/toyol-digital';
+          const root='https://api.github.com/repos/'+repo;
+          const headers={Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+          async function get(path){
+            const r=await fetch(root+path,{headers,redirect:'error',signal:AbortSignal.timeout(14000)});
+            if(!r.ok)throw Error('AUDIT_HTTP_'+r.status);
+            return r.json();
+          }
+          const [meta,w,runs]=await Promise.all([
+            get(''),
+            get('/actions/workflows/toyol-makefun-aggregator-build.yml'),
+            get('/actions/workflows/toyol-makefun-aggregator-build.yml/runs?branch=main&per_page=10')
+          ]);
+          if(meta.private||meta.archived||w.state!=='active'||!Array.isArray(runs.workflow_runs))throw Error('GROWTH_GUARD_STOP');
+          const primaryActive=runs.workflow_runs.some(x=>x.status!=='completed');
+          appendFileSync(process.env.GITHUB_OUTPUT,'idle='+String(!primaryActive)+'\n');
+          console.log('TOYOL_GROWTH_ASSIGNMENT '+JSON.stringify({clone:'aggregator',primaryActive,assigned:!primaryActive,
+            ownerSpendUsd:0,externalOutreachSent:0,confirmedEarnedUsd:0}));
+          JS
+  serve-demand:
+    needs: inspect-aggregator
+    if: needs.inspect-aggregator.outputs.idle == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Test actual buyer-problem demos and ranker
+        run: |
+          node --check src/toyol-csv-growth.mjs
+          node --test test/toyol-csv-growth.test.mjs
+      - name: Check production status and public problems, prepare truthful inbound response
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node src/toyol-csv-growth.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: aggregator-csv-sales-evidence
+          path: out/sales/csv-growth.json
+          retention-days: 10
+          if-no-files-found: error
