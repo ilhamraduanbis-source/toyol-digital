@@ -21,7 +21,7 @@ export function pick(list,now=Date.now()){
   else if(!CURRENCIES.has(price.currency))why='UNPRICED_OR_TOKEN_NOT_USD';
   else if(!Number.isFinite(n)||n<50)why='BELOW_50';
   else if(m.payment_state!=='escrowed')why='NOT_ESCROWED';
-  else if(!['algora','bountyhub','agentbounties','opire','bountybook'].includes(m.source))why='UNSUPPORTED_VENUE';
+  else if(!['algora','bountyhub','agentbounties','opire','bountybook','issuehunt'].includes(m.source))why='UNSUPPORTED_VENUE';
   else if(m.expires&&Date.parse(m.expires)<now)why='EXPIRED';
   else if(rejectWords.test(v.title||'')||rejectWords.test(v.content_text||''))why='SPEND_OR_UNSAFE_REQUIREMENT';
   else if(ageDays(v.date_published,now)>120)why='STALE_OR_VERY_OLD';
@@ -37,7 +37,7 @@ export function pick(list,now=Date.now()){
  return {rows:rows.sort((a,b)=>b.score-a.score).slice(0,25),denied,totalSeen:list.length};
 }
 async function get(url){
- const r=await fetch(url,{headers:{Accept:'application/json','User-Agent':'Toyol-PayableBounty-Audit/1.0'},redirect:'error',signal:AbortSignal.timeout(18000)});
+ const r=await fetch(url,{headers:{Accept:'application/json','User-Agent':'Toyol-PayableBounty-Audit/1.0',...(url.startsWith('https://api.github.com/')&&process.env.GH_TOKEN?{Authorization:'Bearer '+process.env.GH_TOKEN}:{})},redirect:'error',signal:AbortSignal.timeout(18000)});
  if(!r.ok)throw Error('HTTP_'+r.status);
  return r.json();
 }
@@ -50,7 +50,7 @@ async function githubValidate(row){
   const days=Math.round(ageDays(j.created_at));
   const comments=j.comments??null;
   const labels=(j.labels??[]).map(x=>x.name);
-  const risk=comments>20?'HIGH_COMPETITION':days>120?'OLD_STALE':(!labels.some(x=>/bounty|reward/i.test(x))?'BOUNTY_STATUS_NEEDS_VALIDATION':'ORIGINAL_OPEN_LISTED');
+  const risk=days>120?'OLD_STALE':comments>20?'HIGH_COMPETITION':(!labels.some(x=>/bounty|reward/i.test(x))?'BOUNTY_STATUS_NEEDS_VALIDATION':'ORIGINAL_OPEN_LISTED');
   return {...row,original:{createdAt:j.created_at,updatedAt:j.updated_at,comments,labels,officialUrl:j.html_url,issuesState:j.state},
     admission:risk,claimMade:false,paymentVerified:false};
  }catch(e){return {...row,admission:'ORIGINAL_CHECK_UNAVAILABLE',checkError:String(e.message).slice(0,90)};}
