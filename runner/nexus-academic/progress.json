@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M02",
+  "next_module": "M03",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -3722,6 +3722,83 @@
             "doi": "10.28918/hikmatuna.v5i1.1855",
             "status": "ABSTRACT_UNAVAILABLE",
             "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44796471690",
+      "at": "2026-11-20T18:50:20.081552+00:00",
+      "module": "M02",
+      "title": "Tatabahasa Melayu ilmiah",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 1,
+      "mastery_verified": false,
+      "literature": {
+        "query": "tatabahasa bahasa Melayu penulisan akademik imbuhan kata sendi",
+        "source": "https://api.crossref.org/works?query.bibliographic=tatabahasa+bahasa+Melayu+penulisan+akademik+imbuhan+kata+sendi&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.11113/lspi.v4n1.44",
+            "title": "Kesalahan Tatabahasa Bahasa Melayu dalam Penulisan Karangan Pelajar",
+            "year": 2018,
+            "url": "https://doi.org/10.11113/lspi.v4n1.44",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.22452/jomas.vol34no1.7",
+            "title": "ANALISIS KATA SENDI NAMA “DI” DAN “DALAM” DALAM PENULISAN KARANGAN PELAJAR TINGKATAN 4",
+            "year": 2023,
+            "url": "https://doi.org/10.22452/jomas.vol34no1.7",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.55057/ajress.2026.8.4.9",
+            "title": "Heutagogi dan Literasi Akademik Bahasa Melayu: Implikasi terhadap Penulisan Akademik Pelajar Universiti",
+            "year": 2026,
+            "url": "https://doi.org/10.55057/ajress.2026.8.4.9",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1016/j.sbspro.2014.04.245",
+            "title": "Kaedah Penterjemahan Kata Sendi Bahasa Cina-bahasa Melayu",
+            "year": 2014,
+            "url": "https://doi.org/10.1016/j.sbspro.2014.04.245",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.33736/ils.2351.2020",
+            "title": "Pengajaran Bahasa Melayu dalam Kalangan Pelajar Asing: Analisis Pola Kesalahan Tatabahasa dalam Penulisan",
+            "year": 2020,
+            "url": "https://doi.org/10.33736/ils.2351.2020",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.11113/lspi.v4n1.44",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 133,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.22452/jomas.vol34no1.7",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 276,
+            "signals": [
+              "qualitative"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
           }
         ]
       },
