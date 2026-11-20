@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "S106A",
+  "next_module": "M04",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -3873,6 +3873,101 @@
       },
       "transfer_test_pass": true,
       "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44832708654",
+      "at": "2026-11-20T22:54:30.365317+00:00",
+      "module": "S106A",
+      "title": "Nahu (S106)",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 4,
+      "sources_total": 4,
+      "mastery_verified": false,
+      "literature": {
+        "query": "النحو العربي الإعراب المبتدأ والخبر النحو الأجرومية",
+        "source": "https://api.crossref.org/works?query.bibliographic=%D8%A7%D9%84%D9%86%D8%AD%D9%88+%D8%A7%D9%84%D8%B9%D8%B1%D8%A8%D9%8A+%D8%A7%D9%84%D8%A5%D8%B9%D8%B1%D8%A7%D8%A8+%D8%A7%D9%84%D9%85%D8%A8%D8%AA%D8%AF%D8%A3+%D9%88%D8%A7%D9%84%D8%AE%D8%A8%D8%B1+%D8%A7%D9%84%D9%86%D8%AD%D9%88+%D8%A7%D9%84%D8%A3%D8%AC%D8%B1%D9%88%D9%85%D9%8A%D8%A9&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.37167/1677-000-009-011",
+            "title": "المقاصد التعليمية في متون النحو العربي: دراسة في متن الأجرومية",
+            "year": 2017,
+            "url": "https://doi.org/10.37167/1677-000-009-011",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.37136/1969-014-001-050",
+            "title": "دعاة تيسير النحو العربي المعاصرون:, موقف نقد النحو العربي وتيسيره أنموذجا",
+            "year": 2022,
+            "url": "https://doi.org/10.37136/1969-014-001-050",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.35269/1452-011-001-007",
+            "title": "الوظائف الدلالية في النحو الوظيفي ومقابلاتها في النحو العربي",
+            "year": 2020,
+            "url": "https://doi.org/10.35269/1452-011-001-007",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.37172/1901-006-001-024",
+            "title": "تجديد النحو العربي عند مهدي المخزومي:, قراءة في كتاب في النحو العربي نقد وتوجيه",
+            "year": 2022,
+            "url": "https://doi.org/10.37172/1901-006-001-024",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.65405/zskhth21",
+            "title": "ما يلتبس على المُعرب في  صنعة الإعراب دراسة في معنى الإعراب، واللبس، وأمن اللبس في النحو العربي",
+            "year": 2025,
+            "url": "https://doi.org/10.65405/zskhth21",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.37167/1677-000-009-011",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.37136/1969-014-001-050",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": {
+        "focus": "Jumlah ismiyyah dan fiʿliyyah",
+        "reading_targets": [
+          "al-Ajurrumiyyah — Ibn Ajurrum",
+          "Qatr al-Nada wa Ball al-Sada — Ibn Hisham"
+        ],
+        "edition_status": "UNVERIFIED_STAM_2008",
+        "full_text_reviewed": false,
+        "source_questions": [
+          "Apakah istilah Arab dan definisi asal?",
+          "Siapakah pengarang, apakah edisi dan lokasi teks?",
+          "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
+        ],
+        "source_reading": {
+          "url": "https://corpus.quran.com/documentation/grammar.jsp",
+          "status": "GUIDE_SECTIONS_CHECKED",
+          "matched_headings": [
+            "subjects and objects",
+            "preposition phrases",
+            "the verb kāna",
+            "adjectives",
+            "possessives"
+          ],
+          "full_text_reviewed": false,
+          "note": "The guide describes grammatical roles and case inflection; compare subjects/objects, genitive after prepositions, and kana constructions. No independent mastery inferred."
+        }
+      },
       "publication_anchor": null
     }
   ]
