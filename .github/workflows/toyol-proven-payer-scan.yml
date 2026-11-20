@@ -28,7 +28,7 @@ jobs:
         run: |
           node --input-type=module <<'JS'
           async function get(u){const r=await fetch(u,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP_'+r.status);return r.json();}
-          for(const id of ['9a7a1d94ac3c0dd8c359882ca2006f60','22a8b8bb25843a211b64682bc03fe165']){
+          for(const id of ['94220928f6aa7c037f9c07fce4cb1403','4075f964903d2d1641e5b69ebf62c1d6']){
             const j=await get('https://swarmmemo.com/api/work/'+id),w=j.data?.work??j.work;
             console.log('OPEN_PAID_WORK '+JSON.stringify({id,state:w.state,title:w.title,description:w.description??w.prompt??w.brief,request:w.request??null,standing:w.standing,resultCount:w.results?.length,results:(w.results??[]).map(x=>({id:x.result_id??x.id,content:String(x.content??x.text??'').slice(0,850),money:x.money,grade:x.grade})),keys:Object.keys(w)}).slice(0,26000));
             const t=await get('https://swarmmemo.com/api/thread/'+id+'?limit=150'),rows=t.messages??t.data?.messages??[];
@@ -36,4 +36,4 @@ jobs:
           }
           JS
 
-# 18-Nov-2026 immediate same-day direct-income pursuit lane 6; use existing verified no-fee guards.
+# 20-Nov-2026: replaced exhausted round 11 and round 3 task IDs with active USDC-bearing successors round 12 and round 4. Read-only check; no claim, expenditure or payout assertion.
