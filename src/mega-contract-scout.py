@@ -1,6 +1,6 @@
 """Read-only public procurement discovery. Estimates are not earnings or awards."""
 import datetime as dt
-import json,math,pathlib,re,sys,urllib.parse,urllib.request,xml.etree.ElementTree as ET
+import json,math,pathlib,re,sys,time,urllib.error,urllib.parse,urllib.request,xml.etree.ElementTree as ET
 from decimal import Decimal,InvalidOperation
 
 TARGET=Decimal("5000000")
@@ -11,11 +11,22 @@ FX="https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml"
 RELEVANT=re.compile(r"software|information system|digital platform|data platform|cloud computing|information technology|IT services|digital transformation|application development|cybersecurity|artificial intelligence",re.I)
 EXCLUDED=re.compile(r"\b(?:defen[cs]e|military|weapon|munition|surveillance|biometric|police|intelligence service|clinical equipment|medical equipment|construction works|hardware supply|staffing|recruitment)\b",re.I)
 def fetch(url,payload=None):
-    req=urllib.request.Request(url,data=json.dumps(payload).encode() if payload else None,headers={"User-Agent":"ToyolCivilSoftwareResearch/1.0","Accept":"application/json, application/xml","Content-Type":"application/json"})
-    with urllib.request.urlopen(req,timeout=25) as resp:
-        raw=resp.read(8000001)
-    if len(raw)>8000000:raise ValueError("RESPONSE_LIMIT")
-    return raw
+    """Bounded retries only for temporary network/server failures. Never mask total source loss."""
+    req=urllib.request.Request(url,data=json.dumps(payload).encode() if payload else None,headers={"User-Agent":"ToyolCivilSoftwareResearch/1.1","Accept":"application/json, application/xml","Content-Type":"application/json"})
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req,timeout=14) as resp:
+                raw=resp.read(8000001)
+            if len(raw)>8000000:raise ValueError("RESPONSE_LIMIT")
+            return raw
+        except urllib.error.HTTPError as e:
+            # Client-side errors other than rate limits should surface promptly.
+            if e.code not in (408,429,500,502,503,504) or attempt==2:raise
+        except (TimeoutError,urllib.error.URLError) as e:
+            # DNS failure, socket stalls and transient transport errors retry briefly.
+            if attempt==2:raise
+        time.sleep(2*(attempt+1))
+    raise RuntimeError("SOURCE_RETRIES_EXHAUSTED")
 def flat(v):
     if isinstance(v,list):return [x for y in v for x in flat(y)]
     if isinstance(v,dict):return flat(v.get("eng") or next(iter(v.values()),None))
@@ -96,7 +107,7 @@ def ted():
 def uk():
     start=(NOW-dt.timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%S")
     end=NOW.strftime("%Y-%m-%dT%H:%M:%S")
-    url=UK+"?"+urllib.parse.urlencode({"updatedFrom":start,"updatedTo":end,"stages":"tender","limit":100})
+    url=UK+"?"+urllib.parse.urlencode({"updatedFrom":start,"updatedTo":end,"stages":"tender","limit":40})
     latest={};sources=[]
     for page in range(1,5):
         try:
