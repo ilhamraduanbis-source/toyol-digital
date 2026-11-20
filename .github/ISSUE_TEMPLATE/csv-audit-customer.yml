@@ -1,0 +1,40 @@
+name: CSV Audit Customer Inquiry
+description: Ask Toyol Digital about the paid CSV audit API. Start with a free demo; do not submit sensitive data.
+title: "[CSV Audit Inquiry] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Toyol CSV Evidence checks CSV import quality. Start with the free fixed sample:
+        https://toyol-csv-evidence.ilhamraduan-bis.workers.dev/sample
+
+        **Never post customer files, personal data, passwords, API keys, or private links here.**
+        Questions on GitHub are publicly visible. A paid x402 call is optional and always requires the buyer's approval.
+  - type: dropdown
+    id: csv_problem
+    attributes:
+      label: What problem are you trying to solve?
+      options:
+        - Duplicate keys or records
+        - Missing required fields
+        - Incorrect number of columns
+        - Duplicate or empty headers
+        - Need an evidence report or API integration
+        - Other (explain in words only)
+    validations:
+      required: true
+  - type: textarea
+    id: problem_summary
+    attributes:
+      label: Describe expected and actual behavior, without sensitive data
+      description: Describe a synthetic example only. The service supports comma-delimited UTF-8 CSV.
+      placeholder: My nightly inventory import rejects rows with duplicate SKU. I need record numbers so my importer can highlight the problem.
+    validations:
+      required: true
+  - type: checkboxes
+    id: acknowledgement
+    attributes:
+      label: Public inquiry confirmation
+      options:
+        - label: I will not include confidential or personal data in this public issue. [CSV_INQUIRY_V1]
+          required: true
