@@ -1,5 +1,5 @@
 # Toyol USD5M+ procurement pipeline
-Checked 2026-11-20 (MYT). This is a sourced lead and qualification register, NOT bids, awards, earned fees, or a promise to pay. Amounts are entire estimated public procurements, not revenue to any individual or subcontractor. Do not spend, register, contact, bid, or assert company capability without owner approval. No false credentials, shell bidders, misleading capacity, or security-sensitive scope.
+Updated 2026-11-21 (MYT), with historical record retained. This is a sourced lead and qualification register, NOT bids, awards, earned fees, or a promise to pay. Amounts are entire estimated public procurements, not revenue to any individual or subcontractor. Do not spend, register, contact, bid, or assert company capability without owner approval. No false credentials, shell bidders, misleading capacity, or security-sensitive scope.
 
 ## A. LIVE procurement notices — qualification NOT established
 
@@ -23,7 +23,13 @@ Checked 2026-11-20 (MYT). This is a sourced lead and qualification register, NOT
 - Estimated EUR9,240,000, reported date 2027-01-13. Time, framework drawdown and vendor eligibility unverified.
 - Gate: platform architecture, deployment requirements, integration scope, subcontract clauses, Dutch procurement portal registration.
 
-4. Ireland — use #1 as first dossier to understand actual selection conditions before any approach. No redundant duplicate entry or submission.
+4. United States — USAC RFP IT-26-148 Enterprise Data Platform (LIVE)
+- Primary issuer: https://www.usac.org/about/procurement/rfp-it-26-148-enterprise-data-platform-3/
+- Official open-procurement register: https://www.usac.org/about/procurement/
+- The USAC procurement register lists the closing date as 2026-12-07, and the issuer page links a SECOND revision plus bid sheet, confidentiality agreement and clarification documents. Verify the precise clock deadline in the latest revised solicitation before action.
+- A third-party market estimate is USD47 million (https://www.highergov.com/contract-opportunity/usac-rfp-enterprise-data-platform-it-26-148-k-daa6c/), NOT an independently verified official contract ceiling or an amount Toyol would receive. Dollar value unconfirmed from primary source.
+- Could be relevant to Toyol's genuine tested narrow capabilities in data quality, import validation and evidence QA. But this is a complex enterprise platform project requiring a qualified delivery company, prior references, governance and realistic resources. Current direct bid qualification: UNVERIFIED; vendor partnership/subcontract route: RESEARCH ONLY.
+- Next step: read second revision, mandatory eligibility, performance and subcontract provisions; identify an actual qualified prime (no invented partners). Do not solicit a buyer or bid in contradiction of procurement process. No fees or registrations without owner approval.
 
 ## B. FUTURE procurement FORECAST — NOT YET LIVE TENDERS
 
@@ -40,7 +46,7 @@ Checked 2026-11-20 (MYT). This is a sourced lead and qualification register, NOT
 
 ## C. Decision / execution gates
 
-- CURRENT CLASSIFICATION: 3 live >USD5M tenders requiring document-based eligibility; 2 future US forecast leads; zero verified eligible direct bids; zero submissions; zero contract awards; zero verified revenue from these leads.
+- CURRENT CLASSIFICATION: 4 live high-value tenders requiring document-based eligibility (USAC amount is a third-party unverified estimate); 2 future US forecast leads; zero verified eligible direct bids; zero submissions; zero contract awards; zero verified revenue from these leads.
 - DO NOT confuse prize pools/grants/tender ceilings with a personal USD5M payday.
 - First work product worth doing is a capability/evidence pack backed by actual validated services plus shortlist of legitimate prime contractors in each jurisdiction; do not fabricate references or prequalifications.
 - Before outreach or application, confirm owner's approval, actual company/sole trader legal standing, applicable cross-border procurement law, taxes, sanctions, data residency, minimum turnover, insurance, bonding, subcontracting, and feasible team/resource capacity.
