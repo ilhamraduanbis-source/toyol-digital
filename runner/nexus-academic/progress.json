@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M32",
+  "next_module": "M33",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -3299,6 +3299,75 @@
             "signals": [],
             "full_text_reviewed": false,
             "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44693420369",
+      "at": "2026-11-20T07:14:07.564505+00:00",
+      "module": "M32",
+      "title": "Pedagogi pendidikan tinggi, MPU dan reka bentuk kuliah",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "higher education constructive alignment general studies Malaysia MPU learning outcomes",
+        "source": "https://api.crossref.org/works?query.bibliographic=higher+education+constructive+alignment+general+studies+Malaysia+MPU+learning+outcomes&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.33423/jhetp.v21i8.4513",
+            "title": "Assessing Student Achievement of Learning Outcomes Through Academic Service-Learning: A Constructive Alignment Study",
+            "year": 2021,
+            "url": "https://doi.org/10.33423/jhetp.v21i8.4513",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/13562517.2012.696541",
+            "title": "Creating high challenge/high support academic environments through constructive alignment: student outcomes",
+            "year": 2012,
+            "url": "https://doi.org/10.1080/13562517.2012.696541",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.20428/ajqahe.v19i70.4042",
+            "title": "Alignment between General Education Course Learning Outcomes (CLOs) and Program Learning Outcomes (PLOs) in Bangladeshi Universities: Challenges and Recommendations",
+            "year": 2026,
+            "url": "https://doi.org/10.20428/ajqahe.v19i70.4042",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.3390/info11030126",
+            "title": "Constructive Alignment in Game Design for Learning Activities in Higher Education",
+            "year": 2020,
+            "url": "https://doi.org/10.3390/info11030126",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/03075079.2014.968539",
+            "title": "Curriculum mapping as deliberation – examining the alignment of subject learning outcomes and course curricula",
+            "year": 2014,
+            "url": "https://doi.org/10.1080/03075079.2014.968539",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.33423/jhetp.v21i8.4513",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.1080/13562517.2012.696541",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
           }
         ]
       },
