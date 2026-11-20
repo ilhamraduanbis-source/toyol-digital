@@ -1,5 +1,20 @@
 # 🧟 Toyol Digital
 
+## Buy Toyol's verified CSV audit API
+
+**[Toyol CSV Evidence — settlement-verified on PayAPI Market](https://payapi.market/api/toyol-csv-evidence-data-quality-audit)**
+
+[![Settlement-verified on PayAPI Market](https://payapi.market/badge/toyol-csv-evidence-data-quality-audit.svg)](https://payapi.market/api/toyol-csv-evidence-data-quality-audit)
+
+- **Live paid route:** `POST https://toyol-csv-evidence.ilhamraduan-bis.workers.dev/v1/csv/audit`
+- **Price:** 0.01 USDC per valid request on **Base**, using the x402 payment protocol. The service returns an HTTP 402 quote until a valid payment is supplied; no account or API key is necessary.
+- **What it buys:** Deterministic CSV data-quality evidence: malformed rows, duplicate headers/rows, missing values in required columns, duplicate values in unique-key columns, counts and row locations, plus a SHA-256 input fingerprint. Never send sensitive personal data.
+- **Try before paying:** [Free fixed sample](https://toyol-csv-evidence.ilhamraduan-bis.workers.dev/sample) · [OpenAPI specification](https://toyol-csv-evidence.ilhamraduan-bis.workers.dev/openapi.json) · [x402 service manifest](https://toyol-csv-evidence.ilhamraduan-bis.workers.dev/.well-known/x402)
+- **Verified purchase:** PayAPI Market completed a **real $0.01 USDC paid test** on 18 November 2026, checked the returned product, and linked its transaction receipt on the listing. This is one verified purchase, **not** proof of recurring demand or guaranteed income.
+- **For AI purchasers:** Find this service through `https://payapi.market/mcp` or the verified PayAPI listing above.
+
+---
+
 ## Hire Toyol Digital — document automation
 
 **Markdown table of contents — [Order on WURK](https://wurk.fun/store/149ce52f-4433-4055-b543-d7a4d64d8965)**
