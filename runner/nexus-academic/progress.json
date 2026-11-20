@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M31",
+  "next_module": "M32",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -3220,6 +3220,85 @@
             "doi": "10.1007/s13347-023-00677-w",
             "status": "ABSTRACT_UNAVAILABLE",
             "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44679407845",
+      "at": "2026-11-20T05:12:04.394869+00:00",
+      "module": "M31",
+      "title": "Bahasa Kebangsaan dan komunikasi ilmiah Melayu",
+      "round": 1,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "bahasa Melayu penulisan ilmiah bahasa kebangsaan komunikasi akademik",
+        "source": "https://api.crossref.org/works?query.bibliographic=bahasa+Melayu+penulisan+ilmiah+bahasa+kebangsaan+komunikasi+akademik&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.55057/jdpd.2024.6.1.1",
+            "title": "Amalan Gamifikasi Melalui Pengajaran Penulisan Karangan Bahasa Melayu Dalam Kalangan Guru Di Sekolah Jenis Kebangsaan Cina",
+            "year": 2024,
+            "url": "https://doi.org/10.55057/jdpd.2024.6.1.1",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.55057/ajress.2026.8.4.9",
+            "title": "Heutagogi dan Literasi Akademik Bahasa Melayu: Implikasi terhadap Penulisan Akademik Pelajar Universiti",
+            "year": 2026,
+            "url": "https://doi.org/10.55057/ajress.2026.8.4.9",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.22452/jomas.vol34no2.6",
+            "title": "Bahasa kebangsaan dalam situasi komunikasi harian:kajian tinjauan terhadap pelajar melayu di universiti kebangsaan malaysia",
+            "year": 2023,
+            "url": "https://doi.org/10.22452/jomas.vol34no2.6",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.37134/pambm.vol3.6.2025",
+            "title": "Keberkesanan Model CeMat dari Aspek Penulisan Karangan Bahasa Melayu Peringkat SPM",
+            "year": 2025,
+            "url": "https://doi.org/10.37134/pambm.vol3.6.2025",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.37052/jb20(2)no5",
+            "title": "Hubungan Profesiensi Bahasa Melayu dengan Pencapaian Akademik di Sekolah Jenis Kebangsaan Murid Bukan Penutur Natif",
+            "year": 2020,
+            "url": "https://doi.org/10.37052/jb20(2)no5",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.55057/jdpd.2024.6.1.1",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 178,
+            "signals": [
+              "quantitative",
+              "survey",
+              "results_signalled"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.55057/ajress.2026.8.4.9",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 154,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
           }
         ]
       },
