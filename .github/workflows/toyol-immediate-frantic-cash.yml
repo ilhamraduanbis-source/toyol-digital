@@ -31,6 +31,22 @@ jobs:
             sworn:s.verification?.sworn??null,payoutReady:s.agent?.onboarding?.payout?.set??null,
             active:(s.work?.open??[]).map(x=>({n:x.bounty?.number,stage:x.stage,claimId:x.claimId,deliveryDue:x.deliver_deadline_at})),
             settled:(s.work?.settled??[]).map(x=>({n:x.bounty?.number,stage:x.stage}))}));
+          // High-value contract decision: inspect only genuinely funded and open worker slots.
+          try{
+            const listing=await get('/v1/board?status=open&limit=200');
+            const found=listing.board?.bounties??listing.board??listing.bounties??listing.items??[];
+            if(!Array.isArray(found))throw Error('BOARD_SHAPE_UNKNOWN');
+            const eligible=found.filter(x=>x.funded===true && ['open','claimable','active'].includes(String(x.work_status??'').toLowerCase()) && Number(x.claim_slots?.available??x.claim_slots?.open??x.claim_slots??1)>0);
+            const byValue=eligible.sort((a,b)=>Number(b.price_usd??0)-Number(a.price_usd??0));
+            console.log('REAL_FUNDED_OPEN_BOARD '+JSON.stringify({all:found.length,fundedOpen:byValue.length,highValue:byValue.filter(x=>Number(x.price_usd)>=100).length,available:byValue.slice(0,30).map(x=>({id:x.number,title:x.title,usd:x.price_usd,slots:x.claim_slots,visibility:x.visibility,workStatus:x.work_status,actions:x.actions}))}).slice(0,18500));
+            for(const b of byValue.filter(x=>Number(x.price_usd)>=100).slice(0,8)){
+              try{
+                const full=await get('/v1/bounties/'+b.number);
+                const x=full.bounty??full;
+                console.log('HIGH_VALUE_CONTRACT '+JSON.stringify({id:x.number,title:x.title,price:x.price_usd,price_cents:x.price_cents,funded:x.funded,visibility:x.visibility,work_status:x.work_status,claim_slots:x.claim_slots,claim_progress:x.claim_progress,eligibility:x.eligibility,requirements:x.requirements,criteria:x.criteria,description:String(x.description??'').slice(0,12000),delivery_contract:x.delivery_contract,terms:x.terms,actions:x.actions}).slice(0,22000));
+              }catch(e){console.log('HIGH_VALUE_DETAIL_ERROR '+JSON.stringify({id:b.number,reason:e.message}));}
+            }
+          }catch(e){console.log('HIGH_VALUE_BOARD_ERROR '+String(e.message).slice(0,300));}
           for(const n of [147,149,128,97]){
             try{
               const j=await get('/v1/bounties/'+n),b=j.bounty??j;
