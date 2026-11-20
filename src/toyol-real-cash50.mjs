@@ -81,7 +81,8 @@ export async function execute(){
  const shortlisted=s.rows.slice(0,14);
  const verified=[];
  for(const x of shortlisted){verified.push(await githubValidate(x));}
- const out={date:new Date().toISOString(),feed:api,totalSeen:s.totalSeen,filtered:s.denied,shortlisted:verified,ownerSpentUsd:0,claimsSubmitted:0,verifiedNewPayouts:0,
+ const actionable=verified.filter(x=>x.originalGate?.actionableForImmediateWork===true);
+ const out={date:new Date().toISOString(),feed:api,totalSeen:s.totalSeen,filtered:s.denied,shortlisted:verified,actionableForImmediateWork:actionable,ownerSpentUsd:0,claimsSubmitted:0,verifiedNewPayouts:0,
   note:'Index candidates only. Even escrowed board listings need independent award/payout confirmation, seller eligibility and a merge/delivery before any revenue claim.'};
  mkdirSync('out',{recursive:true});writeFileSync('out/real-cash50.json',JSON.stringify(out,null,2)+'\n');
  console.log('CASH50_FILTER '+JSON.stringify({date:out.date,totalSeen:out.totalSeen,filter:s.denied,shortlisted:verified.length,actionableForImmediateWork:actionable.length}));
