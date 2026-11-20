@@ -2,18 +2,6 @@
   "version": 1,
   "observations": [
     {
-      "worker": "payment-reconciliation",
-      "runId": 44483061992,
-      "attempt": 1,
-      "completedAt": "2026-11-19T07:53:44Z",
-      "sourceCommit": "00bc247967f5494f3606a33ff2674fd96e6301a6",
-      "conclusion": "success",
-      "failedSteps": [],
-      "skippedSteps": [],
-      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
-      "incomeInferred": false
-    },
-    {
       "worker": "go-hybrid-4488",
       "runId": 44483435264,
       "attempt": 1,
@@ -1440,6 +1428,20 @@
       "conclusion": "success",
       "failedSteps": [],
       "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-data",
+      "runId": 44672457964,
+      "attempt": 1,
+      "completedAt": "2026-11-20T04:09:07Z",
+      "sourceCommit": "b595f6d309b21649e09fde2e77c3de302d2878a8",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [
+        "Prepare actual data and notary evidence on code change (no claim)"
+      ],
       "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
       "incomeInferred": false
     }
