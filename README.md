@@ -14,6 +14,8 @@
 - **For AI purchasers:** Find this service through `https://payapi.market/mcp` or the verified PayAPI listing above.
 - **New: portable AI-agent buying guide:** [Agent Skills `SKILL.md`](skills/csv-evidence/SKILL.md). Agents that support [Agent Skills](https://agentskills.io/) can install it from this public GitHub repository, for example `npx skills add ilhamraduanbis-source/toyol-digital --skill csv-evidence`. The skill offers free sample and price checks first; **installation is not a purchase** and does not authorize spending.
 - **Buyer proof:** [reproducible audit implementation and tests](skills/csv-evidence/audit.mjs) and [free example output](https://toyol-csv-evidence.ilhamraduan-bis.workers.dev/sample). Only nonsensitive data. `POST /v1/csv/audit` is paid via a user-authorized x402 client.
+- **Ask a CSV question before buying:** [Open a public CSV inquiry (no actual data, no secrets)](../../issues/new?template=csv-audit-customer.yml). A bounded automated responder explains suitable checks and links to the free sample and verified checkout. Customer-initiated inquiries only; no spam or implied order.
+- **Dedicated growth clone:** [Aggregator's CSV customer-growth workflow](../../actions/workflows/toyol-csv-growth.yml) monitors public API health, creates reproducible synthetic buyer demonstrations and screens potential needs. Public issues are not customers or purchases. Other Toyol job searches remain separate.
 
 ---
 
