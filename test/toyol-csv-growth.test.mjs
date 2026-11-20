@@ -17,11 +17,14 @@ test('only current open public customer-needs signals are considered',()=>{
   {title:'Something unrelated',body:'No data import or cleaning here'}])assert.equal(classifyRequest(issue(other),NOW),null);
 });
 test('three actual synthetic buyer problems produce reproducible QA evidence',async()=>{
- const cases=await generateDemos();assert.equal(cases.length,3);
- for(const c of cases){assert.equal(c.verifiedByLocalEngine,true);assert.equal(c.result.pass,false);assert.ok(c.result.sha256.length===64);}
+ const cases=await generateDemos();assert.equal(cases.length,4);
+ for(const c of cases){assert.equal(c.verifiedByLocalEngine,true);assert.equal(c.result.pass,false);}
+ for(const c of cases.slice(0,3))assert.ok(c.result.sha256.length===64);
  assert.ok(cases[0].result.counts.DUPLICATE_VALUE>0);
  assert.ok(cases[1].result.counts.MISSING_REQUIRED>0);
  assert.ok(cases[2].result.counts.ROW_WIDTH>0);
+ assert.equal(cases[3].result.reason,'INVALID_CSV_CONTENT');
+ assert.equal(cases[3].result.paymentNotAttempted,true);
 });
 test('buyers have an unpaid first action and a real independently discoverable listing',()=>{
  assert.ok(URLS.sample.endsWith('/sample'));assert.ok(URLS.marketplace.includes('payapi.market/api/'));
