@@ -1,0 +1,44 @@
+name: Toyol — Inbound CSV Buyer Response
+on:
+  issues:
+    types: [opened]
+  push:
+    branches: [main]
+    paths:
+      - 'src/toyol-csv-inbound.mjs'
+      - 'test/toyol-csv-inbound.test.mjs'
+      - '.github/workflows/toyol-csv-inbound.yml'
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: toyol-csv-inbound-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify consent-based support behavior and no-spend rules
+        run: |
+          node --check src/toyol-csv-inbound.mjs
+          node --test test/toyol-csv-inbound.test.mjs
+  respond:
+    needs: validate
+    if: github.event_name == 'issues' && startsWith(github.event.issue.title, '[CSV Audit Inquiry] ') && contains(github.event.issue.body, '[CSV_INQUIRY_V1]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Reply once to a real inbound question, not unsolicited marketing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TOYOL_ISSUE_NUMBER: ${{ github.event.issue.number }}
+          TOYOL_ISSUE_ACTION: ${{ github.event.action }}
+        run: node src/toyol-csv-inbound.mjs
