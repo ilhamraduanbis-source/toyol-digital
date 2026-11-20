@@ -49,7 +49,7 @@ async function get(url){
 export function originalIssueGate(issue, indexedAmount, asOf=Date.now()){
  const labels=(issue.labels??[]).map(x=>String(typeof x==='string'?x:x.name??''));
  const issueText=String(issue.body??'');
- const officialBounty=labels.some(x=>/bounty|reward|\\$\\s*\\d+/i.test(x))||/\\/bounty\\s+\\$?\\d+/i.test(issueText);
+ const officialBounty=labels.some(x=>/bounty|reward|\$\s*\d+/i.test(x))||/\/bounty\s+\$?\d+/i.test(issueText);
  const age=ageDays(issue.created_at,asOf);
  const stale=age>365;
  const claimed=Array.isArray(issue.assignees)&&issue.assignees.length>0;
