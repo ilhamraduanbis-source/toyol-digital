@@ -26,3 +26,8 @@ test('three actual synthetic buyer problems produce reproducible QA evidence',as
 test('buyers have an unpaid first action and a real independently discoverable listing',()=>{
  assert.ok(URLS.sample.endsWith('/sample'));assert.ok(URLS.marketplace.includes('payapi.market/api/'));
 });
+
+test('not a buyer when CSV is incidental mention in a different issue',()=>{
+ const item=issue({title:'Fix report sorting UI bug',body:'This dashboard handles a CSV export and has a data quality validator; I need the CSS fixed.'});
+ assert.equal(classifyRequest(item,NOW),null);
+});
