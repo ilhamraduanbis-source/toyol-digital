@@ -1,0 +1,27 @@
+name: Toyol — Live $50+ Cash Opportunity Reality Scan
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-real-cash50.yml']
+permissions:
+  contents: read
+jobs:
+  evaluate:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Inspect current paid work schema and primary issue references at no cost
+        run: |
+          node --input-type=module <<'JS'
+          const api='https://jobbi.org/gigs.json?lane=agent&min_reward=50&limit=100';
+          const r=await fetch(api,{redirect:'error',signal:AbortSignal.timeout(20000),headers:{Accept:'application/feed+json,application/json'}});
+          if(!r.ok)throw Error('INDEX_UNAVAILABLE_'+r.status);
+          const data=await r.json(),items=data.items??data.data?.items??[];
+          if(!Array.isArray(items))throw Error('UNEXPECTED_FEED');
+          console.log('CASH50_INDEX '+JSON.stringify({checkedAt:new Date().toISOString(),itemCount:items.length,keys:Object.keys(data),entryKeys:Object.keys(items[0]??{}),notEvidenceOfPayment:true}));
+          for(const x of items.slice(0,35)){
+            const body=JSON.stringify(x);console.log('CASH50_RAW '+body.slice(0,1700));
+          }
+          JS
