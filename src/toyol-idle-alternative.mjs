@@ -12,7 +12,7 @@ const API='https://api.github.com/repos/'+REPO;
 const TOKEN=process.env.GH_TOKEN;
 const MIN_MS=60_000;
 const ALLOW=Object.freeze({
-  'aggregator':                 {fallback:'toyol-real-cash50.yml',minutes:45,why:'Audit new actual USD/USDC escrow-rewarded software work >= $50 after expired Make.fun contest'},
+  'aggregator':                 {fallback:'toyol-csv-growth.yml',minutes:120,why:'Dedicated real customer acquisition for settlement-tested CSV API, free sample, buyer pain points and paid-order readiness; no unsolicited messaging'},
   'frantic-delivery':           {fallback:'toyol-live-earnable.yml',minutes:45,why:'Check new customer-funded listings while existing delivery is preserved'},
   'swarmmemo-qa':              {fallback:'toyol-proven-payer-scan.yml',minutes:45,why:'Read genuine cash seats and previously paying requesters'},
   'swarmmemo-data':            {fallback:'toyol-live-cash-sprint.yml',minutes:45,why:'Screen newly opened real paid tasks across external venues'},
