@@ -15,6 +15,19 @@
 
 ---
 
+## Commercial evidence and execution status — 20 November 2026
+
+**A purchase by an external test payer is confirmed, but recurring customer demand is not.** PayAPI Market [publicly confirms a live paid test on 18 November 2026](https://payapi.market/api/toyol-csv-evidence-data-quality-audit). The linked Base transaction independently passed a finalized USDC Transfer check for **0.010000 USDC into Toyol's declared wallet**. The payment was historical and must not be counted again as fresh revenue on 20 November. [Read the chain-audited, duplicate-safe receipt](ops/payapi-verified-receipt-2026-11-18.json).
+
+- **Current bookable asset:** CSV audit endpoint priced at 0.01 USDC per request on Base. [Free sample](https://toyol-csv-evidence.ilhamraduan-bis.workers.dev/sample) and [public paid listing](https://payapi.market/api/toyol-csv-evidence-data-quality-audit).
+- **Current high-value search:** [USD50+ cash opportunity check](../../actions/workflows/toyol-real-cash50.yml) excludes non-USD-valued token bait, old issues, deposits and unverified vendor claims. Scans and workflow success are **not** sales.
+- **Large-contract opportunity work:** [USD5M qualification pipeline](ops/USD5M_pipeline_2026-11-20.md) remains investigation-only. No bids and no awarded contracts.
+- **Operational hard gates:** never spend owner money, fabricate buyer/award evidence or imply the wallet balance equals lifetime earnings. No MYR cashout verified.
+
+Earlier checklists and history below are preserved as **historical developmental checkpoints**, not claims of current unpaid status.
+
+---
+
 ## Hire Toyol Digital — document automation
 
 **Markdown table of contents — [Order on WURK](https://wurk.fun/store/149ce52f-4433-4055-b543-d7a4d64d8965)**
@@ -56,7 +69,7 @@ B,3
 
 **Matlamat kematangan Toyol:** bina kompetensi sehingga mampu menyelesaikan kerja bernilai sekitar **USD200 atau lebih** dengan kualiti, daya saing dan bukti penerimaan yang nyata. Angka ini **bukan nilai minimum bounty**. Tugasan kecil yang sah boleh menjadi latihan lapangan dan sumber pendapatan sebenar. Keupayaan mesti dibuktikan melalui ujian luaran dan penerimaan, bukan jumlah draf atau harga diiklankan.
 
-## Operational checkpoint — 13 November 2026, 20:00 MYT
+## Historical operational checkpoint — 13 November 2026, 20:00 MYT
 
 **Status: externally settled micro-task demonstrated; repeatable income and MYR cashout not demonstrated.** The earlier v0.9 notes below are historical, not the current operational status.
 
@@ -177,8 +190,10 @@ Pelaksana akan menolak arahan yang kabur atau tidak boleh dibuktikan, cubaan men
 
 **Penilaian pasaran sebelumnya (659 item, hanya 1 padanan) tidak boleh dianggap bertambah hanya kerana bilangan kemahiran meningkat.** Padanan baharu akan diukur oleh `src/market.mjs` dalam run imbasan seterusnya.
 
-## Apa yang belum ada
+## Apa yang belum ada (rekod pembangunan awal, sebelum penyelesaian luaran)
 
-Toyol **belum berjaya menyelesaikan tugasan luar yang diterima sebagai kerja siap**, belum mempunyai saluran bayaran, dan belum menghasilkan pendapatan. Tahap 2 sekarang menyokong sebelas pembetulan khusus serta penolakan tugas bersaing; ia tidak menggunakan model AI berbayar; ia tidak menganggap patch sebagai tugasan selesai. Untuk benar-benar berpendapatan, perlu dipilih kelas kerja kecil yang membenarkan automasi, dengan kos sebenar sifar dan kaedah payout sah di Malaysia. Hanya selepas kitaran pembayaran pertama terbukti barulah wajar mengautomasikan pengulangan tugasan itu.
+**Nota 20 November 2026:** Perenggan ini merekod keadaan pembangunan awal dan telah digantikan oleh status komersial semasa di atas. Pemindahan USDC luaran dan ujian berbayar PayAPI kini terbukti, tetapi permintaan pelanggan berulang dan pengeluaran MYR belum terbukti.
+
+Pada peringkat awal, Toyol **belum berjaya menyelesaikan tugasan luar yang diterima sebagai kerja siap**, belum mempunyai saluran bayaran, dan belum menghasilkan pendapatan. Tahap 2 sekarang menyokong sebelas pembetulan khusus serta penolakan tugas bersaing; ia tidak menggunakan model AI berbayar; ia tidak menganggap patch sebagai tugasan selesai. Untuk benar-benar berpendapatan, perlu dipilih kelas kerja kecil yang membenarkan automasi, dengan kos sebenar sifar dan kaedah payout sah di Malaysia. Hanya selepas kitaran pembayaran pertama terbukti barulah wajar mengautomasikan pengulangan tugasan itu.
 
 Jika imbasan gagal, lihat log pada Actions. GitHub Actions mungkin lewat atau menghentikan jadual selepas tempoh repositori awam tidak aktif. Sekiranya terma pelan percuma berubah, hentikan pelaksanaan dan jangan beralih kepada pelan berbayar tanpa kebenaran.
