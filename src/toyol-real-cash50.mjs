@@ -41,6 +41,25 @@ async function get(url){
  if(!r.ok)throw Error('HTTP_'+r.status);
  return r.json();
 }
+/**
+ * A gig index may republish a six-year-old issue as a fresh bounty.
+ * Distinguish live, independently evidenced paid work from an old
+ * feature request whose GitHub issue carries no bounty confirmation.
+ */
+export function originalIssueGate(issue, indexedAmount, asOf=Date.now()){
+ const labels=(issue.labels??[]).map(x=>String(typeof x==='string'?x:x.name??''));
+ const issueText=String(issue.body??'');
+ const officialBounty=labels.some(x=>/bounty|reward|\\$\\s*\\d+/i.test(x))||/\\/bounty\\s+\\$?\\d+/i.test(issueText);
+ const age=ageDays(issue.created_at,asOf);
+ const stale=age>365;
+ const claimed=Array.isArray(issue.assignees)&&issue.assignees.length>0;
+ const crowded=(Number(issue.comments)||0)>=20;
+ const reject=issue.state!=='open'||claimed||(stale&&!officialBounty)||(crowded&&!officialBounty);
+ return {actionableForImmediateWork:!reject&&officialBounty&&!crowded,
+  payoutIndependentlyVerified:false,
+  issueAgeDays:Math.round(age),originalBountyEvidence:officialBounty,assigned:claimed,crowded,
+  reason:issue.state!=='open'?'CLOSED':claimed?'ALREADY_ASSIGNED':stale&&!officialBounty?'STALE_ORIGINAL_WITHOUT_BOUNTY_PROOF':crowded&&!officialBounty?'CROWDED_WITHOUT_BOUNTY_PROOF':!officialBounty?'BOUNTY_NOT_VERIFIED_ON_ORIGINAL':crowded?'HIGH_COMPETITION':'NEEDS_PRIMARY_PAYOUT_PROOF'};
+}
 async function githubValidate(row){
  const m=row.url.match(/^https:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)\/issues\/(\d+)(?:[?#].*)?$/);
  if(!m)return {...row,admission:'BOARD_ONLY_NEEDS_ORIGINAL'};
@@ -50,9 +69,9 @@ async function githubValidate(row){
   const days=Math.round(ageDays(j.created_at));
   const comments=j.comments??null;
   const labels=(j.labels??[]).map(x=>x.name);
-  const risk=days>120?'OLD_STALE':comments>20?'HIGH_COMPETITION':(!labels.some(x=>/bounty|reward/i.test(x))?'BOUNTY_STATUS_NEEDS_VALIDATION':'ORIGINAL_OPEN_LISTED');
+  const gate=originalIssueGate(j,row.amount);
   return {...row,original:{createdAt:j.created_at,updatedAt:j.updated_at,comments,labels,officialUrl:j.html_url,issuesState:j.state},
-    admission:risk,claimMade:false,paymentVerified:false};
+    originalGate:gate,admission:gate.reason,claimMade:false,paymentVerified:false};
  }catch(e){return {...row,admission:'ORIGINAL_CHECK_UNAVAILABLE',checkError:String(e.message).slice(0,90)};}
 }
 export async function execute(){
@@ -65,7 +84,7 @@ export async function execute(){
  const out={date:new Date().toISOString(),feed:api,totalSeen:s.totalSeen,filtered:s.denied,shortlisted:verified,ownerSpentUsd:0,claimsSubmitted:0,verifiedNewPayouts:0,
   note:'Index candidates only. Even escrowed board listings need independent award/payout confirmation, seller eligibility and a merge/delivery before any revenue claim.'};
  mkdirSync('out',{recursive:true});writeFileSync('out/real-cash50.json',JSON.stringify(out,null,2)+'\n');
- console.log('CASH50_FILTER '+JSON.stringify({date:out.date,totalSeen:out.totalSeen,filter:s.denied,shortlisted:verified.length}));
+ console.log('CASH50_FILTER '+JSON.stringify({date:out.date,totalSeen:out.totalSeen,filter:s.denied,shortlisted:verified.length,actionableForImmediateWork:actionable.length}));
  for(const x of verified)console.log('CASH50_CANDIDATE '+JSON.stringify(x).slice(0,1700));
  return out;
 }
