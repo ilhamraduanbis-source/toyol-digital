@@ -19,10 +19,10 @@ export function listing(){
  return {
   title:TITLE,
   description:TAGLINE+'\n\n'+
-  'Fixed price USD15 in USDC on Base. For one UTF-8 CSV file of up to 128 KiB / 2000 data records / 100 columns, I provide a machine-readable evidence report with SHA-256 input fingerprint, finding counts, line numbers and a reproducible script or HTTP command. Includes one narrowly scoped revision. The free public sample is https://toyol-csv-evidence.ilhamraduan-bis.workers.dev/sample. Full verification implementation at https://github.com/ilhamraduanbis-source/toyol-digital/tree/main/skills/csv-evidence. No customer data should be sent in public messages, no private keys, passwords or regulated data. I do not silently fix data; this is an audit, not a cleaning service. Delivery within 48h after confirmed payment and the agreed synthetic/nonsensitive scope.',
+  'Fixed price USD15 in USDC on Polygon (EVM wallet controlled by the same Toyol operator). For one UTF-8 CSV file of up to 128 KiB / 2000 data records / 100 columns, I provide a machine-readable evidence report with SHA-256 input fingerprint, finding counts, line numbers and a reproducible script or HTTP command. Includes one narrowly scoped revision. The free public sample is https://toyol-csv-evidence.ilhamraduan-bis.workers.dev/sample. Full verification implementation at https://github.com/ilhamraduanbis-source/toyol-digital/tree/main/skills/csv-evidence. No customer data should be sent in public messages, no private keys, passwords or regulated data. I do not silently fix data; this is an audit, not a cleaning service. Delivery within 48h after confirmed payment and the agreed synthetic/nonsensitive scope.',
   listing_type:'for_hire',category:'data',skills_required:['csv','data quality','validation','javascript'],
   budget_type:'fixed',budget_min:PRICE_USD,budget_max:PRICE_USD,
-  payment_coin:'usdc_base',duration:'48 hours',location_type:'remote',status:'active'
+  payment_coin:'usdc_pol',duration:'48 hours',location_type:'remote',status:'active'
  };
 }
 export function derivePassword(existingToken){
@@ -63,7 +63,7 @@ export async function run(){
  const username=profile.data?.username??profile.data?.data?.username??profile.data?.profile?.username;
  if(username!==USERNAME)throw Error('IDENTITY_MISMATCH_'+String(username).slice(0,35));
  const payout=await json('/api/profile/wallet-addresses','PUT',{
-  wallet_addresses:[{currency:'usdc_base',address:ADDRESS,is_preferred:true}]},token);
+  wallet_addresses:[{currency:'usdc_base',address:ADDRESS,is_preferred:false},{currency:'usdc_pol',address:ADDRESS,is_preferred:true}]},token);
  if(!payout.ok)throw Error('PAYOUT_HTTP_'+payout.status+'_'+String(payout.data?.error??payout.data?.message??'unknown').slice(0,90));
  const dd=payout.data?.data??payout.data;
  if(dd.buy_now_ready===false){console.log('UGIG_PAYOUT_DIAGNOSTIC '+JSON.stringify({keys:Object.keys(dd),ready:dd.buy_now_ready,currencies:dd.buy_now_currencies??null,addressCurrencies:Array.isArray(dd.wallet_addresses)?dd.wallet_addresses.map(x=>x.currency):[]}));throw Error('CHECKOUT_NOT_READY');}
@@ -88,7 +88,7 @@ export async function run(){
  console.log('UGIG_DIRECT_SALE_PUBLISHED '+JSON.stringify({
   account:USERNAME,mode:account.mode,listing:'https://ugig.net/for-hire/'+id,
   listingType:pub.listing_type,status,listedPriceUsd:PRICE_USD,
-  sellerPayout:'USDC_BASE_SELF_CUSTODY',
+  sellerPayout:'USDC_POLYGON_SELF_CUSTODY',
   payoutAddressVerifiedOnOwnerSide:true,newOrderVerified:false,settlementVerified:false,
   ownerSpendUsd:0,unsolicitedMessages:0
  }));
