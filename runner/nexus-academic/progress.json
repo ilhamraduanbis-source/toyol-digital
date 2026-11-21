@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "S103A",
+  "next_module": "M06",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -4198,6 +4198,91 @@
       },
       "transfer_test_pass": true,
       "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44878352222",
+      "at": "2026-11-21T07:03:03.973999+00:00",
+      "module": "S103A",
+      "title": "Tauhid (S103)",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 4,
+      "sources_total": 4,
+      "mastery_verified": false,
+      "literature": {
+        "query": "علم التوحيد العقيدة علم الكلام الصفات النبوة السمعيات",
+        "source": "https://api.crossref.org/works?query.bibliographic=%D8%B9%D9%84%D9%85+%D8%A7%D9%84%D8%AA%D9%88%D8%AD%D9%8A%D8%AF+%D8%A7%D9%84%D8%B9%D9%82%D9%8A%D8%AF%D8%A9+%D8%B9%D9%84%D9%85+%D8%A7%D9%84%D9%83%D9%84%D8%A7%D9%85+%D8%A7%D9%84%D8%B5%D9%81%D8%A7%D8%AA+%D8%A7%D9%84%D9%86%D8%A8%D9%88%D8%A9+%D8%A7%D9%84%D8%B3%D9%85%D8%B9%D9%8A%D8%A7%D8%AA&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.37940/rjis:2023.1.2.8",
+            "title": "دور العقيدة الاشعرية في أسلمة علم الكلام وتحقيق الاستقرار الفكري",
+            "year": 2023,
+            "url": "https://doi.org/10.37940/rjis:2023.1.2.8",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.52128/0911-026-002-008",
+            "title": "تأثير العقيدة الإسلامية في الصلابة النفسية:, دراسة لنموذج غزة في إطار علم الكلام الجديد",
+            "year": 2024,
+            "url": "https://doi.org/10.52128/0911-026-002-008",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.55210/bahtsuna.v4i1.123",
+            "title": "فلسفة علم البلاغة  (فصاحة الكلام، علم البيان، علم المعاني، علم البديع)",
+            "year": 2022,
+            "url": "https://doi.org/10.55210/bahtsuna.v4i1.123",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.37138/emirj.v17i1.3782",
+            "title": "منهجية تدريس علم الكلام (العقيدة) لطلبة السنة الأولى علوم إسلامية",
+            "year": 2002,
+            "url": "https://doi.org/10.37138/emirj.v17i1.3782",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.21608/jsad.2023.325434",
+            "title": "التوحيد بين جمال التعبير القرآني وتقسيمات علم الكلام دراسة دعوية",
+            "year": 2023,
+            "url": "https://doi.org/10.21608/jsad.2023.325434",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.37940/rjis:2023.1.2.8",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 194,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.52128/0911-026-002-008",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": {
+        "focus": "Ilahiyyat dan sifat ketuhanan",
+        "reading_targets": [
+          "Umm al-Barahin — Muhammad ibn Yusuf al-Sanusi",
+          "Jawharat al-Tawhid — Ibrahim al-Laqqani"
+        ],
+        "edition_status": "UNVERIFIED_STAM_2008",
+        "full_text_reviewed": false,
+        "source_questions": [
+          "Apakah istilah Arab dan definisi asal?",
+          "Siapakah pengarang, apakah edisi dan lokasi teks?",
+          "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
+        ]
+      },
       "publication_anchor": null
     }
   ]
