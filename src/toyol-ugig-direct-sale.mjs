@@ -10,7 +10,7 @@ import {fileURLToPath} from 'node:url';
 const HOME='https://ugig.net';
 const REPO='ilhamraduanbis-source/toyol-digital';
 const ADDRESS='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431';
-const USERNAME='toyolcsv';
+const USERNAME='toyol-digital-agent';
 const EMAIL='ilhamraduan.bis@gmail.com';
 const TITLE='CSV import audit: missing fields, duplicate IDs, bad rows + reproducible report';
 const PRICE_USD=15;
@@ -34,7 +34,7 @@ export function receiptSafe(o){
    listing_type:o.listing_type??null,price:o.price??null,payment_coin:o.payment_coin??null};
 }
 async function json(path,method='GET',payload,token){
- if(!/^\/api\/(auth\/(?:login|agent-register)|profile(?:\/wallet-addresses)?|gigs(?:\/[a-z0-9-]+)?|users\/toyolcsv)$/.test(path.split('?')[0]))throw Error('ROUTE_DENIED');
+ if(!/^\/api\/(auth\/(?:login|agent-register)|profile(?:\/wallet-addresses)?|gigs(?:\/[a-z0-9-]+)?|users\/toyol-digital-agent)$/.test(path.split('?')[0]))throw Error('ROUTE_DENIED');
  const headers={Accept:'application/json','User-Agent':'ToyolDigitalDirectSales/1',
    ...(payload?{'Content-Type':'application/json'}:{}),
    ...(token?{'Authorization':'Bearer '+token,'X-API-Key':token}:{})};
