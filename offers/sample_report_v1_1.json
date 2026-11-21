@@ -1,0 +1,24 @@
+{
+  "tool": "Toyol CSV Quality Gate",
+  "version": "1.1.0",
+  "sha256": "52324a5ce90ac5d7762ea204560d704dd27c1dfd46d7944381f19f7cd7ed4f54",
+  "headerCount": 3,
+  "recordCount": 4,
+  "passed": false,
+  "findingCount": 5,
+  "counts": {
+    "DUPLICATE_KEY": 1,
+    "DUPLICATE_ROW": 1,
+    "MISSING_REQUIRED_VALUE": 2,
+    "ROW_WIDTH": 1
+  },
+  "findings": [
+    {"code":"DUPLICATE_KEY","record":2,"detail":"Duplicate in id; first seen at record 1"},
+    {"code":"DUPLICATE_ROW","record":2,"detail":"Full duplicate; first seen at record 1"},
+    {"code":"MISSING_REQUIRED_VALUE","record":3,"detail":"Blank required field: name"},
+    {"code":"ROW_WIDTH","record":4,"detail":"Expected 3 columns, found 2"},
+    {"code":"MISSING_REQUIRED_VALUE","record":4,"detail":"Blank required field: status"}
+  ],
+  "truncated": false,
+  "privacy": "Offline; no network calls; record values are omitted from findings"
+}
