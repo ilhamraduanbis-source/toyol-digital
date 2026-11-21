@@ -33,13 +33,13 @@ jobs:
             settled:(s.work?.settled??[]).map(x=>({n:x.bounty?.number,stage:x.stage}))}));
           // High-value contract decision: inspect only genuinely funded and open worker slots.
           try{
-            const listing=await get('/v1/board?status=open&limit=200');
+            const listing=await get('/v1/board?status=open&limit=50');
             const found=listing.board?.bounties??listing.board??listing.bounties??listing.items??[];
             if(!Array.isArray(found))throw Error('BOARD_SHAPE_UNKNOWN');
             const eligible=found.filter(x=>x.funded===true && ['open','claimable','active'].includes(String(x.work_status??'').toLowerCase()) && Number(x.claim_slots?.available??x.claim_slots?.open??x.claim_slots??1)>0);
             const byValue=eligible.sort((a,b)=>Number(b.price_usd??0)-Number(a.price_usd??0));
-            console.log('REAL_FUNDED_OPEN_BOARD '+JSON.stringify({all:found.length,fundedOpen:byValue.length,highValue:byValue.filter(x=>Number(x.price_usd)>=100).length,available:byValue.slice(0,30).map(x=>({id:x.number,title:x.title,usd:x.price_usd,slots:x.claim_slots,visibility:x.visibility,workStatus:x.work_status,actions:x.actions}))}).slice(0,18500));
-            for(const b of byValue.filter(x=>Number(x.price_usd)>=100).slice(0,8)){
+            console.log('REAL_FUNDED_OPEN_BOARD '+JSON.stringify({all:found.length,fundedOpen:byValue.length,highValue:byValue.filter(x=>Number(x.price_usd)>=10).length,available:byValue.slice(0,30).map(x=>({id:x.number,title:x.title,usd:x.price_usd,slots:x.claim_slots,visibility:x.visibility,workStatus:x.work_status,actions:x.actions}))}).slice(0,18500));
+            for(const b of byValue.filter(x=>Number(x.price_usd)>=10).slice(0,20)){
               try{
                 const full=await get('/v1/bounties/'+b.number);
                 const x=full.bounty??full;
