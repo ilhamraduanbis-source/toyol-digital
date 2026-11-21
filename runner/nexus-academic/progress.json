@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "S104",
+  "next_module": "M10",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -4815,6 +4815,89 @@
       },
       "transfer_test_pass": true,
       "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44957181319",
+      "at": "2026-11-21T22:31:41.987917+00:00",
+      "module": "S104",
+      "title": "Tafsir dan Ulumuhu (S104)",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 4,
+      "sources_total": 4,
+      "mastery_verified": false,
+      "literature": {
+        "query": "علوم القرآن التفسير أسباب النزول المكي والمدني أصول التفسير",
+        "source": "https://api.crossref.org/works?query.bibliographic=%D8%B9%D9%84%D9%88%D9%85+%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86+%D8%A7%D9%84%D8%AA%D9%81%D8%B3%D9%8A%D8%B1+%D8%A3%D8%B3%D8%A8%D8%A7%D8%A8+%D8%A7%D9%84%D9%86%D8%B2%D9%88%D9%84+%D8%A7%D9%84%D9%85%D9%83%D9%8A+%D9%88%D8%A7%D9%84%D9%85%D8%AF%D9%86%D9%8A+%D8%A3%D8%B5%D9%88%D9%84+%D8%A7%D9%84%D8%AA%D9%81%D8%B3%D9%8A%D8%B1&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.21608/fisb.2024.407932",
+            "title": "الوجيز في علوم الكتاب العزيز (المكي والمدني - نزول القرآن الكريم وأول وآخر ما نزل منه ـ أسباب النزول ـ الوحي)",
+            "year": 2024,
+            "url": "https://doi.org/10.21608/fisb.2024.407932",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.36047/1227-000-031-006",
+            "title": "أسباب النزول وأثرها في التفسير",
+            "year": 2020,
+            "url": "https://doi.org/10.36047/1227-000-031-006",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.35781/1637-017-017-005",
+            "title": "مدخل لدراسة أسباب النزول : تعريف سبب النزول وأهميته وجهود العلماء في العناية به وفوائده وأثره في التفسير",
+            "year": 2018,
+            "url": "https://doi.org/10.35781/1637-017-017-005",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.21608/mala.2024.262580.1318",
+            "title": "معالم السؤال بين المكي والمدني في القرآن الكريم",
+            "year": 2026,
+            "url": "https://doi.org/10.21608/mala.2024.262580.1318",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.59743/.v5i.99",
+            "title": "تاريخ النزول وأثره في التفسير",
+            "year": 2019,
+            "url": "https://doi.org/10.59743/.v5i.99",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.21608/fisb.2024.407932",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.36047/1227-000-031-006",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": {
+        "focus": "Makki/Madani",
+        "reading_targets": [
+          "al-Itqan fi ʿUlum al-Quran — al-Suyuti",
+          "Tafsir al-Tabari",
+          "Tafsir Ibn Kathir"
+        ],
+        "edition_status": "UNVERIFIED_STAM_2008",
+        "full_text_reviewed": false,
+        "source_questions": [
+          "Apakah istilah Arab dan definisi asal?",
+          "Siapakah pengarang, apakah edisi dan lokasi teks?",
+          "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
+        ]
+      },
       "publication_anchor": null
     }
   ]
