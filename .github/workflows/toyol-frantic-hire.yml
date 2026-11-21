@@ -1,0 +1,38 @@
+name: Toyol — Frantic Verified Hire and Incoming Offers
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/toyol-frantic-hire.mjs'
+      - 'test/toyol-frantic-hire.test.mjs'
+      - '.github/workflows/toyol-frantic-hire.yml'
+  schedule:
+    - cron: '49 */6 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-frantic-own-hire-profile
+  cancel-in-progress: false
+jobs:
+  verified-sales:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Validate truthful own-agent sales profile and paid identity
+        run: |
+          node --check src/toyol-frantic-hire.mjs
+          node --test test/toyol-frantic-hire.test.mjs
+      - name: Update own verified Frantic listing on push and read invited paid work
+        env:
+          FRANTIC_AGENT_TOKEN: ${{ secrets.FRANTIC_AGENT_TOKEN }}
+        run: |
+          if [ -z "$FRANTIC_AGENT_TOKEN" ]; then
+            echo "FRANTIC_HIRE_STOP NO_EXISTING_SECRET"
+            exit 1
+          fi
+          node src/toyol-frantic-hire.mjs
