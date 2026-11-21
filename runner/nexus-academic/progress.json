@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "S106B",
+  "next_module": "M05",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -4045,6 +4045,87 @@
       },
       "transfer_test_pass": true,
       "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44858702193",
+      "at": "2026-11-21T02:58:41.431747+00:00",
+      "module": "S106B",
+      "title": "Sarf (S106)",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 3,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "علم الصرف الميزان الصرفي الإعلال الإبدال المشتقات",
+        "source": "https://api.crossref.org/works?query.bibliographic=%D8%B9%D9%84%D9%85+%D8%A7%D9%84%D8%B5%D8%B1%D9%81+%D8%A7%D9%84%D9%85%D9%8A%D8%B2%D8%A7%D9%86+%D8%A7%D9%84%D8%B5%D8%B1%D9%81%D9%8A+%D8%A7%D9%84%D8%A5%D8%B9%D9%84%D8%A7%D9%84+%D8%A7%D9%84%D8%A5%D8%A8%D8%AF%D8%A7%D9%84+%D8%A7%D9%84%D9%85%D8%B4%D8%AA%D9%82%D8%A7%D8%AA&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.35269/1452-010-001-001",
+            "title": "مواطن الإعلال الصرفي في سورة المائدة",
+            "year": 2019,
+            "url": "https://doi.org/10.35269/1452-010-001-001",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.35645/1711-007-005-034",
+            "title": "علاقة الميزان الصرفي بتلوينه الصوتي",
+            "year": 2021,
+            "url": "https://doi.org/10.35645/1711-007-005-034",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.35269/1452-013-999-023",
+            "title": "التجديد في تمثيل البنية الصرفية للكلمة العربية:, من الميزان الصرفي نحو الميزان الصوتي كمعطى بديل أم تكميلي",
+            "year": 2022,
+            "url": "https://doi.org/10.35269/1452-013-999-023",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.35269/1452-013-999-012",
+            "title": "التكامل المعرفي بين علمي الصرف والأصوات من خلال ظاهرتي الإعلال والإبدال",
+            "year": 2022,
+            "url": "https://doi.org/10.35269/1452-013-999-012",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.33193/ijohss.17.2020.155",
+            "title": "الإعلال: حقيقته واهميته في الصرف العربي",
+            "year": 2020,
+            "url": "https://doi.org/10.33193/ijohss.17.2020.155",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.35269/1452-010-001-001",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.35645/1711-007-005-034",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": {
+        "focus": "Mujarrad dan mazid",
+        "reading_targets": [
+          "Shadha al-ʿArf fi Fann al-Sarf — Ahmad al-Hamalawi"
+        ],
+        "edition_status": "UNVERIFIED_STAM_2008",
+        "full_text_reviewed": false,
+        "source_questions": [
+          "Apakah istilah Arab dan definisi asal?",
+          "Siapakah pengarang, apakah edisi dan lokasi teks?",
+          "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
+        ]
+      },
       "publication_anchor": null
     }
   ]
