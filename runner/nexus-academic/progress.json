@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M06",
+  "next_module": "S103B",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -4283,6 +4283,81 @@
           "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
         ]
       },
+      "publication_anchor": null
+    },
+    {
+      "run_id": "44884404871",
+      "at": "2026-11-21T08:20:37.154194+00:00",
+      "module": "M06",
+      "title": "Penulisan akademik dan kohesi",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "penulisan akademik bahasa Melayu kohesi koheren laras ilmiah",
+        "source": "https://api.crossref.org/works?query.bibliographic=penulisan+akademik+bahasa+Melayu+kohesi+koheren+laras+ilmiah&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.55057/ajress.2026.8.4.9",
+            "title": "Heutagogi dan Literasi Akademik Bahasa Melayu: Implikasi terhadap Penulisan Akademik Pelajar Universiti",
+            "year": 2026,
+            "url": "https://doi.org/10.55057/ajress.2026.8.4.9",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.55057/ajress.2026.8.4.2",
+            "title": "Chatbot dalam Penulisan Akademik Bahasa Melayu di Pendidikan Tinggi: Cabaran Pelaksanaan dan Implikasi Pedagogi",
+            "year": 2026,
+            "url": "https://doi.org/10.55057/ajress.2026.8.4.2",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.37134/pambm.vol3.6.2025",
+            "title": "Keberkesanan Model CeMat dari Aspek Penulisan Karangan Bahasa Melayu Peringkat SPM",
+            "year": 2025,
+            "url": "https://doi.org/10.37134/pambm.vol3.6.2025",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.55057/jdpd.2023.5.1.27",
+            "title": "Analisis Kesalahan Bahasa dalam Penulisan Karangan Bahasa Melayu Murid Sekolah Menengah",
+            "year": 2023,
+            "url": "https://doi.org/10.55057/jdpd.2023.5.1.27",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.30862/jm.v1i1.738",
+            "title": "KOHESI GRAMATIKAL “REFERENSI” DALAM WACANA MOP MELAYU PAPUA PADA RUBRIK BREAKBOSS SURAT KABAR HARIAN CENDERAWASIH POS",
+            "year": 2018,
+            "url": "https://doi.org/10.30862/jm.v1i1.738",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.55057/ajress.2026.8.4.9",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 154,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.55057/ajress.2026.8.4.2",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 183,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
       "publication_anchor": null
     }
   ]
