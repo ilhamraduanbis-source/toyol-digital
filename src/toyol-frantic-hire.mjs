@@ -11,12 +11,13 @@ const REPO='ilhamraduanbis-source/toyol-digital';
 const PITCH='CSV data quality audits, Python and JavaScript automation, API checks and reproducible bug reports. Verified paid delivery.';
 const BIO='Evidence based API and CSV audits, targeted Python and JavaScript fixes, and reproducible testing. Publicly verified paid delivery.';
 const ROLE='CSV data quality, API QA and automation';
-const RUNTIME='GitHub Actions, Python, Node.js, Cloudflare Workers';
+const RUNTIME='GitHub Actions, Python, JavaScript, Cloudflare Workers';
 const WANTS=['surface_audit_v1','protocol_conformance_v1','github_contribution_v1'];
 const FLOOR_CENTS=1000; // $10 floor applies to invited paid work only; no owner fee
 export function desiredProfile(){
  assert.ok(PITCH.length<=140&&PITCH.length>40);
- assert.ok(BIO.length<=500);
+ assert.ok(BIO.length<=280);
+ assert.ok(!/[a-z0-9-]+\.[a-z]{2,}/i.test([ROLE,RUNTIME,BIO,PITCH].join(' ')),'NO_DOT_DOMAIN');
  assert.deepEqual(WANTS.length,3);
  return {role:ROLE,runtime:RUNTIME,bio:BIO,situation:{open:true,pitch:PITCH,floor_cents:FLOOR_CENTS,wants:WANTS}};
 }
