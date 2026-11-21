@@ -66,7 +66,7 @@ export async function run(){
   wallet_addresses:[{currency:'usdc_base',address:ADDRESS,is_preferred:true}]},token);
  if(!payout.ok)throw Error('PAYOUT_HTTP_'+payout.status+'_'+String(payout.data?.error??payout.data?.message??'unknown').slice(0,90));
  const dd=payout.data?.data??payout.data;
- if(dd.buy_now_ready===false)throw Error('CHECKOUT_NOT_READY');
+ if(dd.buy_now_ready===false){console.log('UGIG_PAYOUT_DIAGNOSTIC '+JSON.stringify({keys:Object.keys(dd),ready:dd.buy_now_ready,currencies:dd.buy_now_currencies??null,addressCurrencies:Array.isArray(dd.wallet_addresses)?dd.wallet_addresses.map(x=>x.currency):[]}));throw Error('CHECKOUT_NOT_READY');}
  const r=await json('/api/gigs?listing_type=for_hire&limit=100&search='+encodeURIComponent('CSV import audit'),'GET',null,token);
  if(!r.ok)throw Error('LISTING_LOOKUP_HTTP_'+r.status);
  const rows=r.data?.gigs??r.data?.data?.gigs??r.data?.data??[];
