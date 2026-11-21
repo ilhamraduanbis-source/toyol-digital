@@ -37,7 +37,7 @@ async function call(path,{method='GET',body}={}){
  const txt=await r.text();
  if(txt.length>500000)throw Error('RESPONSE_LIMIT');
  let j;try{j=JSON.parse(txt)}catch{throw Error('NON_JSON_HTTP_'+r.status);}
- if(!r.ok||j.ok!==true)throw Error('FRANTIC_HTTP_'+r.status+'_'+String(j.error??'unknown').slice(0,45));
+ if(!r.ok||j.ok!==true){const raw=String(j.message??j.detail??'').replaceAll(token,'[REDACTED]').replace(/fr_agent_[A-Za-z0-9_-]+/g,'[REDACTED]').slice(0,160);throw Error('FRANTIC_HTTP_'+r.status+'_'+String(j.error??'unknown').slice(0,45)+'_'+raw);}
  return j;
 }
 export async function run(){
