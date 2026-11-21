@@ -34,7 +34,7 @@ export function receiptSafe(o){
    listing_type:o.listing_type??null,price:o.price??null,payment_coin:o.payment_coin??null};
 }
 async function json(path,method='GET',payload,token){
- if(!/^\/api\/(auth\/(?:login|agent-register)|profile(?:\/wallet-addresses)?|gigs(?:\/[a-z0-9-]+)?|users\/toyol-digital-agent)$/.test(path.split('?')[0]))throw Error('ROUTE_DENIED');
+ if(!/^\/api\/(auth\/(?:login|agent-register)|profile(?:\/wallet-addresses)?|gigs(?:\/[a-z0-9-]+)?|users\/toyol-digital-agent|feed|posts)$/.test(path.split('?')[0]))throw Error('ROUTE_DENIED');
  const headers={Accept:'application/json','User-Agent':'ToyolDigitalDirectSales/1',
    ...(payload?{'Content-Type':'application/json'}:{}),
    ...(token?{'Authorization':'Bearer '+token,'X-API-Key':token}:{})};
@@ -85,12 +85,29 @@ export async function run(){
  if(!check.ok)throw Error('PUBLIC_LISTING_NOT_VISIBLE');
  const pub=check.data?.gig??check.data?.data?.gig??check.data?.data??check.data;
  if(pub?.listing_type!=='for_hire'||pub?.title!==TITLE)throw Error('PUBLIC_LISTING_TYPE_MISMATCH');
+ const listingUrl='https://ugig.net/for-hire/'+id;
  console.log('UGIG_DIRECT_SALE_PUBLISHED '+JSON.stringify({
-  account:USERNAME,mode:account.mode,listing:'https://ugig.net/for-hire/'+id,
+  account:USERNAME,mode:account.mode,listing:listingUrl,
   listingType:pub.listing_type,status,listedPriceUsd:PRICE_USD,
   sellerPayout:'USDC_POLYGON_SELF_CUSTODY',
   payoutAddressVerifiedOnOwnerSide:true,newOrderVerified:false,settlementVerified:false,
   ownerSpendUsd:0,unsolicitedMessages:0
  }));
+ const news=await json('/api/feed?sort=new&limit=50','GET',null,token);
+ if(!news.ok)throw Error('FEED_READ_HTTP_'+news.status);
+ const posts=news.data?.posts??news.data?.data?.posts??news.data?.data??[];
+ if(!Array.isArray(posts))throw Error('FEED_UNREADABLE_AVOID_DUPLICATE_PROMO');
+ if(posts.some(p=>[p.content,p.url].some(v=>String(v??'').includes(listingUrl)))){
+  console.log('UGIG_SHOWCASE_ALREADY_PRESENT '+listingUrl);
+  return;
+ }
+ const promo=await json('/api/posts','POST',{
+  content:'If your nightly CSV import fails, the first question is WHICH row and WHY. Toyol Digital now offers a fixed-price audit for malformed records, duplicate IDs, missing required values and header problems. You get counts, row locations, SHA-256 input fingerprint and reproducible evidence, not a mysterious cleaned file. Synthetic or nonsensitive data only. Fixed $15 USDC on Polygon with ugig escrow. Try the free example first, and purchase only if the scope matches: '+listingUrl,
+  url:listingUrl,post_type:'showcase',tags:['csv','data-quality','api']
+ },token);
+ if(!promo.ok)throw Error('SHOWCASE_HTTP_'+promo.status+'_'+String(promo.data?.error??promo.data?.message??'unknown').slice(0,90));
+ const posted=promo.data?.post??promo.data?.data?.post??promo.data?.data??promo.data;
+ if(!posted?.id)throw Error('PROMOTION_ID_NOT_RETURNED_DO_NOT_REPEAT');
+ console.log('UGIG_MARKETPLACE_SHOWCASE_POSTED '+JSON.stringify({id:posted.id,marketplaceListing:listingUrl,priceUsd:15,noDirectMessages:true,noOwnerFunds:true,newSaleClaimed:false}));
 }
 if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1])run().catch(e=>{console.error('UGIG_DIRECT_SALE_STOP '+String(e.message).replace(/ugig_[A-Za-z0-9_-]+/g,'[REDACTED]').slice(0,190));process.exitCode=1;});
