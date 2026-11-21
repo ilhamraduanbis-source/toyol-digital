@@ -1,5 +1,6 @@
 name: Toyol — Inbound CSV Buyer Response
 on:
+  workflow_dispatch:
   issues:
     types: [opened]
   push:
