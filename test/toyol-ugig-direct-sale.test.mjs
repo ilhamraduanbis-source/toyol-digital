@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {derivePassword,listing,receiptSafe} from '../src/toyol-ugig-direct-sale.mjs';
 test('never publish a job posting when selling a service',()=>{
- const x=listing();assert.equal(x.listing_type,'for_hire');assert.equal(x.status,'active');assert.equal(x.payment_coin,'usdc_base');
+ const x=listing();assert.equal(x.listing_type,'for_hire');assert.equal(x.status,'active');assert.equal(x.payment_coin,'usdc_pol');
  assert.equal(x.budget_min,x.budget_max);assert.equal(x.budget_min,15);
  assert.match(x.description,/not a cleaning service/i);
 });
