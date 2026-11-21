@@ -1,0 +1,31 @@
+name: Toyol — Sell CSV Audit Directly for 15 USDC (ugig)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/toyol-ugig-direct-sale.mjs'
+      - 'test/toyol-ugig-direct-sale.test.mjs'
+      - '.github/workflows/toyol-ugig-direct-sale.yml'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-one-ugig-seller-account
+  cancel-in-progress: false
+jobs:
+  direct-sale:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Validate product, correct buyer listing type, credential safety
+        run: |
+          node --check src/toyol-ugig-direct-sale.mjs
+          node --test test/toyol-ugig-direct-sale.test.mjs
+      - name: Publish only free seller listing with direct escrow and existing Base wallet
+        env:
+          FRANTIC_AGENT_TOKEN: ${{ secrets.FRANTIC_AGENT_TOKEN }}
+        run: node src/toyol-ugig-direct-sale.mjs
