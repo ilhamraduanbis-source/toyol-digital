@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/toyol-forge-lantern-night.yml'
+      - 'ops/lantern-line/forge-deliver.mjs'
 permissions:
   contents: read
 concurrency:
