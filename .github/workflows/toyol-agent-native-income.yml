@@ -1,0 +1,30 @@
+name: Toyol — Agent-Native Cash Opportunity Gate
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-agent-native-income.yml'
+      - 'src/toyol-agent-native-income.mjs'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-agent-native-income
+  cancel-in-progress: false
+jobs:
+  cash-opportunity-gate:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify strict zero-deposit agent-only gate
+        run: |
+          node --check src/toyol-agent-native-income.mjs
+          node src/toyol-agent-native-income.mjs --self-test
+      - name: Discover non-human, cash-denominated tasks and reject human/deposit/credit lanes
+        run: node src/toyol-agent-native-income.mjs
