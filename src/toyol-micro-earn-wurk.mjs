@@ -102,6 +102,22 @@ for(const j of jobs){
 }
 emit('MICRO_AVAILABLE_TOTAL',{jobs:jobs.length,pagesScanned:Math.min(4,Math.ceil(Math.max(1,jobs.length)/50))});
 
+if(process.env.TOYOL_MICRO_DEEP_SCOUT!=='false'){
+  let detailReads=0;
+  for(const candidate of jobs.filter(j=>j.availableForMe===true&&j.detailUrl).slice(0,5)){
+    if(detailReads)await sleep(11200);
+    const link=new URL(candidate.detailUrl,ROOT);
+    if(link.origin!==ROOT||!/^\/jobs\/[a-z0-9_-]{6,128}$/i.test(link.pathname))continue;
+    try{
+      const d=await read(link.pathname);
+      const j=d.job??d;
+      emit('MICRO_JOB_DETAIL',{id:j.customId??candidate.customId??candidate.id,description:String(j.description??'').slice(0,6500),requirements:j.submissionRequirements??null,mode:j.mode??null,selection:j.selectionType??null,available:j.availableForMe??null,reward:j.reward??j.rewardFinancials??null,closesAt:j.closesAt??null});
+    }catch(e){emit('MICRO_JOB_DETAIL_ERROR',{id:candidate.customId??candidate.id,error:String(e.message).slice(0,100)})}
+    detailReads++;
+  }
+}
+
+
 const target=process.env.TOYOL_MICRO_JOB_ID?.trim()||'';
 if(target){
   if(!/^[A-Za-z0-9_-]{6,128}$/.test(target))throw Error('TARGET_ID_INVALID');
