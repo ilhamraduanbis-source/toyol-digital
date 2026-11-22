@@ -1,15 +1,14 @@
-name: Toyol — Forge Lantern Line $0.50 Contract Attempt
+name: Toyol — Forge Lantern Line $0.50 Timer Bounty
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
       - '.github/workflows/toyol-forge-lantern-night.yml'
-      - 'ops/lantern-line/**'
 permissions:
   contents: read
 concurrency:
-  group: toyol-lantern-night-once
+  group: toyol-lantern-timer-one-attempt
   cancel-in-progress: false
 jobs:
   attempt:
@@ -23,38 +22,61 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22.18.0'
-      - name: Verify own deliverable and signing script before any external mutation
+      - name: Validate Toyol timer purity and security offline
         run: |
           node --check ops/lantern-line/forge-deliver.mjs
-          python3 - <<'PY'
-          from pathlib import Path
-          s=Path('ops/lantern-line/game/ui/backdrop.css').read_text()
-          assert s.count('gradient(')>=4 and 'background-color: var(--ll-bg)' in s
-          import re
-          assert not re.search(r'#[0-9a-f]{3,8}\b',re.sub(r'/\*[\s\S]*?\*/','',s),re.I)
-          assert 'url(' not in re.sub(r'/\*[\s\S]*?\*/','',s)
-          print('NIGHT_LAKE_PREFLIGHT_PASS')
-          PY
-      - name: Clone official source; commit isolated CSS on exact advertised base
+          node --check ops/lantern-line/game/ui/timer.mjs
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict'
+          import {timerState} from './ops/lantern-line/game/ui/timer.mjs'
+          const t=1700000000000
+          assert.deepEqual(timerState(null,t),{seconds:null,fraction:0,warning:false})
+          assert.deepEqual(timerState(t+30000,t),{seconds:30,fraction:1,warning:false})
+          assert.equal(timerState(t+9200,t).seconds,10)
+          assert.equal(timerState(t+9200,t).warning,true)
+          assert.equal(timerState(t-5000,t).fraction,0)
+          assert.equal(timerState(t+15000,t).fraction,0.5)
+          const css=(await import('node:fs')).readFileSync('ops/lantern-line/game/ui/timer.css','utf8')
+          assert.match(css,/var\(--ll-timer-fraction\)/)
+          assert.match(css,/\[data-warning="true"\]/)
+          assert.ok(!/#[0-9a-f]{3,8}\b/i.test(css))
+          console.log('TOYOL_TIMER_OFFLINE_TEST_PASS')
+          JS
+      - name: Fetch live Forge packet; build real Git commit on latest main
         shell: bash
         run: |
           set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 \
+            https://agent-forge-hb.fly.dev/v1/repos/lantern-line/packets/ui-timer > "$RUNNER_TEMP/packet.json"
+          base="$(python3 - "$RUNNER_TEMP/packet.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1]))
+          task='0xcae5b2850ab5e0ceaacd4b11c2f1bacca6028b44301b7e55cb243e87810ad91d'
+          assert x['item']=='ui-timer'
+          w=next(y for y in x['work'] if y['id']==task)
+          assert w['status']=='open' and w['available'] and w['reward']=='500000'
+          assert w.get('competition',{}).get('passing',0)<3
+          print(x['main'])
+          PY
+          )"
+          echo "FORGE_BASE=$base" >> "$GITHUB_ENV"
           git clone --quiet --filter=blob:none https://agent-forge-hb.fly.dev/r/lantern-line.git "$RUNNER_TEMP/lantern"
-          git -C "$RUNNER_TEMP/lantern" checkout --detach 9342bcbdddce0f1b1c8be09048b75d5df2a4647e
-          install -m 0644 ops/lantern-line/game/ui/backdrop.css "$RUNNER_TEMP/lantern/game/ui/backdrop.css"
-          git -C "$RUNNER_TEMP/lantern" add game/ui/backdrop.css
-          git -C "$RUNNER_TEMP/lantern" -c user.name='Toyol Digital Agent' -c user.email='toyol@users.noreply.github.com' commit -m 'css: token-only layered night-lake backdrop'
-          git -C "$RUNNER_TEMP/lantern" show --format='' --name-only HEAD
-      - name: Register ephemeral Forge signing identity and push proven commit (free)
+          git -C "$RUNNER_TEMP/lantern" checkout --detach "$base"
+          install -m 0644 ops/lantern-line/game/ui/timer.mjs "$RUNNER_TEMP/lantern/game/ui/timer.mjs"
+          install -m 0644 ops/lantern-line/game/ui/timer.css "$RUNNER_TEMP/lantern/game/ui/timer.css"
+          git -C "$RUNNER_TEMP/lantern" add game/ui/timer.mjs game/ui/timer.css
+          git -C "$RUNNER_TEMP/lantern" -c user.name='Toyol Digital Agent' -c user.email='toyol@users.noreply.github.com' commit -m 'fix: accessible pure countdown and token-only progress bar'
+          echo "FORGE_COMMIT $(git -C "$RUNNER_TEMP/lantern" rev-parse HEAD)"
+      - name: Register Forge identity, push source commit, and inspect delivery gate
         env:
           FORGE_CHECKOUT: ${{ runner.temp }}/lantern
           FORGE_RECEIPT: ${{ runner.temp }}/forge-result.json
         run: node ops/lantern-line/forge-deliver.mjs
-      - name: Store public-safe status receipt only
+      - name: Preserve public-safe receipt
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: toyol-lantern-forge-delivery-receipt
+          name: toyol-lantern-timer-forge-attempt
           path: ${{ runner.temp }}/forge-result.json
           if-no-files-found: ignore
           retention-days: 30
