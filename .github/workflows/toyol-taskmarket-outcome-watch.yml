@@ -1,0 +1,41 @@
+name: Toyol — TaskMarket Outcome Watch (No Fees)
+on:
+  schedule:
+    - cron: '31 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/toyol-taskmarket-outcome-watch.mjs'
+      - '.github/workflows/toyol-taskmarket-outcome-watch.yml'
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: toyol-taskmarket-outcome-watch
+  cancel-in-progress: false
+jobs:
+  check:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Offline verification tests
+        run: |
+          node --check src/toyol-taskmarket-outcome-watch.mjs
+          node src/toyol-taskmarket-outcome-watch.mjs --self-test
+      - name: Watch 4 original submissions and alert only on meaningful changes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node src/toyol-taskmarket-outcome-watch.mjs
+      - name: Save read-only audit snapshot
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: taskmarket-outcome-snapshot
+          path: out/taskmarket-watch/latest.json
+          retention-days: 7
+          if-no-files-found: warn
