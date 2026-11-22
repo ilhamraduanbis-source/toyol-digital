@@ -9,6 +9,16 @@ command -v curl >/dev/null || { echo "CURL_MISSING"; exit 1; }
 mkdir -p "$HOME/toyol-tap-free"
 cd "$HOME/toyol-tap-free"
 
+# HARD ZERO-SPEND GUARD. TaskMarket documents that FREE bounty submissions
+# do not load X402 policy, while fee-bearing submissions MUST load it.
+# An intentionally unreadable/invalid temporary policy blocks signing a fee,
+# and the override applies only to this one shell invocation.
+FEE_GUARD="$PWD/.deny-fees-policy.json"
+printf '%s\n' '{ "version": "DENY_ALL_PAID_ACTIONS" }' > "$FEE_GUARD"
+chmod 600 "$FEE_GUARD"
+export TASKMARKET_X402_POLICY_PATH="$FEE_GUARD"
+echo "ZERO_SPEND_GUARD_ACTIVE"
+
 # Do not proceed unless the actual local keystore's TAP key matches a verifier record.
 taskmarket --network tempo tap show > tap-status.json
 node --input-type=module -e '
