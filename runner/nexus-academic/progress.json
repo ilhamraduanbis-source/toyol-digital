@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "S109",
+  "next_module": "M15",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -5605,6 +5605,87 @@
       },
       "transfer_test_pass": true,
       "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45053970410",
+      "at": "2026-11-22T18:15:01.494272+00:00",
+      "module": "S109",
+      "title": "ʿArudh dan Qafiyah (S109)",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 2,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "علم العروض القافية التفعيلات البحور الزحافات العلل الروي",
+        "source": "https://api.crossref.org/works?query.bibliographic=%D8%B9%D9%84%D9%85+%D8%A7%D9%84%D8%B9%D8%B1%D9%88%D8%B6+%D8%A7%D9%84%D9%82%D8%A7%D9%81%D9%8A%D8%A9+%D8%A7%D9%84%D8%AA%D9%81%D8%B9%D9%8A%D9%84%D8%A7%D8%AA+%D8%A7%D9%84%D8%A8%D8%AD%D9%88%D8%B1+%D8%A7%D9%84%D8%B2%D8%AD%D8%A7%D9%81%D8%A7%D8%AA+%D8%A7%D9%84%D8%B9%D9%84%D9%84+%D8%A7%D9%84%D8%B1%D9%88%D9%8A&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.54246/1548-011-001-062",
+            "title": "الزحافات والعلل ودورها في تقريب البحور الخليلية العربية من الأوزان النبرية الأوربية",
+            "year": 2018,
+            "url": "https://doi.org/10.54246/1548-011-001-062",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.12816/0043154",
+            "title": "في العروض والشعر : الزجل نظم على البحور الخليلية باللهجة العامية",
+            "year": 2017,
+            "url": "https://doi.org/10.12816/0043154",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.33193/jalhss.44.5",
+            "title": "البحور المهملة في العروض العربي بين الإهمال والإعمال",
+            "year": 2019,
+            "url": "https://doi.org/10.33193/jalhss.44.5",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.17656/jzsb.10076",
+            "title": "قراءة في علم القافية بين التراث و المعاصرة",
+            "year": 2000,
+            "url": "https://doi.org/10.17656/jzsb.10076",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.33705/0114-000-050-004",
+            "title": "الإيقاع بين علم الموسيقى وعلم العروض",
+            "year": 2020,
+            "url": "https://doi.org/10.33705/0114-000-050-004",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.54246/1548-011-001-062",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.12816/0043154",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": {
+        "focus": "Asbab, awtad dan tafʿilah",
+        "reading_targets": [
+          "Mizan al-Dhahab fi Sinaʿat Shiʿr al-ʿArab — Ahmad al-Hashimi"
+        ],
+        "edition_status": "UNVERIFIED_STAM_2008",
+        "full_text_reviewed": false,
+        "source_questions": [
+          "Apakah istilah Arab dan definisi asal?",
+          "Siapakah pengarang, apakah edisi dan lokasi teks?",
+          "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
+        ]
+      },
       "publication_anchor": null
     }
   ]
