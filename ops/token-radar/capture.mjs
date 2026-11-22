@@ -55,6 +55,9 @@ try {
     await waitForBoard(page);
   };
   await visit('');
+  // Verify visual default order, not just the correct ranking inside board.json.
+  const firstRank = Number((await page.locator('tbody tr').first().locator('td').first().innerText()).trim());
+  if (firstRank !== 1) throw new Error('VISUAL_SORT_FAIL: expected first visible rank 1, got ' + firstRank);
   await page.screenshot({ path: join(dest, '1-board.jpg'), type: 'jpeg', quality: 76 });
 
   // Open the real detail interaction through a user click, not a hash-only assumption.
