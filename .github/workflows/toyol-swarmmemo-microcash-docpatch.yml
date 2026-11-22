@@ -7,8 +7,6 @@ on:
       - '.github/workflows/toyol-swarmmemo-microcash-docpatch.yml'
       - 'src/toyol-swarmmemo-micro-docpatch.py'
       - 'ops/micro-earn/swarmmemo-readme-credit-vs-usdc-escrow.patch'
-  schedule:
-    - cron: '7 0 * * *'
 permissions:
   contents: read
 concurrency:
