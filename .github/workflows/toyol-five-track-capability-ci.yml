@@ -94,3 +94,103 @@ jobs:
         run: |
           echo "TOYOL_FIVE_TRACK: source tests & SDK builds completed"
           echo "REGISTRATIONS=unverified SUBMISSIONS=unverified AWARDS_USD=0"
+
+  pocketops-g2:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    defaults:
+      run:
+        working-directory: ops/five-track-lab/apps/pocketops-g2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install official Even Hub dependencies (no paid APIs)
+        run: npm install --no-audit --no-fund
+      - name: Pure offline proof-gate regression suite
+        run: npm test
+      - name: Real Even Hub SDK build
+        run: npm run build
+      - name: Package native Even Hub G2 application
+        run: npx --no-install evenhub pack app.json dist -o "$RUNNER_TEMP/pocketops-g2.ehpk"
+      - name: Install official simulator Linux WebKit/GTK runtime from Ubuntu packages
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends libwebkit2gtk-4.1-0 libgtk-3-0
+          ldd ./node_modules/@evenrealities/sim-linux-x64/bin/evenhub-simulator > "$RUNNER_TEMP/pocketops-ldd.log"
+          if grep -q 'not found' "$RUNNER_TEMP/pocketops-ldd.log"; then cat "$RUNNER_TEMP/pocketops-ldd.log"; exit 1; fi
+      - name: Run the official Even Hub simulator and test actual gestures
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run dev > "$RUNNER_TEMP/pocketops-vite.log" 2>&1 &
+          VITE_PID=$!
+          xvfb-run -a node ./node_modules/@evenrealities/evenhub-simulator/bin/index.js http://127.0.0.1:5173 --automation-port 9898 > "$RUNNER_TEMP/pocketops-simulator.log" 2>&1 &
+          SIM_PID=$!
+          trap 'kill "$SIM_PID" "$VITE_PID" 2>/dev/null || true' EXIT
+          READY=0
+          for i in $(seq 1 70); do
+            if curl -fsS --max-time 2 http://127.0.0.1:9898/api/ping >/dev/null 2>&1; then READY=1; break; fi
+            if ! kill -0 "$SIM_PID" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if [ "$READY" -ne 1 ]; then
+            echo 'OFFICIAL_SIMULATOR_NO_START'; tail -80 "$RUNNER_TEMP/pocketops-simulator.log"; exit 1
+          fi
+          sleep 4
+          curl -fsS --max-time 15 http://127.0.0.1:9898/api/screenshot/glasses -o "$RUNNER_TEMP/pocketops-g2-before.png"
+          curl -fsS --max-time 15 -H 'Content-Type: application/json' -d '{"action":"click"}' http://127.0.0.1:9898/api/input
+          sleep 2
+          curl -fsS --max-time 15 http://127.0.0.1:9898/api/screenshot/glasses -o "$RUNNER_TEMP/pocketops-g2-after.png"
+          python -m pip install --disable-pip-version-check pillow
+          python - <<'PY'
+          import os
+          from PIL import Image, ImageChops
+          d=os.environ['RUNNER_TEMP']
+          a=Image.open(os.path.join(d,'pocketops-g2-before.png')).convert('RGBA')
+          b=Image.open(os.path.join(d,'pocketops-g2-after.png')).convert('RGBA')
+          assert a.size == (576,288), ('unexpected HUD dimensions',a.size)
+          assert ImageChops.difference(a,b).getbbox() is not None, 'GLASSES_IMAGE_UNCHANGED: gesture did not update display'
+          assert sum(1 for px in a.getdata() if px[3]>128)>1000 and sum(1 for px in b.getdata() if px[3]>128)>1000, 'GLASSES_EMPTY'
+          print('OFFICIAL_EVEN_G2_SIMULATOR_GESTURE_SCREENSHOT_PASS')
+          PY
+      - name: Preserve simulator evidence and local package even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pocketops-g2-original-simulator-evidence
+          path: |
+            ${{ runner.temp }}/pocketops-g2.ehpk
+            ${{ runner.temp }}/pocketops-g2-before.png
+            ${{ runner.temp }}/pocketops-g2-after.png
+            ${{ runner.temp }}/pocketops-simulator.log
+            ${{ runner.temp }}/pocketops-vite.log
+          if-no-files-found: warn
+          retention-days: 7
+
+  firebase-proofsafe:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: ops/five-track-lab/apps/firebase-proofsafe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Firebase SDK without secrets or billing
+        run: npm install --no-audit --no-fund
+      - name: Test no-spend four-factor cloud guard
+        run: npm test
+      - name: Build real Firebase AI Logic SDK app with fallback OFF
+        run: npm run build
+      - name: Assert build has default cloud fallback disabled
+        run: |
+          test -f dist/index.html
+          ! grep -r -F 'NO_CLOUD_BILLING_CONFIRMED_BY_TEST' dist/
+          echo "FIREBASE_SDK_BUILD_PASS; REMOTE_INFERENCE=NOT_EXECUTED; BILLING=NO"

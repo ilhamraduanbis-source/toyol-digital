@@ -1,0 +1,21 @@
+{
+  "name": "toyol-pocketops-g2",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "test": "node --test tests/*.test.mjs",
+    "pack": "npm run build && evenhub pack app.json dist -o pocketops-g2.ehpk"
+  },
+  "dependencies": {
+    "@evenrealities/even_hub_sdk": "^0.0.16"
+  },
+  "devDependencies": {
+    "@evenrealities/evenhub-cli": "*",
+    "@evenrealities/evenhub-simulator": "*",
+    "vite": "^7.0.0",
+    "typescript": "^5.8.0"
+  }
+}
