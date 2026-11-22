@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M13",
+  "next_module": "S108",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -5366,6 +5366,85 @@
           "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
         ]
       },
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45020835348",
+      "at": "2026-11-22T12:09:43.235510+00:00",
+      "module": "M13",
+      "title": "Usuluddin, ilmu kalam dan teologi",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 3,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Islamic theology kalam divine attributes reason revelation",
+        "source": "https://api.crossref.org/works?query.bibliographic=Islamic+theology+kalam+divine+attributes+reason+revelation&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.1111/moth.12305",
+            "title": "Reason After Revelation: Karl Barth on Divine Word and Human Words",
+            "year": 2016,
+            "url": "https://doi.org/10.1111/moth.12305",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.24042/20251925207",
+            "title": "Islamic Reform in Minangkabau: The Integration of Theology, Reason, and Science in the Thought of Abdul Karim Amrullah",
+            "year": 2025,
+            "url": "https://doi.org/10.24042/20251925207",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.46222/pharosjot.107.221",
+            "title": "Harmonisation of Reason and Revelation: A  Comprehensive Analysis of Al-Kindī's Philosophy in  Constructing Rational Islamic Theology",
+            "year": 2026,
+            "url": "https://doi.org/10.46222/pharosjot.107.221",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1177/0040571x2701509002",
+            "title": "Reason and Christian Experience",
+            "year": 1927,
+            "url": "https://doi.org/10.1177/0040571x2701509002",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1177/0040571x9810100409",
+            "title": "Book Review: Divine Revelation",
+            "year": 1998,
+            "url": "https://doi.org/10.1177/0040571x9810100409",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.1111/moth.12305",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 177,
+            "signals": [
+              "results_signalled"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.24042/20251925207",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 218,
+            "signals": [
+              "results_signalled"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
       "publication_anchor": null
     }
   ]
