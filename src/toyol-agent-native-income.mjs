@@ -9,6 +9,7 @@ import {appendFileSync} from 'node:fs';
 const API='https://api.agentics.page/jobs';
 const INVALID_SOURCE=new Set(['agentmesh','basedagents','clawearn','executionMarket','rentahuman','openwork','immunefi','cantina']);
 const FEE_WORDS=/\b(?:deposit|upfront|stake|staking|collateral|bond|paid call|x402 payment|purchase token|token purchase|buy a token|pay a fee|gas fee|buy credits|entry fee)\b/i;
+const CAPITAL_RISK=/\b(?:market.mak(?:e|ing)|liquidity|provide liquidity|swap|trade funds|purchase|buy tokens?|open a position|rebalance a pool|fund a wallet|send (?:crypto|usdc|usdt)|bridge (?:tokens|funds))\b/i;
 const HUMAN_WORDS=/\b(?:human only|record your voice|phone recording|in.person|on.site|physical attendance|real world|live video of yourself|speak to camera)\b/i;
 const UNSUPPORTED=/\b(?:affiliate|referral commissions?|insurance|takaful|sales kpi|tiktok comments|bulk comments|growth hacking)\b/i;
 const CAPABILITY=/\b(?:api|markdown|csv|json|documentation|validator|test|qa|typescript|javascript|node\.?js|python|bug fix|unit tests|data quality|data audit|openapi|calculator|tokenomics|vesting|web app|research report|error handling)\b/i;
@@ -30,6 +31,7 @@ function assess(j,now=Date.now()){
  if(!url)return {kind:'reject',reason:'NO_APPROVED_PRIMARY_URL'};
  if(!['USD','USDC','USDT','OUSD'].includes(currency)||!Number.isFinite(amount)||amount<=0)return {kind:'reject',reason:'NO_POSITIVE_CASH_AMOUNT'};
  if(FEE_WORDS.test(all))return {kind:'reject',reason:'UPFRONT_SPEND_SIGNAL'};
+ if(CAPITAL_RISK.test(all))return {kind:'reject',reason:'TRADING_OR_CAPITAL_REQUIRED'};
  if(HUMAN_WORDS.test(all)||UNSUPPORTED.test(all))return {kind:'reject',reason:'MANUAL_OR_PROHIBITED_SCOPE'};
  if(j.deadline){const d=Date.parse(j.deadline);if(Number.isFinite(d)&&d<now)return{kind:'reject',reason:'EXPIRED'};}
  // Only a shortlist; primary payment and owner eligibility must be checked separately.
@@ -47,11 +49,12 @@ function selfTest(){
  assert.equal(assess({...base,source:'basedagents'}).reason,'NO_CASH_OR_ZERO_DEPOSIT_NOT_ESTABLISHED');
  assert.equal(assess({...base,title:'Deposit $1 for JavaScript task'}).reason,'UPFRONT_SPEND_SIGNAL');
  assert.equal(assess({...base,description:'Buy a token first'}).reason,'UPFRONT_SPEND_SIGNAL');
+ assert.equal(assess({...base,title:'Market-make USDC on Base'}).reason,'TRADING_OR_CAPITAL_REQUIRED');
  assert.equal(assess({...base,currency:'credits'}).reason,'NO_POSITIVE_CASH_AMOUNT');
  assert.equal(assess({...base,url:'https://evil.example/steal'}).reason,'NO_APPROVED_PRIMARY_URL');
  assert.equal(assess({...base,deadline:'2026-01-01T00:00:00Z'},Date.parse('2026-11-22T00:00:00Z')).reason,'EXPIRED');
  assert.equal(assess({...base,payModel:'contest'}).kind,'CONTEST_NOT_RECEIVABLE');
- console.log('AGENT_NATIVE_GATE_TEST_PASS 9');
+ console.log('AGENT_NATIVE_GATE_TEST_PASS 10');
 }
 if(process.argv.includes('--self-test')){selfTest();process.exit(0);}
 selfTest();
@@ -71,7 +74,7 @@ candidates.sort((a,b)=>{
  (x.reason==='CAPABILITY_MATCH'?2:0);
  return score(b)-score(a)||b.amount-a.amount;
 });
-const list=candidates.slice(0,15);
+const list=candidates.filter(x=>x.kind!=='CONTEST_NOT_RECEIVABLE').slice(0,15);
 console.log('AGENT_NATIVE_SCAN '+JSON.stringify({source:API,seen:data.jobs.length,
   sourceFetchedAt:data.fetchedAt??null,candidates:candidates.length,
   displayed:list.length,counts,spendUsd:0,submissions:0,verifiedPayments:0,
