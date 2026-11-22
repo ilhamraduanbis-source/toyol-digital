@@ -128,7 +128,11 @@ node "$entry/main.ts" --input "$kit/input/snapshot.json" --output "$entry/out"
 # Genuine screenshots from the actual output, not copied from the starter.
 node "$GITHUB_WORKSPACE/ops/token-radar/capture.mjs" \
   "$entry/out" "$entry/screenshots"
-# The official program copies screenshots into output and re-generates the byte-matching dossier.
+# Replace starter screenshot files and stale output files: dossier caps allow at most four images.
+find "$entry/screenshots" -maxdepth 1 -type f ! -name '*.jpg' -delete
+rm -rf "$entry/out" "$entry/out-replay"
+mkdir -p "$entry/out" "$entry/out-replay"
+# The official program copies screenshots into freshly empty outputs and creates its dossier.
 node "$entry/main.ts" --input "$kit/input/snapshot.json" --output "$entry/out"
 node "$entry/main.ts" --input "$kit/input/snapshot.json" --output "$entry/out-replay"
 python3 "$GITHUB_WORKSPACE/ops/token-radar/evaluate.py" \
