@@ -1,28 +1,28 @@
 {
   "version": 1,
   "source": "Qwen CPU model; non-executable advisory plan",
-  "lastRunId": "44949945278",
-  "updatedAt": "2026-11-21T21:11:52.118Z",
+  "lastRunId": "44972033083",
+  "updatedAt": "2026-11-22T01:37:19.897Z",
   "agents": {
     "aggregator": {
       "model": "Qwen/Qwen2.5-0.5B-Instruct",
       "revision": "c89bee90d9f811437d9735454613c35b4a3c4dc8",
       "purpose": "research",
-      "proposal": "To ensure a successful review of the clone without reproducing past builds, follow these steps:\n\n1. **Inspection**: Verify that there are no real free-providers' responses and native sessions before attempting any further builds.\n2. **Documentation Audit**: Only vetted shared skill evidence should be used for documentation audit.\n\nThis ensures that the review process adheres to established guidelines while maintaining transparency and accountability.",
-      "generatedTokens": 81,
-      "lastRunId": "44949945278",
+      "proposal": "To ensure a successful review of the clone without reproducing past builds, follow these steps:\n\n1. **Inspection**: Verify that there are no real free-providers' responses and native sessions before attempting any further builds.\n2. **Documentation Audit**: Only vetted shared skill evidence, give one specific next action, its proof criterion, one risk, and one stop criterion.\n\nThis ensures a thorough and safe review process.",
+      "generatedTokens": 85,
+      "lastRunId": "44972033083",
       "status": "MODEL_DRAFT_NO_PAYMENT_OR_EXTERNAL_AUTHORIZATION",
-      "cycles": 17
+      "cycles": 18
     },
     "frantic-delivery": {
       "model": "Qwen/Qwen2.5-0.5B-Instruct",
       "revision": "c89bee90d9f811437d9735454613c35b4a3c4dc8",
       "purpose": "plan",
-      "proposal": "The next concrete next step would be to conduct a thorough inspection of the workflow to verify compliance with the requirements for delivering existing reviewed funded assignments. This involves verifying that only vetted shared skill evidence is used. Given the previous findings, this step requires additional evidence such as CSV evidence and documentation audit. A stop criterion could be achieving success in the workflow completion without establishing delivery, acceptance, or payment.",
-      "generatedTokens": 80,
-      "lastRunId": "44949945278",
+      "proposal": "The next concrete next step would be to conduct a thorough inspection of the workflow to verify compliance with the requirements for delivering existing reviewed funded assignments. This involves verifying that only vetted shared skill evidence is used. Given the previous findings, this step requires additional evidence such as documented workflows, audit logs, and expert reviews. A stop criterion could be reaching a consensus among stakeholders regarding the need for further verification before proceeding.",
+      "generatedTokens": 83,
+      "lastRunId": "44972033083",
       "status": "MODEL_DRAFT_NO_PAYMENT_OR_EXTERNAL_AUTHORIZATION",
-      "cycles": 17
+      "cycles": 18
     },
     "swarmmemo-qa": {
       "model": "Qwen/Qwen2.5-0.5B-Instruct",
@@ -30,59 +30,59 @@
       "purpose": "plan",
       "proposal": "The next step should be to conduct a thorough inspection of the workflow to ensure successful completion without any issues. This involves verifying the use of vetted shared skills and ensuring compliance with the mission's requirements. Specifically, use only vetted shared skill evidence. Additionally, preserve existing jobs. The stop criterion is that the workflow completion alone does not establish delivery, acceptance, or payment.",
       "generatedTokens": 76,
-      "lastRunId": "44949945278",
+      "lastRunId": "44972033083",
       "status": "MODEL_DRAFT_NO_PAYMENT_OR_EXTERNAL_AUTHORIZATION",
-      "cycles": 17
+      "cycles": 18
     },
     "swarmmemo-data": {
       "model": "Qwen/Qwen2.5-0.5B-Instruct",
       "revision": "c89bee90d9f811437d9735454613c35b4a3c4dc8",
       "purpose": "plan",
-      "proposal": "The proposed next step involves conducting a thorough inspection of the workflow to ensure it has successfully completed without any errors or issues. This includes verifying the use of the correct tools and ensuring that the CSV evidence is used correctly. A specific next action could be to conduct a verification process using the verified shared skills, which would require vetted shared skill evidence. The proof criterion for this action would be the successful completion of the workflow with no errors or issues. The risk associated with this action is that there may still be some uncertainty about the workflow's success due to the lack of direct evidence. The stop criterion would be if the workflow was successfully completed without",
-      "generatedTokens": 128,
-      "lastRunId": "44949945278",
+      "proposal": "The next step would be to conduct a thorough inspection of the workflow to ensure it has successfully completed without any errors or issues. This requires verifying the use of the correct tools and ensuring that the CSV evidence is used correctly. To preserve existing jobs, we need to do this independently. The proof criterion for this step would involve checking if the workflow was executed without errors or issues. A risk could be that there might still be some discrepancies or issues with the workflow after this step. The stop criterion should be that the workflow is now fully functional and ready for use.",
+      "generatedTokens": 113,
+      "lastRunId": "44972033083",
       "status": "MODEL_DRAFT_NO_PAYMENT_OR_EXTERNAL_AUTHORIZATION",
-      "cycles": 17
+      "cycles": 18
     },
     "payment-reconciliation": {
       "model": "Qwen/Qwen2.5-0.5B-Instruct",
       "revision": "c89bee90d9f811437d9735454613c35b4a3c4dc8",
       "purpose": "review",
-      "proposal": "To verify and deduplicate real settlements without counting advertised prizes, follow these steps:\n1. **Check Workflow Completion**: Ensure the workflow completes successfully without any errors or issues.\n2. **Review Workflow Use Only Vested Shares**: Use only vetted shares for use in the workflow.\n\n**Proof Criterion**: The workflow must complete successfully without any errors or issues.\n**Risk**: There may be instances where the workflow fails due to errors or unexpected behavior.\n**Stop Criterion**: If the workflow fails, it should be re-run with new, vetted shares.\n\nThis approach ensures that the workflow is reliable and adheres to the specified requirements while minimizing potential",
+      "proposal": "The current assignment involves verifying and deduplicating real settlements without counting advertised prizes. The following actions can be verified:\n\n1. **Check Workflow Completion**: Ensure the workflow completes successfully without any errors or issues.\n\n2. **Review Workflow Use Only Vested Shares**: Use only vetted shared skill evidence.\n\n**Proof Criterion**: The workflow must complete successfully without any errors or issues.\n\n**Risk**: There may be instances where the workflow fails due to errors or unexpected conditions.\n\n**Stop Criterion**: If the workflow fails, it should be re-executed with new inputs until success.\n\nThis approach ensures that the verification process adheres to the specified requirements while",
       "generatedTokens": 128,
-      "lastRunId": "44949945278",
+      "lastRunId": "44972033083",
       "status": "MODEL_DRAFT_NO_PAYMENT_OR_EXTERNAL_AUTHORIZATION",
-      "cycles": 17
+      "cycles": 18
     },
     "go-hybrid-4488": {
       "model": "Qwen/Qwen2.5-0.5B-Instruct",
       "revision": "c89bee90d9f811437d9735454613c35b4a3c4dc8",
       "purpose": "plan",
-      "proposal": "The next concrete next step is to conduct a thorough inspection of the workflow steps to ensure they meet the requirements for delivery, acceptance, and payment. This includes verifying that each step has been executed correctly and that all Mileage  Use only vetted shared skill evidence. A specific next action could be to gather and validate the CSV evidence from the documentation audit, ensuring it meets the criteria for audit and research. The proof criterion would be the verification of the CSV evidence against the established standards, while the risk and stop criterion would be maintaining the existing jobs and preserving any pending decisions until the final assessment.",
-      "generatedTokens": 120,
-      "lastRunId": "44949945278",
+      "proposal": "The next concrete next step is to conduct a thorough inspection of the workflow steps to ensure they meet the requirements for delivery, acceptance, and payment. This includes verifying that each step has been executed correctly and that all Mileage  Use only vetted shared skill evidence. A specific next action could be to gather and validate the workflow documentation, ensuring it aligns with the established standards and guidelines. The proof criterion would be the verification of the workflow steps against the documented requirements. A risk is the potential for misalignment between the workflow and the actual outcomes, which could lead to disputes or delays. A stop criterion is to maintain the integrity of the",
+      "generatedTokens": 128,
+      "lastRunId": "44972033083",
       "status": "MODEL_DRAFT_NO_PAYMENT_OR_EXTERNAL_AUTHORIZATION",
-      "cycles": 17
+      "cycles": 18
     },
     "wurk-markdown-sales": {
       "model": "Qwen/Qwen2.5-0.5B-Instruct",
       "revision": "c89bee90d9f811437d9735454613c35b4a3c4dc8",
       "purpose": "plan",
-      "proposal": "The next step should involve conducting a thorough inspection of the workflow steps to ensure they meet the requirements outlined by the mission document. This includes verifying that each step adheres to the established procedures and that there are no known issues with the workflow. Additionally, it is crucial to verify that the workflow is compatible with the current state of the project and that any changes made align with the mission document's expectations. Proof criteria would include ensuring that all steps are documented, that the code meets the standards specified in the mission document, and that there are no known bugs or errors. A risk could be the potential for delays if the inspection process takes too long",
+      "proposal": "The next step involves conducting a thorough inspection of the workflow steps to ensure they meet the requirements outlined by the mission document. This includes verifying that each step adheres to the established procedures and that there are use-only vetted shared skill evidence. A specific next action could be to conduct a detailed audit of the current workflow, ensuring it meets the specified standards. Proof criteria might include reviewing CSV evidence and validating the workflow against established procedures. A risk would be the potential for incomplete or inaccurate documentation, which could lead to misunderstandings about the intended functionality. A stop criterion would be if the workflow fails to meet the predefined requirements, indicating that further investigation",
       "generatedTokens": 128,
-      "lastRunId": "44949945278",
+      "lastRunId": "44972033083",
       "status": "MODEL_DRAFT_NO_PAYMENT_OR_EXTERNAL_AUTHORIZATION",
-      "cycles": 17
+      "cycles": 18
     },
     "tiny-chess-training": {
       "model": "Qwen/Qwen2.5-0.5B-Instruct",
       "revision": "c89bee90d9f811437d9735454613c35b4a3c4dc8",
       "purpose": "plan",
-      "proposal": "The next step would be to conduct a thorough inspection of the workflow steps to ensure they meet the requirements for delivery, acceptance, and payment. This requires using only vetted shared skill evidence and validating each step through CSV evidence and documentation audit. A stop criterion could be that all three workers have confirmed successful workflow completion with no issues identified.",
-      "generatedTokens": 68,
-      "lastRunId": "44949945278",
+      "proposal": "The proposed next step involves conducting a thorough inspection of the workflow steps to ensure they meet the requirements for delivery, acceptance, and payment. This will require using only vetted shared skill evidence and validating each step through CSV evidence. A specific next action is to use only vetted shared skill evidence. A risk is that this may lead to incomplete or incorrect results due to lack of validated evidence. A stop criterion is to achieve success with workflow completion alone establishing delivery, acceptance, and payment.",
+      "generatedTokens": 98,
+      "lastRunId": "44972033083",
       "status": "MODEL_DRAFT_NO_PAYMENT_OR_EXTERNAL_AUTHORIZATION",
-      "cycles": 17
+      "cycles": 18
     },
     "multihopper": {
       "model": "Qwen/Qwen2.5-0.5B-Instruct",
@@ -90,19 +90,19 @@
       "purpose": "research",
       "proposal": "The next action should be to check the mission, skills, and observed outcomes using the provided resources. This ensures the mission is met with the current purpose of the toyol-multihopper-watch.yml file. The risk is that the mission may not be fully executed due to lack of explicit instructions or verification. The stop criterion is that the mission is successfully completed without any issues or deviations from the original plan.",
       "generatedTokens": 82,
-      "lastRunId": "44949945278",
+      "lastRunId": "44972033083",
       "status": "MODEL_DRAFT_NO_PAYMENT_OR_EXTERNAL_AUTHORIZATION",
-      "cycles": 17
+      "cycles": 18
     },
     "leviathan-contracts": {
       "model": "Qwen/Qwen2.5-0.5B-Instruct",
       "revision": "c89bee90d9f811437d9735454613c35b4a3c4dc8",
       "purpose": "research",
-      "proposal": "To address the current assignment of USD500k for a public enterprise procurement discovery and verification, follow these steps:\n\n1. **Check Shared Skills**: Ensure you have the required expertise through the shared skills section. Verify if the workflow includes use of vetted shared skill evidence.\n\n2. **Documentation Audit**: Review the documentation audit section to ensure it is up-to-date and comprehensive. This will help confirm the accuracy of the information used in the workflow.\n\n3. **Next Action**: Based on the observations, decide whether the workflow has successfully completed the tasks without needing additional actions. If successful, proceed with the remaining steps.\n\n4. **",
-      "generatedTokens": 128,
-      "lastRunId": "44949945278",
+      "proposal": "To identify the facts and authoritative sources needed for this task, we need to check the shared skills section, which includes expertise in research, defi, valuation, and data. We also need to ensure that the shared skills are vetted and verified. The next step involves checking the documentation audit, which ensures the evidence is immutable and requires human or agent review. Finally, we should focus on a claimable funded opportunity within existing permissions. This process will help us verify the eligibility and actual deliverability of the project before any bid.",
+      "generatedTokens": 107,
+      "lastRunId": "44972033083",
       "status": "MODEL_DRAFT_NO_PAYMENT_OR_EXTERNAL_AUTHORIZATION",
-      "cycles": 17
+      "cycles": 18
     },
     "titan-awards": {
       "model": "Qwen/Qwen2.5-0.5B-Instruct",
@@ -110,29 +110,29 @@
       "purpose": "research",
       "proposal": "To identify facts and authoritative sources for the independent USD500k track with the specified criteria, follow these steps:\n\n1. **Mission Requirements Check**: Ensure the mission includes clear objectives, eligibility criteria, and any required conditions (e.g., conformance to rules and capability gates).\n\n2. **Shared Skill Evidence**: Utilize verified shared skill evidence from the provided list.\n\n3. **Next Action Proof Criterion**: Implement the workflow by checking the mission requirements and ensuring compliance with the established criteria.\n\n4. **Risk and Stop Criterion**: Verify that the workflow completes successfully before proceeding to the next step.\n\nBy following these steps, you can ensure",
       "generatedTokens": 128,
-      "lastRunId": "44949945278",
+      "lastRunId": "44972033083",
       "status": "MODEL_DRAFT_NO_PAYMENT_OR_EXTERNAL_AUTHORIZATION",
-      "cycles": 17
+      "cycles": 18
     },
     "atlas-mega-contracts": {
       "model": "Qwen/Qwen2.5-0.5B-Instruct",
       "revision": "c89bee90d9f811437d9735454613c35b4a3c4dc8",
       "purpose": "research",
-      "proposal": "To fulfill the task of verifying the USD5 million individual contract-value target for the civil software, data, and digital transformation procurement in official EU TED notices, follow these steps:\n\n1. **Check Own Mission and Shared Opportunities**: Ensure that the current assignment aligns with the USD5 million individual contract-value target.\n\n2. **Validate Skills**: Verify the use of vetted shared skills such as protocol analysis, tabular conversion, CSV evidence, documentation audit, and documentation research.\n\n3. **Use Only Vested Evidence**: Proceed with using only vetted shared skill evidence.\n\n**Proof Criterion**: The workflow should have been successfully completed without requiring additional",
-      "generatedTokens": 128,
-      "lastRunId": "44949945278",
+      "proposal": "To complete this task, you will need to check your own mission and ensure that it aligns with the requirements outlined in the document. You should also verify that you have access to the required skills and resources, such as CSV evidence and documentation audit. Additionally, you will need to confirm that you have followed the workflow correctly and that all necessary conditions (value currency, deadline, capability, etc.) are met. It is crucial to maintain transparency and adhere to the established deadlines to avoid any delays or penalties.",
+      "generatedTokens": 102,
+      "lastRunId": "44972033083",
       "status": "MODEL_DRAFT_NO_PAYMENT_OR_EXTERNAL_AUTHORIZATION",
-      "cycles": 17
+      "cycles": 18
     },
     "orion-mega-contracts": {
       "model": "Qwen/Qwen2.5-0.5B-Instruct",
       "revision": "c89bee90d9f811437d9735454613c35b4a3c4dc8",
       "purpose": "research",
-      "proposal": "To fulfill the task of checking the workflow completion and establishing delivery, acceptance, and payment, we need to:\n\n1. Verify the latest source for the OCDS releases.\n2. Ensure the release is vetted and verified.\n3. Check the eligibility, currency, scope, and realistic subcontract delivery before bidding.\n\nProof criteria:\n- The latest source should be vetted and verified.\n- The release should be eligible for bidding.\n- The scope and realistic subcontract delivery should be confirmed.\n\nRisk:\n- There may be issues with the OCDS releases due to changes in the system.\n- There might be delays in verifying the source or eligibility checks.",
+      "proposal": "To identify the facts and sources required for this task, we should focus on verifying the latest source for the OCDS releases, ensuring the release is vetted and verified, and checking the eligibility, currency, and scope of the tender. We will also ensure that the tender is registered and bid submitted according to the instructions. The next step involves validating the workflow completion and establishing delivery, acceptance, and payment. This requires verifying the latest source, ensuring it is vetted and verified, checking the eligibility, currency, and scope of the tender, and registering and bidding according to the instructions. The final step involves preserving existing jobs and focusing on a",
       "generatedTokens": 128,
-      "lastRunId": "44949945278",
+      "lastRunId": "44972033083",
       "status": "MODEL_DRAFT_NO_PAYMENT_OR_EXTERNAL_AUTHORIZATION",
-      "cycles": 17
+      "cycles": 18
     },
     "nexus-cross-sector": {
       "model": "Qwen/Qwen2.5-0.5B-Instruct",
@@ -140,9 +140,9 @@
       "purpose": "learn",
       "proposal": "To develop a comprehensive research method for the given tasks, follow these steps:\n\n1. **Define Clear Objectives**: Clearly outline what you want to achieve with each task.\n\n2. **Create a Detailed Plan**: Outline the specific skills needed for each task using vetted shared skill evidence.\n\n**Test of Competence**: After completing the research method, conduct a test of competence by evaluating your ability to:\n- Define clear objectives clearly.\n- Create detailed plans that align with stated goals.\n- Utilize vetted shared skill evidence effectively.\n- Demonstrate proficiency in creating a research plan.\n- Apply the created plan to specific tasks within the framework outlined",
       "generatedTokens": 128,
-      "lastRunId": "44949945278",
+      "lastRunId": "44972033083",
       "status": "MODEL_DRAFT_NO_PAYMENT_OR_EXTERNAL_AUTHORIZATION",
-      "cycles": 17
+      "cycles": 18
     }
   }
 }
