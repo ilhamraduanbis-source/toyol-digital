@@ -1,0 +1,32 @@
+# Diverse income discovery — 22 Nov 2026 (Malaysia, RM0 upfront)
+Status: verified advertised opportunities, NOT user applications, awarded work, approved hours, receivables, or settled cash. Browser/GitHub results checked 2026-11-22. Preserve existing clone missions and do not send unsanctioned applications, unsolicited contacts, financial commitments, or identity information.
+
+## Human-verified work track — prospective income only
+1. **UTM career portal / Shanghai Dolinkers, Malay & English voice recording participant.** https://careercentre.utm.my/job-portal/entry/3350/ . Pay RM40 per 30 minutes of client-approved audio (about one hour of reading). Malaysia residence, native Malay and English, smartphone. One-off and one entry per participant. Official portal closes **2026-11-27**. A human must record, agent cannot impersonate. Requires application and accepted QC; not an auto payout.
+2. **RWS TrainAI, AI Data Specialist Malay.** https://jobs.lever.co/rws/0a1ba562-de05-4bc4-825b-53cf0762abf6 . Posted rate **USD8/hr**, remote Malaysia cities, 10+ hours/week, Malay native and English B2–C2. Not assigned/accepted. Strong candidate for human linguistic AI QA, but no guaranteed hours.
+3. **TSMG Malay AI QC.** https://jobs.lever.co/tsmg/93b69574-d42e-4830-8560-d8a0394035a6 . Malay punctuation, transcript normalisation and speech recognition QC, remote Malaysia; paid on validated work, rate undisclosed. Work requires human QA and applicant approval.
+4. **TSMG Malay transcription.** https://jobs.lever.co/tsmg/4548fed4-d0e1-4d61-9a29-29e0a77f74e7 . Remote Malaysia, full/part time, paid based on validated work (amount unpublished).
+5. **CrowdGen by Appen Malay Voice Recording Specialist**. https://jobs.lever.co/appen/d502aabd-b329-4b19-b409-f1a0224c5aa8 . 150 prompts on Appen mobile, paid upon accepted full session. Pay figure not published in primary listing; human participation only.
+6. **Handshake Malay AI Evaluation Specialist (Singapore/Malaysia)**. https://careereducation.rochester.edu/jobs/handshake-ai-malay-ai-evaluation-specialist-singapore-malaysia/ . Published in public University of Rochester portal, recruiting since 2026-10-13, displayed expires 2027-10-13; Malaysian and Singapore residents with bachelor's or higher, strong Malay writing/English comprehension. Rate not available. Do not confuse with **Handshake Philosophy Expert** which requires PhD and peer-reviewed moral philosophy journal publication and is not eligible by user's current known degree.
+7. **OpenTrain Philosophy Expert AI Evaluation**. https://www.opentrain.ai/jobs/philosophy-ai-evaluation-expert--cmw7va6m300aw08l9rb6eb7gz/ . Listing posted 2026-11-08, **USD50–100/hour advertised**, Malaysia eligible, graduate philosophical degree plus 2+ years teaching/research/writing, fluent written English, 10 hours/wk, project-based, paid weekly via Stripe upon assignment/approval. Technical suitability and access to hiring company not validated.
+8. **Qualitate expert interviews** https://www.qualitate.io/experts . International, invitation-only 25–40 minute asynchronous AI interviews, USD fee set per invitation, 5–10 business day payment stated after completion; NO explicit guarantee of invitations or per-session amount.
+9. **Woozle expert network** https://woozleresearch.exlink.com/expert_registration.php . Choose preferred hourly USD rate, paid consultation on invitation only; not a contract booked.
+
+## Open-source / autonomous software track — screened exclusions
+10. **Tenstorrent tt-metal bounty board** https://github.com/tenstorrent/tt-metal/labels/bounty . On GitHub API 2026-11-22 state:open label:bounty found three, all currently **assigned**: #64575 $750, #65437 $2000, #64647 $750; unsuitable for a new independent unassigned claim. $35,000 #54016 is **closed, completed, paid** — do NOT recycle.
+11. **Fractal Neurons Pacta Wave 4 #159** https://github.com/Fractal-Neurons/pacta/issues/159 ; 10 x 2 USDC, but each entry explicitly needs **nonrefundable 0.02 USDC x402 paid call** funded in user-controlled wallet; REJECT under strict zero-user-outlay rule.
+12. **Base Everest audit on Immunefi** https://immunefi.com/audit-competition/audit-comp-base-everest/information/ . Nov 19–Dec 1 live competition, **USD250,000 total conditional shared reward pool**, Base USDC, mandatory KYC plus runnable exploit PoC. Not a simple or guaranteed USD250,000 contract and requires significant expert security engineering. Research only; no unauthorized testing.
+13. **Upwork mobile app translation English–Malay** https://www.upwork.com/freelance-jobs/apply/Translate-Mobile-App-from-English-Malay-Native-Malaysian-Only_~022121271094707154164/ . Advertised USD100 fixed-price Nov 13. No application unless existing free Connects remain and payer verified; otherwise zero-capital condition conflicts. The other recent Malay video offer $70 requires two smartphones and a real human on camera, not autonomous AI.
+
+## Enterprise/professional track
+14. **Toyol off-chain token vesting studio** previously packaged for Getly; source product is local HTML/ZIP. Listing acceptance, live sale, fulfilled payout NOT verified. Avoid claiming sale from category selection alone.
+15. **Toyol MYReady CSV preflight prototype** has technical tests; paying enterprise demand not demonstrated. Build a specific documented paid QA offer only after verified customer scope and agreement; owner-directed outreach and actual buyer approval required.
+16. Existing USD5M pipeline preserved unchanged in ops/USD5M_pipeline_2026-11-20.md and ops/high_ticket_candidate_queue_2026-11-22.md.
+
+## Operator rules
+- Never mix posted wage, unaccepted applicant, anticipated project, prize pool, contract face value and wallet settlement.
+- Never send a misleading application or use AI to impersonate a real voice/video worker.
+- No registration fees, upfront deposits, gas funding, paid proposal/Connect top-ups or signing for user without authorization.
+- Preserve 14 current GitHub clone lanes; this document is a research lead sheet **not** a launched paid worker or proof of acceptance.
+- Priority: direct paid language/academic tasks where applicant eligible, then recurring client revenue on existing deliverables, then no-fee fully unassigned OSS bounties with known payer. Screen all new leads against closing dates, duplicate listings, identity/payment requirements and real execution cost.
+- As of this note, **no new application submitted, paid contract secured or income earned** by this research.
