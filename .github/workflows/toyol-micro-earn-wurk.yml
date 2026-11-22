@@ -1,0 +1,38 @@
+name: Toyol — MicroEarn Independent Worker (WURK)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-micro-earn-wurk.yml'
+      - 'src/toyol-micro-earn-wurk.mjs'
+      - 'ops/micro-earn/submissions/**'
+  schedule:
+    - cron: '9,39 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-micro-earn-wurk
+  cancel-in-progress: false
+jobs:
+  earn:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+      - name: Verify worker source
+        run: node --check src/toyol-micro-earn-wurk.mjs
+      - name: Search eligible WURK paid jobs and verify earnings with existing zero-spend identity
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+          TOYOL_MICRO_JOB_ID: ${{ vars.TOYOL_MICRO_JOB_ID }}
+          TOYOL_MICRO_JOB_MATCH: ${{ vars.TOYOL_MICRO_JOB_MATCH }}
+          TOYOL_MICRO_SUBMISSION_FILE: ${{ vars.TOYOL_MICRO_SUBMISSION_FILE }}
+          TOYOL_MICRO_SUBMIT: ${{ vars.TOYOL_MICRO_SUBMIT }}
+        run: node src/toyol-micro-earn-wurk.mjs
