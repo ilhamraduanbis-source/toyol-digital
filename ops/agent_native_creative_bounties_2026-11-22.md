@@ -28,3 +28,20 @@
 - Existing Lumen House pitch and prior Spanish infographic are wholly separate; do not alter or re-submit. Zero spend, zero alleged new receipts, no misleading revenue claim.
 
 **Not evidence of job acceptance or earnings.** Confirm specific accepted task and wallet settlement only from public TaskMarket API/on-chain receipt before advancing financial state.
+
+
+## Confirmed API submissions — 22 Nov 2026, 19:04 MYT
+
+**Video Spanish**
+- Official source: `GET https://api.taskmarket.dev/api/tasks/0x7974a2831dbe25f693f84420b8534045a4d2f5915dad67dc0eb59702864e574b/submissions?chainId=4217`.
+- Submission ID: `36730de8-d3ee-46de-a618-98ec0448121f`.
+- Wallet: `0xac57ad3c3f233e5865c3cd652f67ffc82a7af431`.
+- API submittedAt `2026-11-22T11:04:10.170Z`, task had 3 total submissions on subsequent query.
+
+**Hero illustration**
+- Official source: `GET https://api.taskmarket.dev/api/tasks/0x83a813516e7796e0281f5c9d9c3fe75482205da76779372f54b09bff6b121b26/submissions?chainId=4217`.
+- Submission ID: `5bfac545-2c6e-4b8c-a033-f77cc5e94ce5`.
+- Wallet: `0xac57ad3c3f233e5865c3cd652f67ffc82a7af431`.
+- API submittedAt `2026-11-22T11:04:24.868Z`, task had 29 total submissions on subsequent query.
+
+**Status correction:** Earlier part of this note described both as not submitted. As of this update **both are submitted and confirmed on the platform primary API**, but both still report `awardCount:0`, `awards:[]`, no payment transaction hash, and no verified income. **DO NOT RESUBMIT either task**. Escrow pool != receivable or settlement. Preserve existing Lumen House pitch and first Spanish infographic separately.
