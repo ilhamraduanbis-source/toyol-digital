@@ -2,6 +2,8 @@
 
 ## Buy the offline CSV checker — Getly (live)
 
+**[Free CSV preflight checklist: 6 steps before an import](docs/csv-import-errors-preflight-guide.md)** — catches duplicate IDs, missing values and malformed row widths with a realistic example. Includes the paid option and a clear commercial disclosure.
+
 **[Toyol CSV Quality Gate v1.1 — instant digital download, USD49](https://www.getly.store/product/toyol-csv-quality-gate-v1-0-offline-csv-validation-toolkit)**
 
 A standalone **Python 3.10+**, no-subscription, no-dependency, **offline CSV validator** for teams importing data. It checks inconsistent row widths, malformed CSV/UTF-8, missing required columns/values, duplicate IDs/rows and empty or repeated headers. It generates a reproducible **JSON report** with finding codes, record positions and SHA-256 input fingerprint. The product includes an automated test suite (**28 passing tests**) and English/Malay documentation. Commercial internal use is allowed under the package's licence.
