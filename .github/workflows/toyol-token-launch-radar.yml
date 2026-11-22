@@ -1,0 +1,36 @@
+name: Toyol — TokenRadar Clone (recorded build, zero spend)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-token-launch-radar.yml'
+      - 'ops/token-radar/**'
+  schedule:
+    - cron: '17 3 * * 1,3,5'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-token-radar-clone
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+      - name: Run isolated official-kit build and safe token radar tests
+        shell: bash
+        run: bash ops/token-radar/runner.sh
+      - name: Publish source and public-safe evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: toyol-token-radar-public-evidence
+          path: ${{ runner.temp }}/tokenradar/public-evidence/
+          if-no-files-found: warn
+          retention-days: 14
