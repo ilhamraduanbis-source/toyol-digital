@@ -44,13 +44,40 @@ try {
   await page.locator('dialog.detail').waitFor({ state: 'visible', timeout: 12000 });
   await page.screenshot({ path: join(dest, '2-detail.jpg'), type: 'jpeg', quality: 76 });
 
-  // Use a unique-ish name from the actual board for an authentic filtered view.
+  // A hash-only navigation may retain the open modal and produce an exact
+  // duplicate of 2-detail.jpg. Use a genuinely fresh isolated page.
   const q = top.name.trim().split(/\s+/)[0];
-  await visit('#q=' + encodeURIComponent(q));
-  const search = page.locator('input[type=search]');
-  await search.waitFor({ state: 'visible', timeout: 8000 });
-  await page.screenshot({ path: join(dest, '3-filtered.jpg'), type: 'jpeg', quality: 76 });
-  console.log(JSON.stringify({ capture: 'ok', pages: 3, top_slug: top.slug, filter: q, offline: true }));
+  const filtered = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 });
+  await filtered.route('**/*', async route => {
+    const url = route.request().url();
+    if (/^(https?:|wss?:)/i.test(url)) return route.abort();
+    return route.continue();
+  });
+  try {
+    await filtered.goto(file + '#q=' + encodeURIComponent(q), { waitUntil: 'load' });
+    await filtered.waitForFunction(() => {
+      const root = document.getElementById('board');
+      return root && root.getAttribute('aria-busy') === 'false' && root.textContent.length > 100;
+    }, { timeout: 15000 });
+    const search = filtered.locator('input[type=search]');
+    await search.waitFor({ state: 'visible', timeout: 8000 });
+    const visibleFilter = await search.inputValue();
+    const visibleRows = await filtered.locator('tbody tr').count();
+    const modalOpen = await filtered.locator('dialog.detail').evaluate(el => el.open);
+    if (visibleFilter !== q || visibleRows < 1 || visibleRows >= board.rows.length || modalOpen) {
+      throw new Error('FILTER_VIEW_NOT_VERIFIABLY_DISTINCT ' +
+        JSON.stringify({ visibleFilter, q, visibleRows, modalOpen }));
+    }
+    await filtered.screenshot({ path: join(dest, '3-filtered.jpg'), type: 'jpeg', quality: 76 });
+    const { createHash } = await import('node:crypto');
+    const hashes = ['1-board.jpg', '2-detail.jpg', '3-filtered.jpg']
+      .map(name => createHash('sha256').update(readFileSync(join(dest, name))).digest('hex'));
+    if (new Set(hashes).size !== hashes.length) throw new Error('DUPLICATE_SCREENSHOT_CAPTURED');
+    console.log(JSON.stringify({ capture: 'ok', pages: 3, top_slug: top.slug,
+      filter: q, filtered_rows: visibleRows, distinct_hashes: true, offline: true }));
+  } finally {
+    await filtered.close();
+  }
 } finally {
   await browser.close();
 }
