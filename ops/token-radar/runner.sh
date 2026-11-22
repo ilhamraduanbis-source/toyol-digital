@@ -120,7 +120,7 @@ node "$kit/cli/makefun.mjs" init \
   --license MIT | tee "$evidence/init.log"
 find "$kit/starter" -mindepth 1 -maxdepth 1 ! -name LICENSE -exec cp -r {} "$entry/" \;
 git add main.ts lib dashboard screenshots vendor LICENSE
-git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' \
+git -c user.name='ilhamraduanbis-source' -c user.email='308819653+ilhamraduanbis-source@users.noreply.github.com' \
   commit -qm 'Official kit baseline after anchored creation'
 baseline="$(git rev-parse HEAD)"
 echo "KIT_BASELINE_COMMIT $baseline"
@@ -172,7 +172,7 @@ EOF
   rc1=$?
   set -e
   echo "ACTUAL_AGENT_TURN_1_EXIT $rc1"
-  if [ "$rc1" -eq 0 ]; then
+  if [ -s "$root/agent-turn-1.jsonl" ]; then
     set +e
     timeout --kill-after=8s 230s opencode run --standalone --continue \
       --model "$model" --format json \
@@ -185,7 +185,7 @@ EOF
   git diff --check
   git add main.ts lib dashboard
   if ! git diff --cached --quiet; then
-    git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' \
+    git -c user.name='ilhamraduanbis-source' -c user.email='308819653+ilhamraduanbis-source@users.noreply.github.com' \
       commit -qm 'Recorded agent code and dashboard revisions'
     agent_changed=true
     echo 'ACTUAL_AGENT_SOURCE_CHANGE true'
@@ -235,7 +235,7 @@ echo 'DETERMINISTIC_OUTPUT true'
 # Keep entry source in a public-safe artifact, never raw native agent logs or wallet material.
 git add screenshots
 if ! git diff --cached --quiet; then
-  git -c user.name='Toyol Digital' -c user.email='toyol@users.noreply.github.com' \
+  git -c user.name='ilhamraduanbis-source' -c user.email='308819653+ilhamraduanbis-source@users.noreply.github.com' \
     commit -qm 'Captured real offline dashboard screenshots'
 fi
 mkdir -p "$evidence/screenshots"
