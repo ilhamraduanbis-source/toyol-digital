@@ -121,7 +121,7 @@ jobs:
           set -euo pipefail
           npm run dev > "$RUNNER_TEMP/pocketops-vite.log" 2>&1 &
           VITE_PID=$!
-          xvfb-run -a ./node_modules/.bin/evenhub-simulator http://127.0.0.1:5173 --automation-port 9898 > "$RUNNER_TEMP/pocketops-simulator.log" 2>&1 &
+          xvfb-run -a node ./node_modules/@evenrealities/evenhub-simulator/bin/index.js http://127.0.0.1:5173 --automation-port 9898 > "$RUNNER_TEMP/pocketops-simulator.log" 2>&1 &
           SIM_PID=$!
           trap 'kill "$SIM_PID" "$VITE_PID" 2>/dev/null || true' EXIT
           READY=0
