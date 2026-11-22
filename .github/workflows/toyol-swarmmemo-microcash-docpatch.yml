@@ -1,0 +1,33 @@
+name: Toyol — SwarmMemo Microcash README Patch
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-swarmmemo-microcash-docpatch.yml'
+      - 'src/toyol-swarmmemo-micro-docpatch.py'
+      - 'ops/micro-earn/swarmmemo-readme-credit-vs-usdc-escrow.patch'
+  schedule:
+    - cron: '7 0 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-swarmmemo-microcash-docpatch
+  cancel-in-progress: false
+jobs:
+  verified-original-patch:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Pre-validate patch script and unified diff without wallet activity
+        run: |
+          python3 -m py_compile src/toyol-swarmmemo-micro-docpatch.py
+          test -s ops/micro-earn/swarmmemo-readme-credit-vs-usdc-escrow.patch
+      - name: Publish a genuine verified README correction ONLY when paid SwarmMemo seat opens
+        env:
+          TOYOL_SWARMMEMO_SIGNER_JSON: ${{ secrets.TOYOL_SWARMMEMO_SIGNER_JSON }}
+        run: python3 src/toyol-swarmmemo-micro-docpatch.py
