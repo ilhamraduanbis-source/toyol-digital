@@ -1,0 +1,28 @@
+# High-ticket opportunity queue — Toyol Digital
+**Research date:** 22 Nov 2026 MYT. **Status:** SOURCE CHECK ONLY — no qualified award, registered bid, buyer order, income, or payment. **Owner funds:** USD0. **Policy:** preserve existing missions; no false credentials, advance fee, registration, bid, outreach, or customer promises without verified eligibility and authorization.
+
+## Track A — Individual/prize/grant opportunities above USD100,000
+1. **Google / Kaggle: Agent Harness on Physical-Engineering’s Last Exam**. Official competition: https://www.kaggle.com/competitions/physical-engineerings-last-exam/overview ; official announcement: https://cloud.google.com/blog/products/ai-machine-learning/introducing-physical-engineerings-last-exam-for-agents . Official Kaggle displays **USD400,000 total prize pool**, while secondary competition detail reports **USD250,000 first**, **USD100,000 second**, **USD50,000 third**, closing **5 Jan 2027 UTC**. These are conditional contest awards, not a hire or guaranteed contract. Gate: inspect full Kaggle rules and exact prize distribution; demonstrate a valid engineering agent harness, submissions and evaluation; confirm cross-border eligibility and resources. **Candidate for Titan; not an awarded USD250k job.**
+2. **Goose grant program**. Primary maintainer announcement: https://github.com/aaif-goose/goose/discussions/3674 ; follow-up funded statement from March 2026 https://github.com/aaif-goose/goose/discussions/7709 . Original announcement offers **USD100,000 grants over 12 months** on rolling proposal review; March 2026 says funds continue, with process changes. Gate: confirm application channel and latest rules still valid as of current date, propose a concrete new capability integrated with goose supported by demo/tests and deliverable milestones; no speculative grant as cash. Candidate for idle research only.
+3. **Large cybersecurity prize pool: ZeroDay.Cloud 2026, USD6.5M shared pool**. Official https://www.zeroday.cloud/2026-competition ; rules https://www.zeroday.cloud/rules . Mandatory Bugcrowd tax/identity verification deadline **20 Nov 2026**, ALREADY PASSED as of this report, although exploit submission deadline 1 Dec 2026. **Reject as a new entry** absent independently established prior verification; shared prize pool is not an individual USD6.5M earning. Security research only within authorized scope.
+
+## Track B — Enterprise/contract opportunities at USD5M+ total procurement
+4. **FSAI Ireland software development/support — EUR6.5M estimated, single contract over 60 months**. Official TED https://ted.europa.eu/en/notice/-/detail/807168-2026 and portal https://www.etenders.gov.ie/epps/cft/prepareViewCfTWS.do?resourceId=9517554 . Tender deadline **22 Dec 2026 12:00** as last reported from Irish portal. Current pipeline doc: ops/USD5M_pipeline_2026-11-20.md. Gate: fetch ESPD, RFT, services contract, response document; inspect turnover, past references, insurance, data handling, subcontracts and international supplier conditions. **No verified ability to bid as prime**.
+5. **Gateshead Council UK AI Transformation Partner framework — maximum GBP5M excluding VAT**. Official published UK notice cited by governmental Sell2Wales mirror https://www.sell2wales.gov.wales/search/show/search_view.aspx?ID=NOV675935&catID= . Notice ref **105790-2026**, OCID **ocds-h6vhtk-0603c1**; deadline recorded **7 Dec 2026 at 16:00 UK local**. IMPORTANT: one supplier on a closed framework; GBP5M is **maximum potential total spending**, explicitly NOT guaranteed expenditure and not automatically an individual contract payday. Gate: check official Find a Tender notice and tender documents, discover whether qualified partner can procure a small technical subcontract. **Low prime-bid probability for small uncredentialed operation**.
+6. **USAC Enterprise Data Platform RFP IT-26-148**. Official issuer https://www.usac.org/about/procurement/rfp-it-26-148-enterprise-data-platform-3/ and register https://www.usac.org/about/procurement/ ; closing date reported **7 Dec 2026** on issuer register. Third-party value estimate USD47M is **UNVERIFIED by issuer** and must NOT be presented as established contract ceiling. Gate: read revised solicitation, vendor terms, foreign subcontract access, minimum technical team and financial guarantees before any outreach.
+
+## Assignment proposal to existing clone lanes (not a real-time work launch)
+- **Titan:** confirm Kaggle full rules and Goose updated review process, value distinction between individual cash and prize pools. No entry or proposal until qualifications hold.
+- **Leviathan:** research realistic enterprise subcontract packages in public tenders, but not assume top-line face value is payable to Toyol. Document a named eligible prime if one is established, never fabricate partners.
+- **Atlas and Orion:** retain independent EUR/GBP USD5M tender searches and document eligibility. Do not stop existing work.
+- **Nexus:** academic-only; must not be reclassified as an income clone.
+
+## Evidence gates before changing any item to PAYABLE
+1. Official live URL and date/remaining window.
+2. Exact per-person or per-lot payable fee, not prize pool or framework maximum.
+3. Malaysian/solo/overseas eligibility, no mandatory upfront capital.
+4. Demonstrated capability, real independent identity, required tools/deployment capacity.
+5. Supported authenticated action route to submit, plus any necessary user's specific approval.
+6. Settlement receipt reconciled separately from accepted submission/award announcement.
+
+**No awarded contracts / verified new USD100k+ revenues identified at research date.**
