@@ -11,6 +11,23 @@ entry="$root/entry"
 evidence="$root/public-evidence"
 tools="$root/tools"
 mkdir -p "$root" "$entry" "$evidence"
+# Preserve safe reproducible code and captured browser diagnostics on failure.
+# Never upload model sessions, prompt stores, wallet material or API secrets.
+toyol_radar_exit() {
+  local result=$?
+  if [ "$result" -ne 0 ]; then
+    echo "TOKEN_RADAR_FAILURE_DIAGNOSTIC exit=$result"
+    if [ -f "$entry/main.ts" ]; then
+      tar -czf "$evidence/failed-source-debug.tar.gz" \
+        --exclude='.git' --exclude='.makefun' --exclude='opencode.json' \
+        -C "$entry" main.ts lib dashboard screenshots 2>/dev/null || true
+    fi
+    if [ -f "$entry/screenshots/capture-debug.jpg" ]; then
+      cp "$entry/screenshots/capture-debug.jpg" "$evidence/capture-debug.jpg" || true
+    fi
+  fi
+}
+trap toyol_radar_exit EXIT
 export TOYOL_TOOLS_DIR="$tools"
 echo "PRECONDITION Node $(node -v)"
 node -e "let [a,b]=process.versions.node.split('.').map(Number); if(a<22 || (a===22 && b<18)) process.exit(1)"
