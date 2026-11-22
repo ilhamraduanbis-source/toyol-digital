@@ -138,6 +138,22 @@ else
   echo 'NO_ADVERTISED_ZERO_PRICE_MODEL; baseline only, not a contest submission'
 fi
 
+# Official session evidence preflight: the contest does not pay entries
+# built from reconstructed/handed-over logs. Never fake this gate.
+# The original opencode session database is kept only in the ephemeral runner.
+set +e
+(cd "$kit" && node cli/makefun.mjs bundle --repo "$entry" --dry-run) \
+  > "$root/bundle-dryrun.log" 2>&1
+bundle_preflight_rc=$?
+set -e
+echo "OFFICIAL_BUNDLE_DRYRUN_EXIT $bundle_preflight_rc"
+if [ "$bundle_preflight_rc" -eq 0 ]; then
+  echo 'OFFICIAL_BUNDLE_DISCOVERY_COMPLETED; real transcript completeness and run context STILL unverified'
+else
+  echo 'OFFICIAL_BUNDLE_DISCOVERY_FAILED; no entry permitted without authentic complete sessions'
+fi
+# Print no raw transcript or source-path payload; those can contain private data.
+
 # Generate the program's output using the real sealed snapshot.
 mkdir -p "$entry/out" "$entry/out-replay"
 node "$entry/main.ts" --input "$kit/input/snapshot.json" --output "$entry/out"
@@ -170,6 +186,10 @@ cp "$entry/out/board.json" "$evidence/board.json"
 cp "$entry/out/dossier.json" "$evidence/dossier.json"
 tar -czf "$evidence/source.tar.gz" --exclude=.git --exclude=opencode.json \
   --exclude=out --exclude=out-replay -C "$entry" .
+# Native Git bundle is also saved for the kit's supported source-bundle route.
+git bundle create "$evidence/source.bundle" HEAD
+git bundle verify "$evidence/source.bundle"
+echo 'SOURCE_GIT_BUNDLE_VERIFIED true'
 printf 'competition=token-radar-01\nsource_commit=%s\nactual_agent_edits=%s\nsubmission=NO\nreward_paid=NO\n' \
   "$(git rev-parse HEAD)" "$agent_changed" | tee "$evidence/status.txt"
 echo 'TOKEN_RADAR_BUILD_FINISHED; no on-chain transaction and no contest submission.'
