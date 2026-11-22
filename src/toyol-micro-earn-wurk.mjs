@@ -102,6 +102,17 @@ for(const j of jobs){
 }
 emit('MICRO_AVAILABLE_TOTAL',{jobs:jobs.length,pagesScanned:Math.min(4,Math.ceil(Math.max(1,jobs.length)/50))});
 
+const strictMicroCandidates=jobs.filter(j=>{
+  const all=[j.title,j.name,j.descriptionPreview,j.description].map(x=>String(x||'')).join(' ').toLowerCase();
+  const feeOrCredential=/buy|pay a fee|deposit|paid api|x followers|twitter followers|purchase|stake |top up|fund wallet|register card/i.test(all);
+  return j.availableForMe===true&&!feeOrCredential;
+});
+emit('MICRO_ZERO_SPEND_SHORTLIST',{
+  count:strictMicroCandidates.length,
+  candidates:strictMicroCandidates.slice(0,8).map(j=>({id:j.customId??j.id,title:String(j.title||j.name||'').slice(0,100),mode:j.mode,reward:j.reward??j.rewardFinancials}))
+});
+
+
 if(process.env.TOYOL_MICRO_DEEP_SCOUT!=='false'){
   let detailReads=0;
   for(const candidate of jobs.filter(j=>j.availableForMe===true&&j.detailUrl).slice(0,5)){
