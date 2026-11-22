@@ -1,0 +1,16 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {units,printUnits,utcDay,monthsLater,vested,summary,validateSupply} from './vesting-engine.mjs';
+const grant={name:'Team',amount:'1000',tgePercent:'10',cliffMonths:3,durationMonths:12,cadence:'monthly',decimals:2,claimed:'0'};
+test('base units preserve 18 decimals',()=>assert.equal(units('1.000000000000000001'),1000000000000000001n));
+test('unit formatter exact',()=>assert.equal(printUnits(123456n,2),'1234.56'));
+test('untrusted decimals rejected',()=>assert.throws(()=>units('1.001',2)));
+test('TGE vesting arrives on launch only',()=>assert.equal(vested(grant,'2026-01-01','2026-01-01'),10000n));
+test('cliff holds until month three',()=>assert.equal(vested(grant,'2026-01-01','2026-03-31'),10000n));
+test('accrued portion catches up at cliff',()=>assert.equal(vested(grant,'2026-01-01','2026-04-01'),32500n));
+test('fully unlocks at calendar maturity',()=>assert.equal(vested(grant,'2026-01-01','2027-01-01'),100000n));
+test('linear is continuous through the same period',()=>{const n=vested({...grant,cadence:'linear',cliffMonths:0,tgePercent:'0'},'2026-01-01','2026-07-01');assert.ok(n>49000n&&n<51000n)});
+test('claimable never negative',()=>assert.equal(summary({...grant,claimed:'200'},'2026-01-01','2026-01-01').claimable,0n));
+test('capitalization cannot exceed supply',()=>assert.throws(()=>validateSupply([grant],'999',2)));
+test('month-end clamps without leap errors',()=>assert.equal(new Date(monthsLater(utcDay('2026-01-31'),1)).toISOString().slice(0,10),'2026-02-28'));
+test('invalid cadence rejected',()=>assert.throws(()=>vested({...grant,cadence:'weekly'},'2026-01-01','2026-01-01')));
