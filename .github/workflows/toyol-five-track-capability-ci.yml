@@ -62,6 +62,20 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npm run build
+      - name: Validate original Gemma 4 agent configuration and build candidate submission bundle
+        shell: bash
+        working-directory: ops/five-track-lab/entrykits/gemma4
+        run: |
+          python -m unittest -v test_package.py
+          python package.py --out "${RUNNER_TEMP}/gemma4-submission.zip"
+          python -c "import zipfile,os; p=os.path.join(os.environ['RUNNER_TEMP'],'gemma4-submission.zip'); z=zipfile.ZipFile(p); assert 'agent.yaml' in z.namelist(); print('GEMMA4_PACKAGE_PREFLIGHT_PASS')"
+      - name: Preserve Gemma 4 candidate zip (not a contest submission)
+        uses: actions/upload-artifact@v4
+        with:
+          name: gemma4-config-candidate-unsubmitted
+          path: ${{ runner.temp }}/gemma4-submission.zip
+          if-no-files-found: error
+          retention-days: 7
       - name: Report honest bounds
         run: |
           echo "TOYOL_FIVE_TRACK: source tests & SDK builds completed"
