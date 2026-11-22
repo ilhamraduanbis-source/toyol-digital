@@ -45,3 +45,12 @@
 - API submittedAt `2026-11-22T11:04:24.868Z`, task had 29 total submissions on subsequent query.
 
 **Status correction:** Earlier part of this note described both as not submitted. As of this update **both are submitted and confirmed on the platform primary API**, but both still report `awardCount:0`, `awards:[]`, no payment transaction hash, and no verified income. **DO NOT RESUBMIT either task**. Escrow pool != receivable or settlement. Preserve existing Lumen House pitch and first Spanish infographic separately.
+
+
+## Submission receipts — 2026-11-22 19:04 MYT
+
+**Evidence:** user-provided Termux screenshot. Local CLI reports two distinct successful TaskMarket API submissions. These are **not** award or settlement receipts.
+
+- Spanish video task `0x7974a2831dbe25f693f84420b8534045a4d2f5915dad67dc0eb59702864e574b`: `SUBMISSION_ACCEPTED_BY_API 36730de8-d3ee-46de-a618-98ec0448121f`; preflight saw 2 existing entries against cap 5.
+- AI economy hero image task `0x83a813516e7796e0281f5c9d9c3fe75482205da76779372f54b09bff6b121b26`: `SUBMISSION_ACCEPTED_BY_API 5bfac545-2c6e-4b8c-a033-f77cc5e94ce5`; preflight saw 28 entries against cap 50.
+- Local receipt flags: `NO_AWARD_OR_PAYMENT_VERIFIED` for both. Never count 2 OUSD or 1 OUSD as revenue until requester acceptance and a settlement receipt are confirmed. Do not resubmit either task. Existing Lumen House pitch and Spanish infographic remain untouched. No owner funds spent for these two entries.
