@@ -102,16 +102,9 @@ for(const j of jobs){
 }
 emit('MICRO_AVAILABLE_TOTAL',{jobs:jobs.length,pagesScanned:Math.min(4,Math.ceil(Math.max(1,jobs.length)/50))});
 
-const strictMicroCandidates=jobs.filter(j=>{
-  const all=[j.title,j.name,j.descriptionPreview,j.description].map(x=>String(x||'')).join(' ').toLowerCase();
-  const feeOrCredential=/buy|pay a fee|deposit|paid api|x followers|twitter followers|purchase|stake |top up|fund wallet|register card/i.test(all);
-  return j.availableForMe===true&&!feeOrCredential;
-});
-emit('MICRO_ZERO_SPEND_SHORTLIST',{
-  count:strictMicroCandidates.length,
-  candidates:strictMicroCandidates.slice(0,8).map(j=>({id:j.customId??j.id,title:String(j.title||j.name||'').slice(0,100),mode:j.mode,reward:j.reward??j.rewardFinancials}))
-});
-
+// Preview descriptions often omit pay-to-use API fees and account gates.
+// Never claim a job is zero-spend without reading its full authenticated brief.
+emit('MICRO_PREVIEW_ONLY_UNVERIFIED',{count:jobs.length,detailReviewRequired:true});
 
 if(process.env.TOYOL_MICRO_DEEP_SCOUT!=='false'){
   let detailReads=0;
@@ -123,6 +116,10 @@ if(process.env.TOYOL_MICRO_DEEP_SCOUT!=='false'){
       const d=await read(link.pathname);
       const j=d.job??d;
       emit('MICRO_JOB_DETAIL',{id:j.customId??candidate.customId??candidate.id,description:String(j.description??'').slice(0,6500),requirements:j.submissionRequirements??null,mode:j.mode??null,selection:j.selectionType??null,available:j.availableForMe??null,reward:j.reward??j.rewardFinancials??null,closesAt:j.closesAt??null});
+      const fullBrief=String(j.description??'');
+      const chargesOrExternalGate=/pay.*(?:upfront|x402|tool fee)|paid.*(?:x402|api|mcp)|(?:0[.]005|0[.]12)\s*usdc|fee\s*(?:is|of|:)|network costs|500\s+followers|minimum\s+of\s+500\s+followers|payment.*must.*wallet/i.test(fullBrief);
+      const imageEvidence=j.submissionRequirements?.imageRequired===true;
+      emit('MICRO_DETAILED_COST_GATE',{id:j.customId??candidate.customId??candidate.id,preliminarilyZeroSpend:!chargesOrExternalGate&&!imageEvidence,hasFeeOrExternalGate:chargesOrExternalGate,requiresImageProof:imageEvidence,note:'Conservative preliminary classification only; never assume reward or spend eligibility from advertisement.'});
     }catch(e){emit('MICRO_JOB_DETAIL_ERROR',{id:candidate.customId??candidate.id,error:String(e.message).slice(0,100)})}
     detailReads++;
   }
