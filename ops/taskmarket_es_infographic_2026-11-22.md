@@ -13,3 +13,11 @@
 - Pack created in conversation container: `Toyol_Taskmarket_Espanol_Free_Entry.tar.gz` with artifact, notes, strict duplicate+payment guard, Termux launcher; not pushed as binary to GitHub. SHA256 archived pack `876332c0593b7e50a8ea891a7ddb6b85accc596dfac084c4f5be766b9d16e70b`.
 - Submission needs local authorized phone Termux signer. Do not export key, store keys in cloud, submit to another bounty, fund wallet, or infer earnings.
 - Lumen House pitch remains separate and unchanged.
+
+
+## Confirmed delivery update — 2026-11-22 18:49 MYT
+
+- Termux local CLI reported `SUBMISSION_ACCEPTED_BY_API` with submission ID `1625581d-1bcd-40da-a9eb-9138d66c7dea`.
+- Independently observed on official primary `GET https://api.taskmarket.dev/api/tasks/0x2b7ccfc7bf4bfd086a8e809082bc4b113ec3310dc65c790791985e5ec9e3409a/submissions?chainId=4217`, entry belongs to verified Toyol Tempo wallet `0xac57ad3c3f233e5865c3cd652f67ffc82a7af431`, submitted at `2026-11-22T10:49:20.040Z`.
+- Primary task API now reports `submissionCount: 9`, `awardCount: 0`, status open, escrow tracked 10,000,000 atomic units (10 OUSD). Therefore **submission accepted, award not yet made, no settlement evidence, confirmed payout 0 OUSD**.
+- **Never resubmit:** single entry per wallet and person; local script has already recorded one-time attempt. Leave original Lumen House pending separately.
