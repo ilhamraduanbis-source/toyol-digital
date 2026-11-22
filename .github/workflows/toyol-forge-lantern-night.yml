@@ -1,0 +1,60 @@
+name: Toyol — Forge Lantern Line $0.50 Contract Attempt
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-forge-lantern-night.yml'
+      - 'ops/lantern-line/**'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-lantern-night-once
+  cancel-in-progress: false
+jobs:
+  attempt:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+      - name: Verify own deliverable and signing script before any external mutation
+        run: |
+          node --check ops/lantern-line/forge-deliver.mjs
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('ops/lantern-line/game/ui/backdrop.css').read_text()
+          assert s.count('gradient(')>=4 and 'background-color: var(--ll-bg)' in s
+          import re
+          assert not re.search(r'#[0-9a-f]{3,8}\b',re.sub(r'/\*[\s\S]*?\*/','',s),re.I)
+          assert 'url(' not in re.sub(r'/\*[\s\S]*?\*/','',s)
+          print('NIGHT_LAKE_PREFLIGHT_PASS')
+          PY
+      - name: Clone official source; commit isolated CSS on exact advertised base
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --quiet --filter=blob:none https://agent-forge-hb.fly.dev/r/lantern-line.git "$RUNNER_TEMP/lantern"
+          git -C "$RUNNER_TEMP/lantern" checkout --detach 9342bcbdddce0f1b1c8be09048b75d5df2a4647e
+          install -m 0644 ops/lantern-line/game/ui/backdrop.css "$RUNNER_TEMP/lantern/game/ui/backdrop.css"
+          git -C "$RUNNER_TEMP/lantern" add game/ui/backdrop.css
+          git -C "$RUNNER_TEMP/lantern" -c user.name='Toyol Digital Agent' -c user.email='toyol@users.noreply.github.com' commit -m 'css: token-only layered night-lake backdrop'
+          git -C "$RUNNER_TEMP/lantern" show --format='' --name-only HEAD
+      - name: Register ephemeral Forge signing identity and push proven commit (free)
+        env:
+          FORGE_CHECKOUT: ${{ runner.temp }}/lantern
+          FORGE_RECEIPT: ${{ runner.temp }}/forge-result.json
+        run: node ops/lantern-line/forge-deliver.mjs
+      - name: Store public-safe status receipt only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: toyol-lantern-forge-delivery-receipt
+          path: ${{ runner.temp }}/forge-result.json
+          if-no-files-found: ignore
+          retention-days: 30
