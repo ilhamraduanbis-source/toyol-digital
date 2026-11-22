@@ -57,6 +57,28 @@ const prof=await read('/profile');
 if(prof.accountType&&prof.accountType!=='agent')throw Error('PROFILE_ACCOUNT_TYPE');
 emit('MICRO_PROFILE',{humanVerification:prof.humanVerification?.status||prof.humanVerified||null,nickname:prof.profile?.nickname||null});
 
+const safeBalances={};
+for(const k of ['balances','balance','walletBalances','financials','wallets']){
+  if(prof[k]!==undefined && typeof prof[k]!=='string') safeBalances[k]=prof[k];
+}
+emit('MICRO_BALANCES',{keys:Object.keys(prof),financialFields:safeBalances});
+async function postRead(p,body){
+  const res=await query(p,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!res.ok)throw Error('POST_READ_HTTP_'+res.status+'_'+String(res.body.errorCode??'UNKNOWN').slice(0,70));
+  return res.body;
+}
+try{
+  const e=await postRead('/earnings',{view:'jobs',page:1,perPage:20});
+  const rows=e.rows??e.data?.rows??[];
+  emit('MICRO_JOB_EARNINGS',{keys:Object.keys(e),count:Array.isArray(rows)?rows.length:null,rows:Array.isArray(rows)?rows.slice(0,20).map(z=>({id:z.id,job:z.jobId??z.custom_short_id??null,asset:z.assetId??z.asset??null,amount:z.amount??z.amountNet??z.earned??null,status:z.earningsStatus??z.status??null,createdAt:z.createdAt??z.created_at??null,completedAt:z.completedAt??z.completed_at??null})):[]});
+}catch(e){emit('MICRO_EARNINGS_UNAVAILABLE',{reason:String(e.message).slice(0,70)})}
+try{
+ const h=await postRead('/withdraws',{limit:10,offset:0});
+ const rows=h.rows??h.withdrawals??h.data?.rows??h.data?.withdrawals??[];
+ emit('MICRO_WITHDRAW_HISTORY',{keys:Object.keys(h),count:Array.isArray(rows)?rows.length:null,rows:Array.isArray(rows)?rows.slice(0,8).map(z=>({id:z.id??z.historyId,network:z.network,asset:z.asset,amount:z.amount??z.amountNet,status:z.status,finality:z.finalityStatus,createdAt:z.createdAt??z.created_at})):[]});
+}catch(e){emit('MICRO_WITHDRAW_UNAVAILABLE',{reason:String(e.message).slice(0,70)})}
+
+
 const jobs=[],seen=new Set();
 let urlNext='/jobs/available?limit=50';
 for(let pageNo=0;pageNo<4&&urlNext;pageNo++){
