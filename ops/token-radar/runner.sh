@@ -12,7 +12,7 @@ evidence="$root/public-evidence"
 tools="$root/tools"
 mkdir -p "$root" "$entry" "$evidence"
 # Preserve safe reproducible code and captured browser diagnostics on failure.
-# Never upload model sessions, prompt stores, wallet material or API secrets.
+# Never upload plaintext model sessions, prompt stores, wallet material or API secrets.
 toyol_radar_exit() {
   local result=$?
   if [ "$result" -ne 0 ]; then
@@ -25,6 +25,64 @@ toyol_radar_exit() {
     if [ -f "$entry/screenshots/capture-debug.jpg" ]; then
       cp "$entry/screenshots/capture-debug.jpg" "$evidence/capture-debug.jpg" || true
     fi
+  fi
+
+  # Preserve ORIGINAL OpenCode records encrypted with the owner's public certificate.
+  # Never expose plaintext session records or a private decryption key in GitHub.
+  if [ -d "$root/isolated-home/.local/share/opencode" ] || [ -s "$root/agent-turn-1.jsonl" ]; then
+    local session_dir="$root/native-records"
+    mkdir -p "$session_dir"
+    for f in agent-turn-1.jsonl agent-turn-2.jsonl agent-turn-1.stderr agent-turn-2.stderr bundle-dryrun.log; do
+      if [ -f "$root/$f" ]; then cp "$root/$f" "$session_dir/$f"; fi
+    done
+    if [ -d "$root/isolated-home/.local/share/opencode" ]; then
+      cp -a "$root/isolated-home/.local/share/opencode" "$session_dir/opencode-native-data"
+    fi
+    if [ -d "$root/isolated-home/.local/state/opencode" ]; then
+      cp -a "$root/isolated-home/.local/state/opencode" "$session_dir/opencode-native-state"
+    fi
+    if [ -f "$entry/opencode.json" ]; then cp "$entry/opencode.json" "$session_dir/opencode-config.json"; fi
+    cat > "$root/recipient-cert.pem" <<'TOKENRADAR_PUBLIC_CERT'
+-----BEGIN CERTIFICATE-----
+MIIEMzCCApugAwIBAgIUG9UD31Qoend00i0D/1wneYHVgv8wDQYJKoZIhvcNAQEL
+BQAwKTEnMCUGA1UEAwweVG95b2wgVG9rZW5SYWRhciBFdmlkZW5jZSBPbmx5MB4X
+DTI2MTEyMjEyMDQxN1oXDTI4MTEyMTEyMDQxN1owKTEnMCUGA1UEAwweVG95b2wg
+VG9rZW5SYWRhciBFdmlkZW5jZSBPbmx5MIIBojANBgkqhkiG9w0BAQEFAAOCAY8A
+MIIBigKCAYEAuRh3pGsxdciKJsu28+7dDG4uFfqiRcF6NLHjkxpmX2U2UlTa72Jm
+t7iOwBOqJYA7aoqD6VRhz6t/n19AzZri8hHZNmNjsJrR1tUmoFH6A3geU5T9aOdI
+7x460FgPu79a0DzKeN/EhhgLyOmgAdX5ENuGfuZ3F++p7Sow06sZIawkhmEQgLDH
+3L1QG3yvSEMOGaiRbE16m0ucfugnrg7SOhLFTwseUhneGAuLVHDHFglG+hWxEi+y
+1nrLMaSbqgPBKAGTrxA1+YUHTygoojngCBXk+EXb43YMWR4Bj75pElp6jkBfg/kI
+P0sAPhPiKhrEPVjEkckLTAnTrtYTxZZQ0jj+D9TdujevREA6/kjTN5m2JBvj6O4d
+MafECPA+/Jor3wk/wl66lvaZZssAvhwaElUQGzC/TLPmST/Nv65oYIvcv90OjpNa
+fyJ4m03H11LfKU4Vk9Mn18NkcdJFxutavLMjHqxEuMTGlV8uBB71PwokNaM/wNF0
+hCD0RsaxFLvdAgMBAAGjUzBRMB0GA1UdDgQWBBQQkVR28Q+svbII/rZtD8lt8Udm
+sTAfBgNVHSMEGDAWgBQQkVR28Q+svbII/rZtD8lt8UdmsTAPBgNVHRMBAf8EBTAD
+AQH/MA0GCSqGSIb3DQEBCwUAA4IBgQApi+b8oXZC+SlYAhDUEO4X/vOIKuIb1Jsc
+TF3zr+zbtRzQjKyG13+/Um7L2r52PWerza8zAMADsyoP3gfuaDTMj+BeZJ2cAbGs
+HtzSkkPQYKDfY0xbP2nq13azNcOrvzk9iGKlAOZYmRpkumTdKCpgIvQnzcMgbnkU
+jk/yBip3PBFFrO1k7Z1GTAwXpp2LolHANc2JXFR7iO1le3OHBCuI1bXPOpeB6uvo
+KdJyXVOX4oXxYq7JwI35AyathDkLFogrrk/TkzBbci9kSl7YUJhcA3h/KodCa/fs
+sI2WT+3cg8+nDVwmE15m9mkd/+EvMhcVCtwGoaMeJxdpmlvukJy9JXql7MUSAJzi
+K0HjgQx5fSBJC8vZzxh5Rh6+L/EK/AbXEuurkw+b5SxKKlYY6Ei4kPvPUr0nbiil
+wSUDBz2BUMtsIJ0e9npLp73KrV81bRdVS7m/8dCE9Lxi2R9eTDbjgcHrz49QHcRo
+IFtv3SpIeJaDi0e2lOamhbnI+RaToCw=
+-----END CERTIFICATE-----
+TOKENRADAR_PUBLIC_CERT
+    tar -czf "$root/native-records.tar.gz" -C "$root" native-records
+    if openssl cms -encrypt -aes-256-gcm -binary -outform DER \
+      -in "$root/native-records.tar.gz" \
+      -out "$evidence/tokenradar-authentic-sessions.p7m" \
+      -recip "$root/recipient-cert.pem"; then
+      echo 'AUTHENTIC_AGENT_RECORDS_ENCRYPTED true (eligibility still needs official bundle verification)'
+    else
+      echo 'AUTHENTIC_AGENT_RECORDS_ENCRYPTION_FAILED'
+      return 1
+    fi
+    rm -f "$root/native-records.tar.gz"
+    rm -rf "$session_dir"
+  else
+    echo 'AUTHENTIC_AGENT_RECORDS_ABSENT; no paid-entry eligibility established'
   fi
 }
 trap toyol_radar_exit EXIT
