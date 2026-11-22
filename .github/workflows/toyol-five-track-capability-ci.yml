@@ -163,3 +163,27 @@ jobs:
             ${{ runner.temp }}/pocketops-vite.log
           if-no-files-found: warn
           retention-days: 7
+
+  firebase-proofsafe:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: ops/five-track-lab/apps/firebase-proofsafe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Firebase SDK without secrets or billing
+        run: npm install --no-audit --no-fund
+      - name: Test no-spend four-factor cloud guard
+        run: npm test
+      - name: Build real Firebase AI Logic SDK app with fallback OFF
+        run: npm run build
+      - name: Assert build has default cloud fallback disabled
+        run: |
+          test -f dist/index.html
+          ! grep -r -F 'NO_CLOUD_BILLING_CONFIRMED_BY_TEST' dist/
+          echo "FIREBASE_SDK_BUILD_PASS; REMOTE_INFERENCE=NOT_EXECUTED; BILLING=NO"
