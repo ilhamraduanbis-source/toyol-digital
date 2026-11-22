@@ -32,7 +32,23 @@ if(u.ok!==true||u.auth!=='siwx'||u.paid!==false||u.network!=='solana'||u.walletA
 const headers={'X-API-Key':u.apikey};
 console.log('::add-mask::'+u.apikey);
 emit('WURK_AGENT_ACTIVE',{id:u.accountId,address,created:u.created,paid:false});
-async function read(p){const {r,j}=await request(p,{headers});if(!r.ok)throw Error('HTTP_'+r.status+'_'+String(j.errorCode??'UNKNOWN').slice(0,80));return j;}
+async function read(p){
+  // Retry only read-only GETs on temporary service/rate-limit errors.
+  // Never auto-retry POST writes or crypto authentication signatures.
+  const transient=/^(?:HTTP_|NON_JSON_)(?:429|500|502|503|504)(?:_|$)/;
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      const {r,j}=await request(p,{headers});
+      if(!r.ok)throw Error('HTTP_'+r.status+'_'+String(j.errorCode??'UNKNOWN').slice(0,80));
+      return j;
+    }catch(e){
+      if(!transient.test(String(e.message??''))||attempt===2)throw e;
+      emit('WURK_READ_RETRY',{path:p,attempt:attempt+1,reason:String(e.message).slice(0,40)});
+      await new Promise(resolve=>setTimeout(resolve,[2500,5000][attempt]));
+    }
+  }
+  throw Error('WURK_READ_UNEXPECTED');
+}
 const profile=await read('/profile');
 if(profile.accountId!==u.accountId||profile.accountType!=='agent')throw Error('PROFILE_MISMATCH');
 
