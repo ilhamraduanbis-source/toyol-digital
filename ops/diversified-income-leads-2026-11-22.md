@@ -1,7 +1,9 @@
 # Diverse income discovery — 22 Nov 2026 (Malaysia, RM0 upfront)
+
+**CORRECTION 22 Nov 2026: Human-only opportunities below are excluded from the Toyol autonomous income pipeline.** They remain historical research notes only, not valid jobs for any autonomous clone. Toyol's objective is machine-executable delivery and verified owner cash with minimal human work. Use `src/toyol-agent-native-income.mjs` and strict primary-source verification for candidate discovery; GitHub Actions scan success is not earnings.
 Status: verified advertised opportunities, NOT user applications, awarded work, approved hours, receivables, or settled cash. Browser/GitHub results checked 2026-11-22. Preserve existing clone missions and do not send unsanctioned applications, unsolicited contacts, financial commitments, or identity information.
 
-## Human-verified work track — prospective income only
+## ARCHIVE ONLY — human-required work, NOT eligible for Toyol
 1. **UTM career portal / Shanghai Dolinkers, Malay & English voice recording participant.** https://careercentre.utm.my/job-portal/entry/3350/ . Pay RM40 per 30 minutes of client-approved audio (about one hour of reading). Malaysia residence, native Malay and English, smartphone. One-off and one entry per participant. Official portal closes **2026-11-27**. A human must record, agent cannot impersonate. Requires application and accepted QC; not an auto payout.
 2. **RWS TrainAI, AI Data Specialist Malay.** https://jobs.lever.co/rws/0a1ba562-de05-4bc4-825b-53cf0762abf6 . Posted rate **USD8/hr**, remote Malaysia cities, 10+ hours/week, Malay native and English B2–C2. Not assigned/accepted. Strong candidate for human linguistic AI QA, but no guaranteed hours.
 3. **TSMG Malay AI QC.** https://jobs.lever.co/tsmg/93b69574-d42e-4830-8560-d8a0394035a6 . Malay punctuation, transcript normalisation and speech recognition QC, remote Malaysia; paid on validated work, rate undisclosed. Work requires human QA and applicant approval.
@@ -28,5 +30,5 @@ Status: verified advertised opportunities, NOT user applications, awarded work, 
 - Never send a misleading application or use AI to impersonate a real voice/video worker.
 - No registration fees, upfront deposits, gas funding, paid proposal/Connect top-ups or signing for user without authorization.
 - Preserve 14 current GitHub clone lanes; this document is a research lead sheet **not** a launched paid worker or proof of acceptance.
-- Priority: direct paid language/academic tasks where applicant eligible, then recurring client revenue on existing deliverables, then no-fee fully unassigned OSS bounties with known payer. Screen all new leads against closing dates, duplicate listings, identity/payment requirements and real execution cost.
+- Priority for Toyol: (1) payable agent-native buyer orders with zero capital and reproducible automated delivery, (2) repeat sales of self-owned tools/services with independently verified payment, (3) no-fee currently unclaimed coding bounties with a reliable named payer, (4) large-value prime/subcontract research subject to eligibility. **Human voice, manual AI-QA employment and human applications are EXCLUDED**. Screen all candidate leads against source rules, actual deadline, fee/deposit, existing claim, operator consent, acceptance path, payout rail and deliverability. A machine cannot pretend to be a human applicant.
 - As of this note, **no new application submitted, paid contract secured or income earned** by this research.
