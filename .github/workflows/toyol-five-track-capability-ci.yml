@@ -154,7 +154,7 @@ jobs:
           b=Image.open(os.path.join(d,'pocketops-g2-after.png')).convert('RGBA')
           assert a.size == (576,288), ('unexpected HUD dimensions',a.size)
           assert ImageChops.difference(a,b).getbbox() is not None, 'GLASSES_IMAGE_UNCHANGED: gesture did not update display'
-          assert len(set(a.getdata()))>10 and len(set(b.getdata()))>10, 'GLASSES_EMPTY'
+          assert sum(1 for px in a.getdata() if px[3]>128)>1000 and sum(1 for px in b.getdata() if px[3]>128)>1000, 'GLASSES_EMPTY'
           print('OFFICIAL_EVEN_G2_SIMULATOR_GESTURE_SCREENSHOT_PASS')
           PY
       - name: Preserve simulator evidence and local package even on failure
