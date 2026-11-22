@@ -39,8 +39,9 @@ try {
   await visit('');
   await page.screenshot({ path: join(dest, '1-board.jpg'), type: 'jpeg', quality: 76 });
 
-  await visit('#p=' + encodeURIComponent(top.slug));
-  await page.locator('dialog[open]').waitFor({ state: 'visible', timeout: 8000 });
+  // Open the real detail interaction through a user click, not a hash-only assumption.
+  await page.locator('tbody tr').first().click();
+  await page.locator('dialog.detail').waitFor({ state: 'visible', timeout: 12000 });
   await page.screenshot({ path: join(dest, '2-detail.jpg'), type: 'jpeg', quality: 76 });
 
   // Use a unique-ish name from the actual board for an authentic filtered view.
