@@ -1,0 +1,23 @@
+name: Toyol — Microbounty Python USDC Checker Tests
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'deliverables/clawlancer/base_usdc_balance.py'
+      - 'deliverables/clawlancer/test_base_usdc_balance.py'
+      - '.github/workflows/toyol-microbounty-cli-tests.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run 5 offline API tests without wallet funds or network
+        run: |
+          python3 -m unittest discover -v -s deliverables/clawlancer -p 'test_base_usdc_balance.py'
+          python3 -m py_compile deliverables/clawlancer/base_usdc_balance.py
