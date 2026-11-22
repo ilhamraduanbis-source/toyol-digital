@@ -59,10 +59,12 @@ export XDG_CACHE_HOME="$HOME/.cache"
 export OPENCODE_DISABLE_AUTOSHARE=true
 mkdir -p "$HOME"
 unset OPENAI_API_KEY ANTHROPIC_API_KEY GEMINI_API_KEY GOOGLE_API_KEY OPENROUTER_API_KEY OPENCODE_API_KEY GITHUB_TOKEN GH_TOKEN || true
-npm install --prefix "$tools" --no-audit --no-fund --ignore-scripts \
+npm install --prefix "$tools" --no-audit --no-fund \
   @opencode/cli@2.3.0 playwright@1.56.1 > "$evidence/npm-install.log" 2>&1
 export PATH="$tools/node_modules/.bin:$PATH"
 timeout 65s opencode models --standalone > "$root/models.txt" 2> "$root/models.stderr" || true
+echo "MODEL_LIST_LINE_COUNT $(wc -l < "$root/models.txt")"
+grep '^opencode/' "$root/models.txt" | head -n 12 || true
 curl -fsSL --retry 1 --connect-timeout 10 --max-time 40 \
   https://models.dev/api.json -o "$root/prices.json"
 python3 - "$root/models.txt" "$root/prices.json" > "$root/zero-price-models.txt" <<'PY'
@@ -79,6 +81,7 @@ preferred=['big-pickle','glm-5.3-flash-free','deepseek-v4.1-flash-free','minimax
 free.sort(key=lambda x:(preferred.index(x) if x in preferred else 99,x))
 print('\n'.join('opencode/'+x for x in free[:5]))
 PY
+echo "ZERO_PRICE_CANDIDATES $(wc -l < "$root/zero-price-models.txt")"
 model="$(head -n 1 "$root/zero-price-models.txt" || true)"
 agent_changed=false
 if [ -n "$model" ]; then
