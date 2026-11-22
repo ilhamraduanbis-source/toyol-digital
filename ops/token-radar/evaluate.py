@@ -43,6 +43,10 @@ for fname in ("1-board.jpg", "2-detail.jpg", "3-filtered.jpg"):
     f = root / "screenshots" / fname
     assert f.is_file() and 5000 <= f.stat().st_size <= 524288, ("image", fname)
     assert f.read_bytes()[:3] == b"\xff\xd8\xff", ("not jpeg", fname)
+from hashlib import sha256
+picture_hashes = [sha256((root / "screenshots" / name).read_bytes()).digest()
+                  for name in ("1-board.jpg", "2-detail.jpg", "3-filtered.jpg")]
+assert len(set(picture_hashes)) == 3, "Duplicate screenshots are not independent board/detail/filter evidence"
 assert (root / "dossier.json").is_file() and (root / "dossier.json").stat().st_size <= 1500000
 print(json.dumps({
     "quality_gate": "PASS",
