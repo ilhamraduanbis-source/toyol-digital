@@ -56,6 +56,20 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npm run build
+      - name: Pack actual Even Hub G2 app with official CLI, no portal login
+        shell: bash
+        working-directory: /tmp/toyol-five-track-ci/toyol-five-track-lab/integrations/even-g2
+        run: |
+          npx --no-install evenhub pack app.json dist -o "$RUNNER_TEMP/toyol-proofdesk.ehpk"
+          test -s "$RUNNER_TEMP/toyol-proofdesk.ehpk"
+          echo "EVENHUB_LOCAL_PACKAGE_CREATED; simulator and official event signup still NOT verified"
+      - name: Preserve locally generated Even Hub package (not uploaded to Hub)
+        uses: actions/upload-artifact@v4
+        with:
+          name: evenhub-proofdesk-local-build-unsubmitted
+          path: ${{ runner.temp }}/toyol-proofdesk.ehpk
+          if-no-files-found: error
+          retention-days: 7
       - name: Build actual Firebase AI Logic adapter without contacting the API
         shell: bash
         working-directory: /tmp/toyol-five-track-ci/toyol-five-track-lab/integrations/firebase-hybrid
