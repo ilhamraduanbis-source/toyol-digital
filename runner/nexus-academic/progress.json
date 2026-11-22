@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "S110",
+  "next_module": "M16",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -5766,6 +5766,91 @@
       },
       "transfer_test_pass": true,
       "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45076985327",
+      "at": "2026-11-22T22:18:43.721430+00:00",
+      "module": "S110",
+      "title": "Balaghah (S110)",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 3,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "البلاغة العربية علم المعاني البيان البديع التشبيه الاستعارة الكناية",
+        "source": "https://api.crossref.org/works?query.bibliographic=%D8%A7%D9%84%D8%A8%D9%84%D8%A7%D8%BA%D8%A9+%D8%A7%D9%84%D8%B9%D8%B1%D8%A8%D9%8A%D8%A9+%D8%B9%D9%84%D9%85+%D8%A7%D9%84%D9%85%D8%B9%D8%A7%D9%86%D9%8A+%D8%A7%D9%84%D8%A8%D9%8A%D8%A7%D9%86+%D8%A7%D9%84%D8%A8%D8%AF%D9%8A%D8%B9+%D8%A7%D9%84%D8%AA%D8%B4%D8%A8%D9%8A%D9%87+%D8%A7%D9%84%D8%A7%D8%B3%D8%AA%D8%B9%D8%A7%D8%B1%D8%A9+%D8%A7%D9%84%D9%83%D9%86%D8%A7%D9%8A%D8%A9&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.55210/bahtsuna.v4i1.123",
+            "title": "فلسفة علم البلاغة  (فصاحة الكلام، علم البيان، علم المعاني، علم البديع)",
+            "year": 2022,
+            "url": "https://doi.org/10.55210/bahtsuna.v4i1.123",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.35645/1711-005-002-033",
+            "title": "مستويات الدلالة الرمزية في البلاغة العربية:, الكناية، الاستعارة، المجاز المرسل",
+            "year": 2019,
+            "url": "https://doi.org/10.35645/1711-005-002-033",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.35157/0578-014-002-022",
+            "title": "تجليات البعد التداولي في البلاغة العربية:, علم البيان نموذجا",
+            "year": 2022,
+            "url": "https://doi.org/10.35157/0578-014-002-022",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.21608/mbse.2014.143189",
+            "title": "آيات الأمهات في القرآن الکريم  دراسة بلاغية 1- في ضوء علم المعاني. 2- في ضوء علم البيان. 3- في ضوء علم البديع",
+            "year": 2014,
+            "url": "https://doi.org/10.21608/mbse.2014.143189",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.46968/0326-011-001-013",
+            "title": "من البلاغة العربية ، أسلوب الكناية",
+            "year": 1985,
+            "url": "https://doi.org/10.46968/0326-011-001-013",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.55210/bahtsuna.v4i1.123",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 247,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.35645/1711-005-002-033",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": {
+        "focus": "Bayan: tasybih, majaz, istiʿarah dan kinayah",
+        "reading_targets": [
+          "al-Balaghah al-Wadihah — ʿAli al-Jarim dan Mustafa Amin",
+          "Jawahir al-Balaghah — Ahmad al-Hashimi"
+        ],
+        "edition_status": "UNVERIFIED_STAM_2008",
+        "full_text_reviewed": false,
+        "source_questions": [
+          "Apakah istilah Arab dan definisi asal?",
+          "Siapakah pengarang, apakah edisi dan lokasi teks?",
+          "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
+        ]
+      },
       "publication_anchor": null
     }
   ]
