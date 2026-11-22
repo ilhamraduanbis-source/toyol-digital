@@ -20,8 +20,19 @@ assert max(values) > min(values), "nonconstant model"
 expected = set(snapshot["watchlist"])
 actual = {r["slug"] for r in rows}
 assert expected <= actual, f"missing watchlist slugs: {sorted(expected-actual)[:10]}"
+# Verify actual token-record evidence in the sealed input, not a particular
+# dashboard label. The independent coding agent may call the same state
+# "token-not-recorded" instead of the starter's "pre-token".
+by_slug = {p["slug"]: p for p in snapshot["protocols"]}
 for r in rows:
-    assert r.get("token_status") == "pre-token", ("incorrect status", r["slug"])
+    source = by_slug.get(r["slug"])
+    assert source is not None, ("unknown protocol", r["slug"])
+    assert source.get("gecko_id") is None, ("live CoinGecko id", r["slug"])
+    assert source.get("symbol") is None, ("live token symbol", r["slug"])
+    assert source.get("mcap_usd") is None, ("live token market cap", r["slug"])
+    status = str(r.get("token_status", "")).lower().replace("_", "-")
+    assert status and status not in {"live", "launched", "token-live", "already-trades"}, ("misleading status", r["slug"])
+    assert r["tvl_usd"] == source["tvl_usd"], ("snapshot TVL mismatch", r["slug"])
     steps = r.get("farm_steps")
     assert isinstance(steps, list) and 3 <= len(steps) <= 12, ("farm count", r["slug"])
     assert all(isinstance(s, str) and 20 <= len(s.strip()) <= 600 for s in steps), ("farm detail", r["slug"])
