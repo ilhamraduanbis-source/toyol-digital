@@ -94,3 +94,72 @@ jobs:
         run: |
           echo "TOYOL_FIVE_TRACK: source tests & SDK builds completed"
           echo "REGISTRATIONS=unverified SUBMISSIONS=unverified AWARDS_USD=0"
+
+  pocketops-g2:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    defaults:
+      run:
+        working-directory: ops/five-track-lab/apps/pocketops-g2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install official Even Hub dependencies (no paid APIs)
+        run: npm install --no-audit --no-fund
+      - name: Pure offline proof-gate regression suite
+        run: npm test
+      - name: Real Even Hub SDK build
+        run: npm run build
+      - name: Package native Even Hub G2 application
+        run: npx --no-install evenhub pack app.json dist -o "$RUNNER_TEMP/pocketops-g2.ehpk"
+      - name: Run the official Even Hub simulator and test actual gestures
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run dev > "$RUNNER_TEMP/pocketops-vite.log" 2>&1 &
+          VITE_PID=$!
+          xvfb-run -a ./node_modules/.bin/evenhub-simulator http://127.0.0.1:5173 --automation-port 9898 > "$RUNNER_TEMP/pocketops-simulator.log" 2>&1 &
+          SIM_PID=$!
+          trap 'kill "$SIM_PID" "$VITE_PID" 2>/dev/null || true' EXIT
+          READY=0
+          for i in $(seq 1 70); do
+            if curl -fsS --max-time 2 http://127.0.0.1:9898/api/ping >/dev/null 2>&1; then READY=1; break; fi
+            if ! kill -0 "$SIM_PID" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if [ "$READY" -ne 1 ]; then
+            echo 'OFFICIAL_SIMULATOR_NO_START'; tail -80 "$RUNNER_TEMP/pocketops-simulator.log"; exit 1
+          fi
+          sleep 4
+          curl -fsS --max-time 15 http://127.0.0.1:9898/api/screenshot/glasses -o "$RUNNER_TEMP/pocketops-g2-before.png"
+          curl -fsS --max-time 15 -H 'Content-Type: application/json' -d '{"action":"click"}' http://127.0.0.1:9898/api/input
+          sleep 2
+          curl -fsS --max-time 15 http://127.0.0.1:9898/api/screenshot/glasses -o "$RUNNER_TEMP/pocketops-g2-after.png"
+          python -m pip install --disable-pip-version-check pillow
+          python - <<'PY'
+          import os
+          from PIL import Image, ImageChops
+          d=os.environ['RUNNER_TEMP']
+          a=Image.open(os.path.join(d,'pocketops-g2-before.png')).convert('RGBA')
+          b=Image.open(os.path.join(d,'pocketops-g2-after.png')).convert('RGBA')
+          assert a.size == (576,288), ('unexpected HUD dimensions',a.size)
+          assert ImageChops.difference(a,b).getbbox() is not None, 'GLASSES_IMAGE_UNCHANGED: gesture did not update display'
+          assert len(set(a.getdata()))>10 and len(set(b.getdata()))>10, 'GLASSES_EMPTY'
+          print('OFFICIAL_EVEN_G2_SIMULATOR_GESTURE_SCREENSHOT_PASS')
+          PY
+      - name: Preserve simulator evidence and local package even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pocketops-g2-original-simulator-evidence
+          path: |
+            ${{ runner.temp }}/pocketops-g2.ehpk
+            ${{ runner.temp }}/pocketops-g2-before.png
+            ${{ runner.temp }}/pocketops-g2-after.png
+            ${{ runner.temp }}/pocketops-simulator.log
+            ${{ runner.temp }}/pocketops-vite.log
+          if-no-files-found: warn
+          retention-days: 7
