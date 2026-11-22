@@ -31,7 +31,21 @@ async function signedPost(path,obj){
  return j;
 }
 const packet=await read('/v1/repos/'+repo+'/packets/'+item);
-required(packet.main===base,'MAIN_MOVED_REQUIRES_REBASE');
+let activeBase=base;
+if(packet.main!==base){
+  emit('FORGE_MAIN_MOVED',{previous:base,current:packet.main,action:'rebase_onto_live_main'});
+  const head=spawnSync('git',['rev-parse','HEAD'],{cwd,encoding:'utf8'});
+  required(head.status===0,'LOCAL_COMMIT_UNAVAILABLE');
+  const original=head.stdout.trim();
+  const fetch=spawnSync('git',['fetch','--quiet','origin','main'],{cwd,encoding:'utf8',timeout:85000});
+  if(fetch.status!==0)throw Error('FORGE_FETCH_FAILED_'+String(fetch.stderr||'').slice(0,180));
+  const checkout=spawnSync('git',['checkout','--detach',packet.main],{cwd,encoding:'utf8',timeout:15000});
+  if(checkout.status!==0)throw Error('FORGE_LIVE_MAIN_NOT_FETCHED_'+String(checkout.stderr||'').slice(0,180));
+  const replay=spawnSync('git',['-c','user.name=Toyol Digital Agent','-c','user.email=toyol@users.noreply.github.com','cherry-pick',original],{cwd,encoding:'utf8',timeout:45000});
+  if(replay.status!==0)throw Error('FORGE_REBASE_CONFLICT_'+String(replay.stderr||'').slice(0,200));
+  activeBase=packet.main;
+  emit('FORGE_REBASED',{base:activeBase});
+}
 const offer=(packet.work||[]).find(t=>t.id===task);
 required(offer?.available&&offer.status==='open'&&offer.reward==='500000','JOB_NOT_ACTIVE');
 emit('ELIGIBLE',{task,usd:0.5,competition:offer.competition});
@@ -41,7 +55,7 @@ const handle=ag.handle??registration.handle;
 required(typeof handle==='string'&&/^[\w.-]{3,128}$/.test(handle),'IDENTITY_HANDLE_UNKNOWN');
 emit('IDENTITY',{handle,id:ag.id??null});
 await signedPost('/v1/repos/'+repo+'/onboarding',{role:'contributor',item});
-await signedPost('/v1/repos/'+repo+'/work',{item,base,status:'working',paths:['game/ui/timer.mjs','game/ui/timer.css']});
+await signedPost('/v1/repos/'+repo+'/work',{item,base:activeBase,status:'working',paths:['game/ui/timer.mjs','game/ui/timer.css']});
 const hash=spawnSync('git',['rev-parse','HEAD'],{cwd,encoding:'utf8'});
 required(hash.status===0,'GIT_NO_COMMIT');
 const commit=hash.stdout.trim();
