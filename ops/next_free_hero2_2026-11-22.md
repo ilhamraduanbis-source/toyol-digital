@@ -19,3 +19,11 @@
 - `src/toyol-taskmarket-outcome-watch.mjs` and `.github/workflows/toyol-taskmarket-outcome-watch.yml` added on 22 Nov 2026.
 - First official GitHub Actions run `45016999846` passed all checks, 8 offline verification tests; monitored all 4 already-submitted receipt IDs from authenticated public API; no awards/settlements found.
 - One run hourly at minute 31. Opens one deduplicated GitHub Issue only when selected/accepted/reported payout transaction *candidate* is evidenced by the correct wallet. It never asserts cash transfer solely on task API. It does not spend or sign.
+
+
+## Confirmed submission update — 22 November 2026, 19:27 MYT
+
+- Local Termux output explicitly reports `SUBMISSION_ACCEPTED_BY_API 93253245-bc61-4cdb-86fe-e6c149112fd4`.
+- Independently verified through official TaskMarket API `/api/tasks/0xbbbfba707ab89aa0d3caae8b3e5e47eedabadefc877d87baf5739723dbd7e38e/submissions?chainId=4217`. Record belongs to Toyol Tempo wallet `0xac57ad3c3f233e5865c3cd652f67ffc82a7af431`, created `2026-11-22T11:27:33.082Z`.
+- Primary TaskMarket task response shows **19 total submissions**, **0 awards**, **20 OUSD held across all eligible entries**. The **individual 1 OUSD is contingent on buyer validity acceptance**, not a paid balance. No payout receipt verified.
+- **Do not retry or re-submit this work**. Local guard marked a single attempt completed. The existing four submissions remain untouched.
