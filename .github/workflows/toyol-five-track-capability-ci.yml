@@ -1,0 +1,68 @@
+name: Toyol Five-Track Capability CI (zero-spend)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ops/five-track-lab/**'
+      - '.github/workflows/toyol-five-track-capability-ci.yml'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-five-track-proofdesk
+  cancel-in-progress: false
+jobs:
+  test:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Extract only the five-track lab into a clean workspace
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/toyol5"
+          python - <<'PY'
+          import zipfile, pathlib
+          archive=pathlib.Path('ops/five-track-lab/Toyol_Five_Track_Opportunity_Lab_2026-11-23.zip')
+          root=pathlib.Path('/tmp/toyol-five-track-ci')
+          root.mkdir(exist_ok=True)
+          with zipfile.ZipFile(archive) as z:
+              for info in z.infolist():
+                  p=pathlib.PurePosixPath(info.filename)
+                  assert p.parts and p.parts[0]=='toyol-five-track-lab'
+                  assert '..' not in p.parts and not info.filename.startswith('/')
+              z.extractall(root)
+          print('SOURCE_EXTRACTED',len(zipfile.ZipFile(archive).namelist()))
+          PY
+      - name: Python capability tests
+        run: python /tmp/toyol-five-track-ci/toyol-five-track-lab/run_checks.py
+      - name: Real Chromium browser interactions (no external service)
+        shell: bash
+        run: |
+          python -m pip install --no-cache-dir playwright==1.56.0
+          CHROME=$(command -v google-chrome || command -v chromium || true)
+          test -n "$CHROME"
+          sed -i "s|/usr/bin/chromium|$CHROME|g" /tmp/toyol-five-track-ci/toyol-five-track-lab/tests/browser_e2e.py
+          python /tmp/toyol-five-track-ci/toyol-five-track-lab/tests/browser_e2e.py
+      - name: Build actual Even Hub SDK adapter using free npm packages
+        shell: bash
+        working-directory: /tmp/toyol-five-track-ci/toyol-five-track-lab/integrations/even-g2
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+      - name: Build actual Firebase AI Logic adapter without contacting the API
+        shell: bash
+        working-directory: /tmp/toyol-five-track-ci/toyol-five-track-lab/integrations/firebase-hybrid
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+      - name: Report honest bounds
+        run: |
+          echo "TOYOL_FIVE_TRACK: source tests & SDK builds completed"
+          echo "REGISTRATIONS=unverified SUBMISSIONS=unverified AWARDS_USD=0"
