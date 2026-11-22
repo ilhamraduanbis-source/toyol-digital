@@ -14,7 +14,8 @@ const JOBS=[
   {name:'Lumen House pitch',id:'0x2e4f6c554593a02a9c8cf8ba291db09c863b5fe07a0c4ea96a032ad40eb3b50e',chainId:8453,kind:'pitches',recordId:'9b42b166-d144-4da6-b140-f0eff7df7b7f'},
   {name:'Spanish infographic',id:'0x2b7ccfc7bf4bfd086a8e809082bc4b113ec3310dc65c790791985e5ec9e3409a',chainId:4217,kind:'submissions',recordId:'1625581d-1bcd-40da-a9eb-9138d66c7dea'},
   {name:'Spanish video',id:'0x7974a2831dbe25f693f84420b8534045a4d2f5915dad67dc0eb59702864e574b',chainId:4217,kind:'submissions',recordId:'36730de8-d3ee-46de-a618-98ec0448121f'},
-  {name:'Hero illustration',id:'0x83a813516e7796e0281f5c9d9c3fe75482205da76779372f54b09bff6b121b26',chainId:4217,kind:'submissions',recordId:'5bfac545-2c6e-4b8c-a033-f77cc5e94ce5'}
+  {name:'Hero illustration',id:'0x83a813516e7796e0281f5c9d9c3fe75482205da76779372f54b09bff6b121b26',chainId:4217,kind:'submissions',recordId:'5bfac545-2c6e-4b8c-a033-f77cc5e94ce5'},
+  {name:'Hero 2 — mechanical leverage',id:'0xbbbfba707ab89aa0d3caae8b3e5e47eedabadefc877d87baf5739723dbd7e38e',chainId:4217,kind:'submissions',recordId:'93253245-bc61-4cdb-86fe-e6c149112fd4'}
 ];
 const norm=x=>String(x??'').trim().toLowerCase();
 const isOwn=x=>norm(x)===WALLET;
