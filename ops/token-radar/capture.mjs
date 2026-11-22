@@ -24,17 +24,35 @@ const chrome = process.env.CHROME_BIN || '/usr/bin/google-chrome';
 const browser = await chromium.launch({ executablePath: chrome, headless: true, args: ['--no-sandbox', '--disable-gpu'] });
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 });
+  page.on('pageerror', error => console.error('CAPTURE_PAGE_ERROR', String(error).slice(0, 900)));
   await page.route('**/*', async route => {
     const url = route.request().url();
     if (/^(https?:|wss?:)/i.test(url)) return route.abort();
     return route.continue();
   });
+  const waitForBoard = async target => {
+    try {
+      await target.waitForFunction(() => {
+        const root = document.getElementById('board') || document.querySelector('main');
+        return !!root && root.getAttribute('aria-busy') !== 'true' &&
+          root.textContent.length > 100 && document.querySelectorAll('tbody tr').length > 0;
+      }, null, { timeout: 12000 });
+    } catch (error) {
+      const diagnosis = await target.evaluate(() => ({
+        url: location.href, title: document.title,
+        rootExists: !!document.getElementById('board'), rootBusy: document.getElementById('board')?.getAttribute('aria-busy'),
+        textLength: document.body?.textContent?.length || 0,
+        tableRows: document.querySelectorAll('tbody tr').length,
+        scripts: [...document.scripts].map(s => s.getAttribute('src')).filter(Boolean)
+      })).catch(e => ({ probeError: String(e) }));
+      console.error('CAPTURE_NOT_READY_DIAGNOSIS', JSON.stringify(diagnosis));
+      await target.screenshot({ path: join(dest, 'capture-debug.jpg'), type: 'jpeg', quality: 70 }).catch(() => {});
+      throw error;
+    }
+  };
   const visit = async (fragment) => {
     await page.goto(file + fragment, { waitUntil: 'load' });
-    await page.waitForFunction(() => {
-      const root = document.getElementById('board');
-      return root && root.getAttribute('aria-busy') === 'false' && root.textContent.length > 100;
-    }, { timeout: 15000 });
+    await waitForBoard(page);
   };
   await visit('');
   await page.screenshot({ path: join(dest, '1-board.jpg'), type: 'jpeg', quality: 76 });
@@ -55,10 +73,7 @@ try {
   });
   try {
     await filtered.goto(file + '#q=' + encodeURIComponent(q), { waitUntil: 'load' });
-    await filtered.waitForFunction(() => {
-      const root = document.getElementById('board');
-      return root && root.getAttribute('aria-busy') === 'false' && root.textContent.length > 100;
-    }, { timeout: 15000 });
+    await waitForBoard(filtered);
     const search = filtered.locator('input[type=search]');
     await search.waitFor({ state: 'visible', timeout: 8000 });
     const visibleFilter = await search.inputValue();
