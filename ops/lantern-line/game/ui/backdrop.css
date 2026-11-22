@@ -1,0 +1,68 @@
+/*
+ * Lantern Line — three-dimensional night-lake backdrop.
+ * Reproducible CSS-only scenery, no image requests and no literal colours.
+ * All hues derive from the project's accepted design tokens.
+ */
+.ll-table {
+  position: relative;
+  isolation: isolate;
+  min-height: 32rem;
+  padding: clamp(var(--ll-space-3), 2vw, var(--ll-space-6));
+  color: var(--ll-text);
+  font-family: var(--ll-font);
+  background-color: var(--ll-bg);
+
+  /*
+   * Layer order (nearest to furthest):
+   * 1. Soft near-water lantern reflection, asymmetric
+   * 2. Cool mist over the far shore
+   * 3. Vignette for night-sky depth and legible edges
+   * 4. Deep indigo horizon into almost-black water
+   */
+  background-image:
+    radial-gradient(
+      ellipse 46% 31% at 58% 78%,
+      color-mix(in srgb, var(--ll-gold) 17%, transparent) 0%,
+      color-mix(in srgb, var(--ll-gold) 7%, transparent) 42%,
+      transparent 78%
+    ),
+    radial-gradient(
+      ellipse 70% 43% at 22% 28%,
+      color-mix(in srgb, var(--ll-seat-1) 12%, transparent) 0%,
+      color-mix(in srgb, var(--ll-seat-3) 6%, transparent) 46%,
+      transparent 86%
+    ),
+    radial-gradient(
+      ellipse 87% 83% at 50% 38%,
+      transparent 24%,
+      color-mix(in srgb, var(--ll-bg) 39%, transparent) 71%,
+      color-mix(in srgb, var(--ll-bg) 82%, transparent) 100%
+    ),
+    linear-gradient(
+      178deg,
+      var(--ll-surface) 0%,
+      color-mix(in srgb, var(--ll-surface) 48%, var(--ll-bg)) 24%,
+      var(--ll-bg) 55%,
+      color-mix(in srgb, var(--ll-bg) 96%, var(--ll-seat-3)) 100%
+    );
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* Mount content remains above the light layers; no interaction is intercepted. */
+.ll-table [data-ll-mount] {
+  position: relative;
+  z-index: 1;
+}
+
+/* Avoid bright panel gradients underneath smaller labels. */
+.ll-table [data-ll-mount] :is(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--ll-gold);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ll-table {
+    background-attachment: scroll;
+  }
+}
