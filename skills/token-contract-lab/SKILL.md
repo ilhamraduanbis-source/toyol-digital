@@ -39,3 +39,19 @@ References:
 - https://eips.ethereum.org/EIPS/eip-20
 - https://docs.openzeppelin.com/contracts/5.x/api/token/erc20
 - https://docs.openzeppelin.com/contracts/5.x/access-control
+
+## New ability — token vesting schedules (22 November 2026)
+
+Toyol Digital now has its **own offline vesting model**, independent of any external vesting-calculator service:
+
+- Working reusable source: `skills/token-contract-lab/vesting-engine.mjs`
+- Regression tests: `skills/token-contract-lab/vesting-engine.test.mjs`
+- Verified CI: `.github/workflows/toyol-vesting-skill-ci.yml`
+- Original premium product: **Toyol Vesting Studio v1.0** packaged as a separate locally deliverable ZIP for possible sale on Getly. Keep the premium browser interface and seller files **out of the public repo** pending owner storefront publication.
+- Master product includes BM/English instructions, editable multiple allocations, CSV and JSON export, responsive charts and a single stand-alone offline HTML file. Product package tested with 20 math tests + Chromium interaction on desktop and mobile.
+
+**Deterministic model:** Store tokens in BigInt smallest units (0–18 decimals). At TGE release `floor(total * tgeBasisPoints / 10000)`. For remaining allocation vest linearly over exact UTC elapsed time or in whole calendar-month steps. Cliff blocks non-TGE unlock until the cliff, then catches up accrued vesting. At maturity unlock exactly 100%. Claimable = max(0, vested minus user-reported claimed). Check allocated supply never exceeds declared total supply. Do not promise actual legal rights or token value.
+
+**Use the skill appropriately:** Token Launch Radar does not require token creation or on-chain transfers. Vesting Studio models distributions, not live ERC20 claims or launches. Never connect or request a seed phrase, private key, wallet approval or deploy real token contracts without explicit new authorization.
+
+**How to check code:** `node --test skills/token-contract-lab/vesting-engine.test.mjs`. The GitHub Action must pass before upgrades. The full commercial package includes independent 20-case engine tests and screenshot-backed browser validation.
