@@ -13,6 +13,10 @@ Learn totalSupply, balanceOf, transfer, approve, allowance and transferFrom. Stu
 
 The files token-ledger.mjs and token-ledger.test.mjs implement an **in-memory mock ledger in JavaScript**. It never signs transactions, touches a blockchain or generates wallet addresses. It cannot be sold or deployed as ERC-20. Twelve unit tests assert balances, delegated spending, capped minting, burns and invalid inputs.
 
+## Educational Solidity example — not compiled, audited or deployed
+
+The repository also includes `ToyolLabToken.sol`, an **illustrative** capped ERC-20 Solidity contract drafted against OpenZeppelin 5.6.1. Its Solidity compilation and security review have **not** been verified. Do not treat it as a production-ready contract or a real launched token.
+
 ## Production design track — not implemented/deployed
 
 1. Written purpose and utility of a token; why a database record would not be more appropriate.
