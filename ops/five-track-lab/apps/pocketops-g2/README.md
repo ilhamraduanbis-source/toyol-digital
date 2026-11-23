@@ -38,6 +38,12 @@ https://raw.githubusercontent.com/ilhamraduanbis-source/toyol-digital/main/ops/f
 
 This is a **real simulator gesture/navigation test**, not physical G2 footage, an AI model inference demonstration, or proof of event submission. The exact source artifact was verified by SHA-256 `5cb79901040b317ff84f2a653eb5d5ee6580dbfc1ec18de1090cbdbb49f13b66` before publication in GitHub Actions run `45200754406`.
 
+## Official DoraHacks Build listing
+
+**PocketOps G2:** https://dorahacks.io/build/51719
+
+Owner confirmed official Build submission on 23 November 2026 at approximately 23:11 MYT and supplied a screenshot showing `Under Review`. This is not judging acceptance or a prize. Project title, track and final status remain subject to organiser review.
+
 ## Contest honesty checklist
 
 - One human participant can register solo; AI coding help must not be presented as extra human teammates.
