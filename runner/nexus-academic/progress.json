@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M21",
+  "next_module": "M22",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -6218,6 +6218,75 @@
             ],
             "full_text_reviewed": false,
             "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45144714143",
+      "at": "2026-11-23T09:10:58.786100+00:00",
+      "module": "M21",
+      "title": "Kelestarian interaksi manusia dan alam",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 2,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Orang Asli traditional ecological knowledge human environment sustainability Malaysia",
+        "source": "https://api.crossref.org/works?query.bibliographic=Orang+Asli+traditional+ecological+knowledge+human+environment+sustainability+Malaysia&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.20474/jahss-4.4.4",
+            "title": "An exploratory study on Indigenous Knowledge of ‘Green Technology’ (IKGT) among orang asli in Malaysia",
+            "year": 2018,
+            "url": "https://doi.org/10.20474/jahss-4.4.4",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.31901/24566772.2012/06.03.10",
+            "title": "Traditional Knowledge and Usage of Medicinal Plants among the Semai Orang Asli at Kampung Batu 16, Tapah, Perak, Malaysia",
+            "year": 2012,
+            "url": "https://doi.org/10.31901/24566772.2012/06.03.10",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.13057/biodiv/d220329",
+            "title": "Traditional knowledge of medicinal plants in the Kampung Orang Asli Donglai Baru, Hulu Langat, Malaysia",
+            "year": 2021,
+            "url": "https://doi.org/10.13057/biodiv/d220329",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.3390/su142013201",
+            "title": "A Systematic Review of What Malaysia Can Learn to Improve Orang Asli Students’ Mathematics Learning from Other Countries",
+            "year": 2022,
+            "url": "https://doi.org/10.3390/su142013201",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.55230/mabjournal.v52i5.co6",
+            "title": "Traditional Ecological Knowledge of Wild Tubers Used by The Orang Asli Bateq Tribe on The East Coast of Peninsular Malaysia",
+            "year": 2023,
+            "url": "https://doi.org/10.55230/mabjournal.v52i5.co6",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.20474/jahss-4.4.4",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.31901/24566772.2012/06.03.10",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
           }
         ]
       },
