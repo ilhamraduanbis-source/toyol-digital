@@ -119,7 +119,7 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends libwebkit2gtk-4.1-0 libgtk-3-0
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends libwebkit2gtk-4.1-0 libgtk-3-0 ffmpeg
           ldd ./node_modules/@evenrealities/sim-linux-x64/bin/evenhub-simulator > "$RUNNER_TEMP/pocketops-ldd.log"
           if grep -q 'not found' "$RUNNER_TEMP/pocketops-ldd.log"; then cat "$RUNNER_TEMP/pocketops-ldd.log"; exit 1; fi
       - name: Run the official Even Hub simulator and test actual gestures
