@@ -1,0 +1,55 @@
+name: Publish verified PocketOps G2 simulator video
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-even-video-public.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: toyol-even-video-evidence
+  cancel-in-progress: false
+jobs:
+  publish-verified-video:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download existing genuine simulator video artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pocketops-g2-original-simulator-evidence
+          run-id: 45088726502
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/pocketops-verified
+      - name: Verify and publish ONLY original demo MP4
+        shell: bash
+        run: |
+          set -euo pipefail
+          src="$RUNNER_TEMP/pocketops-verified/pocketops-g2-simulator-real.mp4"
+          test -s "$src"
+          echo '5cb79901040b317ff84f2a653eb5d5ee6580dbfc1ec18de1090cbdbb49f13b66  '"$src" | sha256sum -c -
+          python3 - "$src" <<'PY'
+          import pathlib,sys
+          p=pathlib.Path(sys.argv[1])
+          b=p.read_bytes()
+          assert len(b)==36648
+          assert b[4:8]==b'ftyp'
+          assert b'moov' in b, 'not a complete MP4'
+          print('AUTHENTIC_EVEN_SIMULATOR_MP4_VERIFIED')
+          PY
+          mkdir -p ops/five-track-lab/apps/pocketops-g2/media
+          cp "$src" ops/five-track-lab/apps/pocketops-g2/media/pocketops-g2-simulator-real.mp4
+          git add ops/five-track-lab/apps/pocketops-g2/media/pocketops-g2-simulator-real.mp4
+          if git diff --staged --quiet; then
+            echo 'VIDEO_ALREADY_PUBLISHED'
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Even G2: publish genuine 15s simulator MP4 with verified SHA256'
+          git push origin HEAD:main
+          echo 'PUBLIC_VIDEO_SOURCE_COMMITTED'
