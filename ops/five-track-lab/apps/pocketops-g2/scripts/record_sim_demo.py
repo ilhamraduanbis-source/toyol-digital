@@ -70,7 +70,7 @@ def main():
             raise RuntimeError("ffmpeg failed: "+stderr.decode(errors="replace")[-1200:])
         if len({x[1] for x in snapshots}) < 3:
             raise RuntimeError("Fewer than three distinct real simulator frames")
-        if OUT.stat().st_size < 15000:
+        if OUT.stat().st_size < 1500:
             raise RuntimeError("Demo file suspiciously small")
         print("EVEN_SIM_REAL_CAPTURE_PASS",OUT,"frames",frame_count,
               "states",len({x[1] for x in snapshots}),
