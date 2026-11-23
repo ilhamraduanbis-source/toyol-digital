@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M24",
+  "next_module": "M25",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -6450,6 +6450,78 @@
             ],
             "full_text_reviewed": false,
             "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45204003334",
+      "at": "2026-11-23T15:20:07.726818+00:00",
+      "module": "M24",
+      "title": "Hubungan etnik dan masyarakat Malaysia",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 0,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Malaysia ethnic relations social cohesion multiculturalism national integration",
+        "source": "https://api.crossref.org/works?query.bibliographic=Malaysia+ethnic+relations+social+cohesion+multiculturalism+national+integration&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.47772/ijriss.2025.91100337",
+            "title": "Managing Ethnic Relations in Malaysia: Policies, Practices, and Prospects for National Cohesion",
+            "year": 2025,
+            "url": "https://doi.org/10.47772/ijriss.2025.91100337",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/01419870.2015.1095324",
+            "title": "Multiculturalism, social cohesion and immigration: shifting conceptions in the UK",
+            "year": 2015,
+            "url": "https://doi.org/10.1080/01419870.2015.1095324",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1353/ces.2011.0005",
+            "title": "Multiculturalism and Social Cohesion: Potentials and Challenges of Diversity (review)",
+            "year": 2011,
+            "url": "https://doi.org/10.1353/ces.2011.0005",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/14662043.2017.1258102",
+            "title": "Double-layered ethnic politics in Malaysia: national integration, ethnic unity and social stability",
+            "year": 2016,
+            "url": "https://doi.org/10.1080/14662043.2017.1258102",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.6007/ijarbss/v12-i11/15651",
+            "title": "Social Cohesion for Community Development in Malaysia: Impact to National Integration",
+            "year": 2022,
+            "url": "https://doi.org/10.6007/ijarbss/v12-i11/15651",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.47772/ijriss.2025.91100337",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 163,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.1080/01419870.2015.1095324",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
           }
         ]
       },
