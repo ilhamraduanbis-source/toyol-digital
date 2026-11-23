@@ -1,0 +1,60 @@
+name: Toyol KaneCLI Contest Test (free credits only)
+on:
+  workflow_dispatch:
+    inputs:
+      free_credits_confirmed:
+        description: 'I checked the TestMu dashboard and have enough FREE Kane credits; no paid credit will be used'
+        type: boolean
+        required: true
+        default: false
+permissions:
+  contents: read
+jobs:
+  kane-test:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      LT_USERNAME: ${{ secrets.LT_USERNAME }}
+      LT_ACCESS_KEY: ${{ secrets.LT_ACCESS_KEY }}
+      TEST_URL: https://toyol-proofsafe-hybrid.vercel.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Explicit no-spend and authentication gate
+        env:
+          CONFIRM: ${{ inputs.free_credits_confirmed }}
+        shell: bash
+        run: |
+          test "$CONFIRM" = 'true' || { echo 'BLOCKED_NO_FREE_CREDIT_CONFIRMATION'; exit 1; }
+          test -n "${LT_USERNAME:-}" && test -n "${LT_ACCESS_KEY:-}" || { echo 'BLOCKED_MISSING_TESTMU_SECRETS'; exit 1; }
+          echo 'FREE_CREDITS_CONFIRMED_BY_OWNER; this is not an independent wallet balance verification'
+      - name: Install official Kane CLI (not a paid plan)
+        shell: bash
+        run: |
+          npm install -g @testmuai/kane-cli --no-audit --no-fund
+          kane-cli --version
+      - name: Run genuine Kane browser acceptance test with strict budget
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/kane-evidence"
+          set +e
+          kane-cli run 'On the ProofSafe page, verify that the heading ProofSafe is visible, the cloud fallback checkbox is unchecked by default, and clicking Generate with a normal prompt reports that Firebase project configuration is missing. Do not sign in, use any credit card, enable cloud or enter personal data.' \
+            --url "$TEST_URL" --agent --headless --timeout 180 --max-steps 12 \
+            > "$RUNNER_TEMP/kane-evidence/agent-output.ndjson" \
+            2> "$RUNNER_TEMP/kane-evidence/diagnostics.stderr"
+          rc=$?
+          set -e
+          echo "GENUINE_KANE_CLI_EXIT=$rc"
+          export KANE_RUN_RC="$rc"
+          python3 ops/five-track-lab/entrykits/kane-cli/check_real_result.py "$RUNNER_TEMP/kane-evidence/agent-output.ndjson"
+      - name: Archive real Kane evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kane-cli-real-free-test-evidence
+          path: ${{ runner.temp }}/kane-evidence
+          retention-days: 7
+          if-no-files-found: warn
