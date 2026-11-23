@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M17",
+  "next_module": "M18",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -5915,6 +5915,81 @@
             "doi": "10.21608/maed.2023.359267",
             "status": "ABSTRACT_UNAVAILABLE",
             "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45099789412",
+      "at": "2026-11-23T02:22:12.429263+00:00",
+      "module": "M17",
+      "title": "Metafizik, ontologi dan falsafah manusia",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 2,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Islamic metaphysics ontology human nature soul philosophy",
+        "source": "https://api.crossref.org/works?query.bibliographic=Islamic+metaphysics+ontology+human+nature+soul+philosophy&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.1017/s0031819126101600",
+            "title": "‘Are there no foxes in the human soul?’ A Midgleyean Metaphysics for Mixed Communities",
+            "year": 2026,
+            "url": "https://doi.org/10.1017/s0031819126101600",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.21146/2949-1126-2025-3-1-129-142",
+            "title": "The Key to the Human Soul",
+            "year": 2025,
+            "url": "https://doi.org/10.21146/2949-1126-2025-3-1-129-142",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.5325/jspecphil.31.4.0575",
+            "title": "Ful-filling the Copula, Determining Nature: The Grammatical Ontology of Hegel's Metaphysics",
+            "year": 2017,
+            "url": "https://doi.org/10.5325/jspecphil.31.4.0575",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.5840/faithphil200421330",
+            "title": "Soul, Body, and Survival",
+            "year": 2004,
+            "url": "https://doi.org/10.5840/faithphil200421330",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.5840/islamicphil2006219",
+            "title": "Avicenna’s Metaphysics in Context",
+            "year": 2006,
+            "url": "https://doi.org/10.5840/islamicphil2006219",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.1017/s0031819126101600",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 16,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.21146/2949-1126-2025-3-1-129-142",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 259,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
           }
         ]
       },
