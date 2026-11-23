@@ -1,0 +1,74 @@
+name: Toyol Kane standalone ProofSafe one-shot FREE credit verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-kane-standalone-bridge-once.yml'
+permissions: {contents: read}
+jobs:
+  genuine-kane-on-new-app:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 11
+    env:
+      LT_USERNAME: ${{ secrets.LT_USERNAME }}
+      LT_ACCESS_KEY: ${{ secrets.LT_ACCESS_KEY }}
+      TEST_URL: https://kanecli-proofsafe-2026.vercel.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Validate actual new repo public demo without spending Kane credits
+        run: |
+          set -euo pipefail
+          test -n "${LT_USERNAME:-}" && test -n "${LT_ACCESS_KEY:-}" || { echo 'MISSING_KANE_SECRETS'; exit 2; }
+          curl -fLsS --max-time 15 "$TEST_URL/" -o /tmp/proofsafe-standalone.html
+          grep -q 'Test the claim. Keep the evidence.' /tmp/proofsafe-standalone.html
+          curl -fLsS --max-time 15 "$TEST_URL/src/engine.mjs" | grep -q 'preflight'
+          echo 'REAL_NEW_REPO_PUBLIC_DEMO_VERIFIED'
+      - name: Install official Kane CLI and verify FREE balance
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install -g @testmuai/kane-cli --no-audit --no-fund
+          kane-cli login --username "$LT_USERNAME" --access-key "$LT_ACCESS_KEY" >/dev/null
+          kane-cli balance | tee "$RUNNER_TEMP/kane-balance.txt"
+          credits=$(sed -nE 's/.*Available credits:[[:space:]]*([0-9]+).*/\1/p' "$RUNNER_TEMP/kane-balance.txt" | tail -1)
+          test -n "$credits" && test "$credits" -ge 100 || { echo 'INSUFFICIENT_OR_UNVERIFIED_FREE_KANE_CREDITS';exit 2; }
+          echo 'FREE_KANE_CREDITS_AVAILABLE; one bounded original test is authorized'
+      - name: Run ONE official Kane headless agent test of standalone app
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/kane-original"
+          set +e
+          kane-cli run 'Test ProofSafe QA from the NEW standalone repo. First confirm Export reproducible JSON is disabled. Press Validate locally on the original CSV, verify PASS and exactly 2 records. Press Load failing case, Validate locally and verify FAIL with at least two issues. Press Reset sample, Validate locally and verify PASS. Do not provide secrets, log in, make purchases, or submit real invoices.' \
+            --url "$TEST_URL" --agent --headless --timeout 180 --max-steps 15 \
+            > "$RUNNER_TEMP/kane-original/kane-authentic.ndjson" \
+            2> "$RUNNER_TEMP/kane-original/diagnostics.stderr"
+          rc=$?
+          set -e
+          echo "REAL_STANDALONE_KANE_EXIT=$rc"
+          python3 - "$RUNNER_TEMP/kane-original/kane-authentic.ndjson" "$rc" <<'PY'
+          import json,sys
+          path,code=sys.argv[1],int(sys.argv[2])
+          end=None
+          with open(path,errors='replace') as f:
+              for line in f:
+                  try: obj=json.loads(line)
+                  except ValueError: continue
+                  if isinstance(obj,dict) and obj.get('type')=='run_end':end=obj
+          if not end:raise SystemExit('ORIGINAL_KANE_LOG_MISSING_TERMINAL_EVENT')
+          print('AUTHENTIC_KANE_STATUS',end.get('status','unknown'))
+          if code!=0 or end.get('status')!='passed':
+              raise SystemExit('REAL_KANE_TEST_NOT_PASSED')
+          print('GENUINE_STANDALONE_KANE_PASS')
+          PY
+      - name: Preserve original unchanged Kane proof, including on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: proofsafe-standalone-genuine-kane-session
+          path: ${{ runner.temp }}/kane-original/
+          retention-days: 14
+          if-no-files-found: warn
