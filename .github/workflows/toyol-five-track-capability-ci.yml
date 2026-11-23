@@ -157,7 +157,7 @@ jobs:
           assert sum(1 for px in a.getdata() if px[3]>128)>1000 and sum(1 for px in b.getdata() if px[3]>128)>1000, 'GLASSES_EMPTY'
           print('OFFICIAL_EVEN_G2_SIMULATOR_GESTURE_SCREENSHOT_PASS')
           PY
-          python3 scripts/record_sim_demo.py
+          EVEN_DEMO_OUT="$RUNNER_TEMP/pocketops-g2-simulator-real.mp4" python3 scripts/record_sim_demo.py
           test -s "$RUNNER_TEMP/pocketops-g2-simulator-real.mp4"
           ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1 "$RUNNER_TEMP/pocketops-g2-simulator-real.mp4"
       - name: Preserve simulator evidence and local package even on failure
