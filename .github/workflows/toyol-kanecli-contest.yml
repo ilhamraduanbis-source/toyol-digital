@@ -36,6 +36,14 @@ jobs:
         run: |
           npm install -g @testmuai/kane-cli --no-audit --no-fund
           kane-cli --version
+      - name: Authenticate and verify free credits in TestMu (no browsing OAuth on CI)
+        shell: bash
+        run: |
+          set -euo pipefail
+          kane-cli login --username "$LT_USERNAME" --access-key "$LT_ACCESS_KEY" >/dev/null
+          kane-cli whoami | sed -E 's/([A-Za-z0-9_-]{15,})/[REDACTED]/g'
+          kane-cli balance
+          echo 'Only proceed if above balance shows sufficient free promotion credits'
       - name: Run genuine Kane browser acceptance test with strict budget
         shell: bash
         run: |
@@ -48,6 +56,7 @@ jobs:
           rc=$?
           set -e
           echo "GENUINE_KANE_CLI_EXIT=$rc"
+          if [ "$rc" -ne 0 ]; then echo "KANE_RUN_NOT_PASSED"; fi
           export KANE_RUN_RC="$rc"
           python3 ops/five-track-lab/entrykits/kane-cli/check_real_result.py "$RUNNER_TEMP/kane-evidence/agent-output.ndjson"
       - name: Archive real Kane evidence, including failures
