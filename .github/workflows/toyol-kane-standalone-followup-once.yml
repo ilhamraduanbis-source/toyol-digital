@@ -1,0 +1,98 @@
+name: Toyol Kane new-app second pass after AI feedback, one shot
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/toyol-kane-standalone-followup-once.yml'
+permissions: {contents: read, actions: read}
+jobs:
+  genuine-after-agent:
+    if: github.repository == 'ilhamraduanbis-source/toyol-digital'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      LT_USERNAME: ${{ secrets.LT_USERNAME }}
+      LT_ACCESS_KEY: ${{ secrets.LT_ACCESS_KEY }}
+      TARGET: https://kanecli-proofsafe-2026.vercel.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Retrieve genuine pre-patch Kane run, no fabricated input
+        uses: actions/download-artifact@v4
+        with:
+          name: proofsafe-standalone-genuine-kane-session
+          run-id: 45212673247
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/kane-before
+      - name: Verify AI feedback originated in authentic previous Kane log
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$RUNNER_TEMP/kane-before/kane-authentic.ndjson" <<'PY'
+          import json,sys
+          results=[]
+          for l in open(sys.argv[1]):
+              try: o=json.loads(l)
+              except ValueError: continue
+              if o.get('type')=='run_end':results.append(o)
+          assert results and results[-1].get('status')=='passed'
+          state=results[-1].get('final_state',{})
+          assert state.get('original_csv_records')=='2'
+          assert state.get('failing_case_issues')=='3'
+          print('GENUINE_BEFORE_AGENT_REPORT_VERIFIED',results[-1].get('status'))
+          PY
+          curl -fLsS --max-time 15 "$TARGET/src/app.mjs" -o /tmp/proofsafe-new-source.js
+          grep -q 'transactionSettled:false' /tmp/proofsafe-new-source.js
+          grep -q "source:'LOCAL_BROWSER'" /tmp/proofsafe-new-source.js
+          echo 'DEPLOYED_POST_AGENT_SOURCE_VERIFIED'
+      - name: Authenticate official Kane and verify remaining free credits
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${LT_USERNAME:-}" && test -n "${LT_ACCESS_KEY:-}" || exit 2
+          npm install -g @testmuai/kane-cli --no-audit --no-fund
+          kane-cli login --username "$LT_USERNAME" --access-key "$LT_ACCESS_KEY" >/dev/null
+          kane-cli balance | tee "$RUNNER_TEMP/kane-credit-check.txt"
+          python3 - "$RUNNER_TEMP/kane-credit-check.txt" <<'PY'
+          import re,sys
+          s=open(sys.argv[1]).read()
+          m=re.search(r'Available credits:\s*([0-9.]+)',s)
+          if not m or float(m.group(1)) < 100:
+              raise SystemExit('CREDITS_UNVERIFIED_OR_INSUFFICIENT')
+          print('FREE_CREDIT_BALANCE_GATE_PASS')
+          PY
+      - name: Genuine Kane agent tests post-AI JSON provenance work
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/kane-after"
+          set +e
+          kane-cli run 'You are testing the new standalone ProofSafe QA after an AI coding assistant read a genuine previous Kane test. First confirm Export reproducible JSON is disabled. Validate clean sample, verify PASS, 2 records, and Export button becomes enabled. Click Export reproducible JSON and confirm a download is offered if supported. Load failing sample, validate and confirm FAIL with exactly 3 issues. Reset sample, validate and confirm PASS. No personal data, logins, purchases or API secrets.' \
+            --url "$TARGET" --agent --headless --timeout 230 --max-steps 25 \
+            > "$RUNNER_TEMP/kane-after/kane-after-original.ndjson" \
+            2> "$RUNNER_TEMP/kane-after/diagnostics.stderr"
+          rc=$?
+          set -e
+          echo "KANE_AFTER_AI_EXIT=$rc"
+          python3 - "$RUNNER_TEMP/kane-after/kane-after-original.ndjson" "$rc" <<'PY'
+          import json,sys
+          events=[]
+          for l in open(sys.argv[1],errors='replace'):
+              try: o=json.loads(l)
+              except ValueError: continue
+              if o.get('type')=='run_end':events.append(o)
+          if not events: raise SystemExit('GENUINE_AFTER_LOG_MISSING')
+          end=events[-1]
+          print('GENUINE_AFTER_KANE_STATUS',end.get('status'), 'reason',end.get('reason'))
+          if int(sys.argv[2]) or end.get('status')!='passed': raise SystemExit('KANE_POST_AGENT_TEST_NOT_PASSED')
+          print('AI_FEEDBACK_TO_KANE_CLOSED_LOOP_TEST_PASS')
+          PY
+      - name: Archive authentic post-agent Kane outputs including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: proofsafe-after-ai-genuine-kane-session
+          path: ${{ runner.temp }}/kane-after/
+          retention-days: 14
+          if-no-files-found: warn
