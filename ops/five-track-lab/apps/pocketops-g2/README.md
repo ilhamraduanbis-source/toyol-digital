@@ -31,6 +31,13 @@ npm run dev
 
 The native .ehpk is built with official `evenhub pack`. For simulator evidence, see GitHub Actions run [45088726502](https://github.com/ilhamraduanbis-source/toyol-digital/actions/runs/45088726502), or the more recent [45088726502](https://github.com/ilhamraduanbis-source/toyol-digital/actions/runs/45088726502) simulator workflow and recorded local demo. See [SUBMISSION.md](SUBMISSION.md) for full submission preparation. The 15-second simulator MP4 demonstrates genuine HUD navigation only, not a complete 3-minute AI demo.
 
+## Genuine simulator demo video
+
+A 15-second MP4 recording from the official Even Hub simulator is published at:
+https://raw.githubusercontent.com/ilhamraduanbis-source/toyol-digital/main/ops/five-track-lab/apps/pocketops-g2/media/pocketops-g2-simulator-real.mp4
+
+This is a **real simulator gesture/navigation test**, not physical G2 footage, an AI model inference demonstration, or proof of event submission. The exact source artifact was verified by SHA-256 `5cb79901040b317ff84f2a653eb5d5ee6580dbfc1ec18de1090cbdbb49f13b66` before publication in GitHub Actions run `45200754406`.
+
 ## Contest honesty checklist
 
 - One human participant can register solo; AI coding help must not be presented as extra human teammates.
