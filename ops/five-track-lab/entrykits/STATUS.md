@@ -2,7 +2,7 @@
 
 | Competition | Built and reproducible | Missing official gate |
 | --- | --- | --- |
-| KaneCLI | Genuine KaneCLI GitHub Actions test **PASS** (run 45093939279, 2026-11-23), with authentic run_end status=passed; TestMu credits confirmed via UI | **Contest submission NOT done**; existing toyol-digital repo created 2026-11-08 (contest requires newly initialized repo on/after 2026-11-12); agent→Kane closed loop, YouTube 3–5m demo, two public posts, and new standalone public repo needed |
+| KaneCLI | [Independent new eligible-date repo](https://github.com/ilhamraduanbis-source/kanecli-proofsafe-2026) Public, MIT, 10/10 tests and real Chromium CI PASS; genuine first Kane on new app PASS (#45212673247), AI feedback commit #489026de, updated Vercel demo, genuine second Kane PASS (#45214209632) | **Contest form NOT submitted**. English narrated MP4 demo prepared locally (not uploaded to YouTube). Two real public posts still require human publication. New repo direct TestMu Secrets not configured; tests ran securely from prior repo without copying keys. |
 | Even Realities | SDK TypeScript build, `.ehpk` packaged, simulator gesture/screenshot test PASS | **Build submitted on DoraHacks at 2026-11-23 23:11 MYT, UNDER REVIEW. Official judging result pending; optional local AI inference not demonstrated.** |
 | Firebase Hybrid AI | Firebase AI Logic TypeScript build and strict on-device default | Real Firebase project and real inference, demo and Devpost |
 | Kaggle Gemma 4 | Original agent.yaml + prompt + sampling + eval settings + deterministic package/tests | Rules acceptance by 25 Nov UTC, Kaggle model evaluation and submission |
@@ -34,3 +34,14 @@ GitHub Actions run https://github.com/ilhamraduanbis-source/toyol-digital/action
 - **Orion USD5m:** GitHub Actions run 45194830101 inspected 9 unique notices (bounded sample), rejected all 9 as outside civil software scope, filed **0 bids**, and reported USD0 verified income.
 - **Paid-task pipeline:** GitHub Actions run 45204008555 had 14 configured agent tracks and 2 distinct candidates, not two funded awards or continuous independent paid workers. Unverified issue lists are not escrow-backed revenue.
 - **Even Realities:** [PocketOps G2 submission](https://dorahacks.io/build/51719) remains under organiser review as last confirmed by owner screenshots. No USDT prize received.
+
+## KaneCLI standalone completion update — 2026-11-23
+
+New repository: https://github.com/ilhamraduanbis-source/kanecli-proofsafe-2026, created 23 November 2026 (after 12 November cutoff). Original MIT source, ten unit tests and Chromium UI CI run #45213978552 PASS. Public HTTPS Vercel site https://kanecli-proofsafe-2026.vercel.app verified by remote smoke CI.
+
+Two official authenticated TestMu Kane runs against this specific new app:
+- Baseline PASS https://github.com/ilhamraduanbis-source/toyol-digital/actions/runs/45212673247; unmodified artifact 14836742911.
+- AI coding assistant read authentic baseline, strengthened `LOCAL_BROWSER` exported JSON provenance and Chromium downloaded JSON assertions in new repo commit `489026de`.
+- Post-agent Kane PASS https://github.com/ilhamraduanbis-source/toyol-digital/actions/runs/45214209632; unmodified artifact 14837054192. Kane confirmed download offered and actual browser pass/fail/reset; Chromium CI separately checked JSON file contents.
+
+A 4-minute 47-second English narrated demo MP4 was created in the conversation container with genuine local browser screenshots. **It is not yet a published YouTube video** and is not in GitHub. Two public launch posts and competition final submit still need the owner's external account actions. Deadline 26 Nov 2026 23:59 IST (27 Nov 02:29 MYT). No prize or settled income confirmed. The formerly stated 'new repo not created' and 'AI loop missing' points above are superseded.
