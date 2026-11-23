@@ -10,6 +10,8 @@ from pathlib import Path
 import subprocess
 import time
 from urllib.request import Request, urlopen
+from io import BytesIO
+from PIL import Image
 
 BASE = os.environ.get("EVEN_SIM_URL", "http://127.0.0.1:9898")
 OUT = Path(os.environ.get("EVEN_DEMO_OUT", "/tmp/pocketops-g2-simulator-real.mp4"))
@@ -37,7 +39,7 @@ def main():
         "ffmpeg","-hide_banner","-nostdin","-loglevel","error","-y",
         "-f","image2pipe","-framerate",str(FPS),"-c:v","png","-i","pipe:0",
         "-vf","scale=1152:576:flags=neighbor,pad=1152:630:0:0:black,"
-              "drawtext=text='GENUINE EVEN HUB SIMULATOR - CLICK TEST / NOT DEVICE HARDWARE':"
+              "drawtext=text='OFFICIAL G2 SIMULATOR ALPHA RENDER - NOT PHYSICAL HARDWARE':"
               "fontcolor=white:fontsize=21:x=22:y=591",
         "-c:v","libx264","-pix_fmt","yuv420p","-crf","26","-preset","veryfast",
         "-movflags","+faststart",str(OUT)
@@ -58,7 +60,15 @@ def main():
                 tick=time.monotonic()
                 frame=get_frame()
                 if first is None: first=hashlib.sha256(frame).hexdigest()
-                proc.stdin.write(frame)
+                # Interpret genuine Even Hub alpha-mask pixels rather than the green chroma RGB.
+                rgba=Image.open(BytesIO(frame)).convert('RGBA')
+                alpha=rgba.getchannel('A')
+                if alpha.getextrema()[1] < 200:
+                    raise RuntimeError('Simulator frame contains no illuminated glyph data')
+                glyph=alpha.point(lambda a: 255 if a >= 220 else (55 if a >= 100 else 0)).convert('RGB')
+                buf=BytesIO()
+                glyph.save(buf,format='PNG')
+                proc.stdin.write(buf.getvalue())
                 frame_count+=1
                 delay=(1/FPS)-(time.monotonic()-tick)
                 if delay>0:time.sleep(delay)
