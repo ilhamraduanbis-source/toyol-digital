@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M03",
+  "next_module": "S106A",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -7542,6 +7542,78 @@
             "signals": [
               "qualitative"
             ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45489165025",
+      "at": "2026-11-24T21:15:15.570796+00:00",
+      "module": "M03",
+      "title": "Analisis konsep dan hujah falsafah",
+      "round": 3,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 1,
+      "mastery_verified": false,
+      "literature": {
+        "query": "philosophical argument analysis",
+        "source": "https://api.crossref.org/works?query.bibliographic=philosophical+argument+analysis&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.1080/09515080050128141",
+            "title": "A cognitive analysis of the Chinese room argument",
+            "year": 2000,
+            "url": "https://doi.org/10.1080/09515080050128141",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.24917/20841043.14.1.2",
+            "title": "Mourning and melancholia: An analysis of the Mothers of the Plaza De Mayo",
+            "year": 2024,
+            "url": "https://doi.org/10.24917/20841043.14.1.2",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.2307/2220350",
+            "title": "A Bayesian Analysis of Hume's Argument Concerning Miracles",
+            "year": 1989,
+            "url": "https://doi.org/10.2307/2220350",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1515/ling.1971.9.67.72",
+            "title": "A NOTE ON TAGMEMIC DISCOURSE ANALYSIS: PHILOSOPHICAL ARGUMENT",
+            "year": 1971,
+            "url": "https://doi.org/10.1515/ling.1971.9.67.72",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1111/j.1468-0114.2012.01432.x",
+            "title": "THE ASSIMILATION ARGUMENT AND THE ROLLBACK ARGUMENT",
+            "year": 2012,
+            "url": "https://doi.org/10.1111/j.1468-0114.2012.01432.x",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.1080/09515080050128141",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.24917/20841043.14.1.2",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 230,
+            "signals": [],
             "full_text_reviewed": false,
             "findings_verified": false
           }
