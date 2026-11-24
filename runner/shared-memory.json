@@ -2,18 +2,6 @@
   "version": 1,
   "observations": [
     {
-      "worker": "nexus-cross-sector",
-      "runId": 45124025170,
-      "attempt": 1,
-      "completedAt": "2026-11-23T06:25:53Z",
-      "sourceCommit": "541f2a6e1618a4b48513a9f153a770b47812fd85",
-      "conclusion": "success",
-      "failedSteps": [],
-      "skippedSteps": [],
-      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
-      "incomeInferred": false
-    },
-    {
       "worker": "atlas-mega-contracts",
       "runId": 45124802440,
       "attempt": 1,
@@ -1439,6 +1427,20 @@
       "failedSteps": [],
       "skippedSteps": [
         "Read-only live availability probe (push and manual only)"
+      ],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-data",
+      "runId": 45344806063,
+      "attempt": 1,
+      "completedAt": "2026-11-24T07:01:47Z",
+      "sourceCommit": "078f79de26aa351b283580d568f782aadb6f47d5",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [
+        "Prepare actual data and notary evidence on code change (no claim)"
       ],
       "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
       "incomeInferred": false
