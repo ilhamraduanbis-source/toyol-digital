@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M29",
+  "next_module": "M30",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -6824,6 +6824,75 @@
             "signals": [],
             "full_text_reviewed": false,
             "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45305458082",
+      "at": "2026-11-24T01:30:05.690983+00:00",
+      "module": "M29",
+      "title": "Seni, kreativiti dan estetika Islam",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Islamic aesthetics art creativity philosophy ethics",
+        "source": "https://api.crossref.org/works?query.bibliographic=Islamic+aesthetics+art+creativity+philosophy+ethics&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.2307/430075",
+            "title": "Creativity in Art and Ethics",
+            "year": 1975,
+            "url": "https://doi.org/10.2307/430075",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1111/1540_6245.jaac34.2.0183",
+            "title": "Creativity in Art and Ethics",
+            "year": 1975,
+            "url": "https://doi.org/10.1111/1540_6245.jaac34.2.0183",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.55927/ajpr.v4i1.13114",
+            "title": "Art in the Muhammadiyah Islamic View: A Balance of Aesthetics and Ethics",
+            "year": 2025,
+            "url": "https://doi.org/10.55927/ajpr.v4i1.13114",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.3366/film.1998.0011",
+            "title": "Art and Ethics Reunited: <i>Aesthetics and Ethics</i>, edited by Jerrold Levinson",
+            "year": 1998,
+            "url": "https://doi.org/10.3366/film.1998.0011",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1086/291340",
+            "title": "<i>Aesthetics and Philosophy of Art Criticism</i>. Jerome Stolnitz",
+            "year": 1961,
+            "url": "https://doi.org/10.1086/291340",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.2307/430075",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.1111/1540_6245.jaac34.2.0183",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
           }
         ]
       },
