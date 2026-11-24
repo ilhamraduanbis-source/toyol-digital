@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M34",
+  "next_module": "M35",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -7180,6 +7180,75 @@
           },
           {
             "doi": "10.1080/02602930802474169",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45380657822",
+      "at": "2026-11-24T11:03:55.353506+00:00",
+      "module": "M34",
+      "title": "Pemeriksaan luar dan jaminan kualiti akademik",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 2,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "external examiner quality assurance higher education curriculum Malaysia",
+        "source": "https://api.crossref.org/works?query.bibliographic=external+examiner+quality+assurance+higher+education+curriculum+Malaysia&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.1080/1353832990050108",
+            "title": "The Practitioner as External Examiner",
+            "year": 1999,
+            "url": "https://doi.org/10.1080/1353832990050108",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/13538322.2015.1051795",
+            "title": "Professionalism, profession and quality assurance practitioners in external quality assurance agencies in higher education",
+            "year": 2015,
+            "url": "https://doi.org/10.1080/13538322.2015.1051795",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1108/09684880310471560",
+            "title": "The trials of being a PhD external examiner",
+            "year": 2003,
+            "url": "https://doi.org/10.1108/09684880310471560",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/13538320601051010",
+            "title": "Impact of Quality Assurance: Overview of a discussion between representatives of external quality assurance agencies",
+            "year": 2006,
+            "url": "https://doi.org/10.1080/13538320601051010",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/1353832042000230608",
+            "title": "External quality assurance in Indian higher education: developments of a decade",
+            "year": 2004,
+            "url": "https://doi.org/10.1080/1353832042000230608",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.1080/1353832990050108",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.1080/13538322.2015.1051795",
             "status": "ABSTRACT_UNAVAILABLE",
             "full_text_reviewed": false
           }
