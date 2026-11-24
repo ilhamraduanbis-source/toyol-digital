@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M30",
+  "next_module": "M31",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -6891,6 +6891,78 @@
           },
           {
             "doi": "10.1111/1540_6245.jaac34.2.0183",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45320168229",
+      "at": "2026-11-24T03:32:07.355669+00:00",
+      "module": "M30",
+      "title": "Falsafah teknologi, AI dan cabaran semasa",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 3,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "philosophy technology artificial intelligence Islamic ethics education",
+        "source": "https://api.crossref.org/works?query.bibliographic=philosophy+technology+artificial+intelligence+Islamic+ethics+education&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.1007/s13347-023-00668-x",
+            "title": "Artificial Intelligence (AI) in Islamic Ethics: Towards Pluralist Ethical Benchmarking for AI",
+            "year": 2023,
+            "url": "https://doi.org/10.1007/s13347-023-00668-x",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1007/s13347-023-00677-w",
+            "title": "Commentary on Artificial Intelligence (AI) in Islamic Ethics: Towards Pluralist Ethical Benchmarking for AI",
+            "year": 2023,
+            "url": "https://doi.org/10.1007/s13347-023-00677-w",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.59728/jaie.2026.5.3.42",
+            "title": "The Foundations of AI Ethics and the Philosophy of Technology: A Focus on Heidegger’s Philosophy of Technology",
+            "year": 2026,
+            "url": "https://doi.org/10.59728/jaie.2026.5.3.42",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.23917/iseth.6865",
+            "title": "Islamic Ethics-by-Design for Artificial Intelligence: A Conceptual Framework for Digital Ethics in Islamic Education.",
+            "year": 2026,
+            "url": "https://doi.org/10.23917/iseth.6865",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.61882/pesi.51300.2.10.274",
+            "title": "The Ethics of Artificial Intelligence in Education",
+            "year": 2025,
+            "url": "https://doi.org/10.61882/pesi.51300.2.10.274",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.1007/s13347-023-00668-x",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 210,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.1007/s13347-023-00677-w",
             "status": "ABSTRACT_UNAVAILABLE",
             "full_text_reviewed": false
           }
