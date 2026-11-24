@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M35",
+  "next_module": "M36",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -7249,6 +7249,75 @@
           },
           {
             "doi": "10.1080/13538322.2015.1051795",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45399994240",
+      "at": "2026-11-24T13:06:29.004849+00:00",
+      "module": "M35",
+      "title": "Penyelidikan pendidikan, pembelajaran hibrid dan H5P",
+      "round": 2,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 2,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "higher education hybrid learning H5P formative assessment student learning",
+        "source": "https://api.crossref.org/works?query.bibliographic=higher+education+hybrid+learning+H5P+formative+assessment+student+learning&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.1080/02602938.2019.1677855",
+            "title": "Supporting the less-adaptive student: the role of learning analytics, formative assessment and blended learning",
+            "year": 2019,
+            "url": "https://doi.org/10.1080/02602938.2019.1677855",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/02602930801956075",
+            "title": "Formative computer‐based assessment in higher education: the effectiveness of feedback in supporting student learning",
+            "year": 2009,
+            "url": "https://doi.org/10.1080/02602930801956075",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/02602930801955986",
+            "title": "Student perspectives on formative peer assessment: an attempt to deepen learning?",
+            "year": 2009,
+            "url": "https://doi.org/10.1080/02602930801955986",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/0260293990240307",
+            "title": "Practice Tests as Formative Assessment Improve Student Performance on Computer‐managed Learning Assessments",
+            "year": 1999,
+            "url": "https://doi.org/10.1080/0260293990240307",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.62512/etlhe.21",
+            "title": "Fixed ‘Formative-Specific' Assessment Rubrics and ‘Formal’ Formative Assessment? What’s the point? Evolving formative assessment processes for a large-scale international student taught master’s Education module",
+            "year": 2025,
+            "url": "https://doi.org/10.62512/etlhe.21",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.1080/02602938.2019.1677855",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.1080/02602930801956075",
             "status": "ABSTRACT_UNAVAILABLE",
             "full_text_reviewed": false
           }
