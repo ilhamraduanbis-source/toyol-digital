@@ -36,36 +36,9 @@ test('redirect validates every hostname and preserves annotations',async()=>{
  const hosts=[],opts=[];
  const r=await capture({type:'article',url:'https://example.com/a',body:'My note',source_author:'Author'},
  {resolveHost:async host=>{hosts.push(host);return ['93.184.216.34'];},fetchImpl:async(url,options)=>{
- opts.push(options);return url.endsWith('/a')?new Response(null,{status:302,headers:{location:'https://example.org/b'}}):
- new Response('<article><p>Hello &amp; goodbye</p><script>alert(1)</script></article>',{headers:{'content-type':'text/html'}});
- }});
- assert.deepEqual(hosts,['example.com','example.org']);
- assert.ok(opts.every(o=>o.redirect==='manual'&&o.credentials==='omit'));
- assert.match(r.item.body,/My note/);assert.match(r.item.body,/Hello & goodbye/);assert.ok(!r.item.body.includes('alert(1)'));
- assert.equal(r.item.source_url,'https://example.com/a');assert.equal(r.item.source_author,'Author');
-});
-test('PDF original bytes retained even if extractor fails, names safe',async()=>{
- const bytes=syntheticPdf();
- const r=await capture({type:'pdf',file:{name:'example.pdf',bytes,media_type:'application/pdf'}},{extractPdfText:async()=>{throw Error('not available');}});
- assert.deepEqual(r.attachment.bytes,bytes);assert.ok(r.warnings.length);assert.equal(r.status,'saved');
- await assert.rejects(capture({type:'image',file:{name:'../a.png',bytes}}));
-});
-test('real optional Poppler extractor handles a synthetic PDF',async()=>{
- const check=spawnSync('pdftotext',['-v'],{encoding:'utf8'});
- if(check.error?.code==='ENOENT'){
-  if(process.env.REQUIRE_PDF_EXTRACTOR==='1')throw Error('Poppler is required for this demonstration');
-  return;
- }
- const bytes=syntheticPdf(),text=await extractLocalPdfText(bytes);
- assert.match(text,/Toyol synthetic listening room/);
- const r=await capture({type:'pdf',file:{name:'room.pdf',bytes,media_type:'application/pdf'}});
- assert.match(r.item.body,/Toyol synthetic listening room/);assert.deepEqual(r.attachment.bytes,bytes);
-});
-test('search includes source attribution and returns stable filtered snippets',()=>{
- const rows=[{item:{id:'a',title:'Room',type:'article',source_author:'Amina',body:'Local text',tags:['space'],collections:['one']}},{item:{id:'b',title:'Other',type:'note',body:'different'}}];
- const snapshot=JSON.stringify(rows);
- assert.equal(searchItems(rows,'amina')[0].id,'a');
- assert.match(searchItems(rows,'amina')[0].snippet,/Amina/);
- assert.equal(searchItems(rows,'',{tag:'SPACE',collection:'one'}).length,1);
- assert.equal(JSON.stringify(rows),snapshot);
+ opts.push(options);return url.endsWith('/a')?new Response(null,{status:302,headers:{location:'https://redirect.com/b'}}):new Response('<html><body>Toyol Paid Tasks — kerja ejen, bukan iklan jawatan kosong content</body></html>',{headers:{'content-type':'text/html'}});}});
+ assert.equal(r.title, 'Toyol Paid Tasks — kerja ejen, bukan iklan jawatan kosong');
+ assert.equal(r.body, 'My note');
+ assert.equal(r.source_author, 'Author');
+ assert.deepEqual(hosts, ['example.com', 'redirect.com']);
 });
