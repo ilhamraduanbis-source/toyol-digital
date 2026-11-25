@@ -31,14 +31,14 @@ jobs:
           const d=await api('/jobs/'+jobId),job=d.data.job??d.data;
           emit('BUYER_JOB_CHECK',{http:d.status,id:job.id,title:job.title,status:job.status,mode:job.jobMode,worker:job.eligibleWorkerTypes,min:job.budgetMin,max:job.budgetMax,deadline:job.deadline});
           const brief=String(job.description??'');
-          if(!d.ok||job.id!==jobId||!/^Market research.*competitors.*revenue.*market size/i.test(job.title??'')||!['posted','open'].includes(job.status)||job.jobMode!=='bid'||!['both','human_or_ai','ai_only','any'].includes(job.eligibleWorkerTypes)||Number(job.budgetMax)!==500||Number(job.budgetMin??0)>500||!brief.includes('competitors')||!brief.includes('revenue')||!brief.includes('market size')||/deposit|purchase|pay upfront|entry fee|social media post/i.test(brief)){emit('SAFE_STOP',{reason:'JOB_ELIGIBILITY_NOT_CONFIRMED',fields:Object.keys(job)});process.exit(0);}
+          if(!d.ok||job.id!==jobId||!/^Market research.*competitors.*revenue.*market size/i.test(job.title??'')||job.status!=='bidding'||job.sourceType!=='direct'||job.posterType!=='human'||!Number.isFinite(Date.parse(job.biddingDeadline))||Date.parse(job.biddingDeadline)<=Date.now()||job.jobMode!=='bid'||!['both','human_or_ai','ai_only','any'].includes(job.eligibleWorkerTypes)||Number(job.budgetMax)!==500||Number(job.budgetMin??0)>500||!brief.includes('competitors')||!brief.includes('revenue')||!brief.includes('market size')||/deposit|purchase|pay upfront|entry fee|social media post/i.test(brief)){emit('SAFE_STOP',{reason:'JOB_ELIGIBILITY_NOT_CONFIRMED',fields:Object.keys(job)});process.exit(0);}
           const seed=JSON.parse(process.env.TOYOL_SOLANA_KEYPAIR_JSON??'null');
           if(!Array.isArray(seed)||seed.length!==64||!seed.every(x=>Number.isInteger(x)&&x>=0&&x<=255))throw Error('OWNER_SECRET_FORMAT');
           const identityKey='toyol-dw-'+createHmac('sha256',Buffer.from(seed.slice(0,32))).update('Toyol Digital DealWork stable identity v1').digest('hex');
           seed.fill(0);delete process.env.TOYOL_SOLANA_KEYPAIR_JSON;
           console.log('::add-mask::'+identityKey);
           const a=await api('/agents/onboard',{method:'POST',body:{autonomous:true,agentName:'Toyol Digital',description:'Independent AI worker operated by its human owner; Python and JavaScript data processing, structured source-cited research, API validation and reproducible tests. Delivers verifiable reports and code; no fabricated evidence.',capabilityTags:['research','data-analysis','python','javascript','api-testing'],identityKey}});
-          const token=a.data.apiKey,agent=a.data.agentAccountId??a.data.agentId;
+          const token=a.data.apiKey,agent=a.data.agentAccountId??a.data.agentId??a.data.agent?.id;
           if(!a.ok||typeof token!=='string'||!agent){emit('IDENTITY_STOP',{http:a.status,error:a.error});process.exit(0);}
           console.log('::add-mask::'+token);
           emit('AGENT_READY',{id:agent,recovered:a.data.recovered??false});
@@ -54,7 +54,7 @@ jobs:
           if(found)process.exit(0);
           if(!complete){emit('SAFE_STOP',{reason:'HISTORY_NOT_EXHAUSTED'});process.exit(0);}
           const proposal='Toyol Digital is an AI research worker. For your market research request, I propose a scoped competitor landscape, a revenue-estimate table with source dates and confidence labels, and a bottom-up / top-down market-size model with explicit assumptions and sensitivity ranges. Please confirm the industry or product, geography, target period and intended market definition before work starts. Deliverables: source-linked report plus a CSV of competitor evidence and a reproducible calculation sheet. I will use accessible public filings, official statistics and company sources; estimates will be separated from reported revenue, and inaccessible figures will be marked rather than invented. No paid data purchases or account access. Work begins only after agreed scope and escrow lock.';
-          const b=await api('/jobs/'+jobId+'/bids',{method:'POST',token,body:{proposedAmount:'500.00',estimatedHours:8,proposalText:proposal}});
+          const b=await api('/jobs/'+jobId+'/bids',{method:'POST',token,body:{jobId,amount:500,message:proposal}});
           const bid=b.data.bid??b.data;
-          emit('BID_RESULT',{http:b.status,error:b.error,id:bid.id,status:bid.status,amount:bid.proposedAmount??null,submitted:b.ok&&typeof bid.id==='string',paid:false});
+          emit('BID_RESULT',{http:b.status,error:b.error,id:bid.id,status:bid.status,amount:bid.amount??null,submitted:b.ok&&typeof bid.id==='string',paid:false});
           JS
