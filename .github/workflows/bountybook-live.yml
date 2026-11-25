@@ -28,3 +28,5 @@ jobs:
               except Exception as e:
                   print(json.dumps({'category':category,'blocked':str(e)[:250]}))
           PY
+
+# 25 Nov: recheck direct market from runner after external HTTP 502; no claim or spending.
