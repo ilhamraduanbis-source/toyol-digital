@@ -20,22 +20,22 @@ jobs:
         with:
           path: |
             ~/.local/bin/toyol-godot
-            ~/.local/share/godot/export_templates/4.5.1.stable
-          key: toyol-godot-4.5.1-web-linux-x64-v1
+            ~/.local/share/godot/export_templates/4.7.2.stable
+          key: toyol-godot-4.7.2-web-linux-x64-v1
       - name: Install verified official Godot binaries and templates if absent
         shell: bash
         run: |
           set -euo pipefail
           engine="$HOME/.local/bin/toyol-godot"
-          templates="$HOME/.local/share/godot/export_templates/4.5.1.stable"
+          templates="$HOME/.local/share/godot/export_templates/4.7.2.stable"
           if [[ ! -x "$engine" || ! -s "$templates/web_nothreads_release.zip" ]]; then
             cd "$RUNNER_TEMP"
-            base=https://github.com/godotengine/godot-builds/releases/download/4.5.1-stable
-            curl --fail --location --silent --show-error --retry 2 --max-time 240 "$base/Godot_v4.5.1-stable_linux.x86_64.zip" -o engine.zip
-            curl --fail --location --silent --show-error --retry 2 --max-time 360 "$base/Godot_v4.5.1-stable_export_templates.tpz" -o templates.tpz
-            printf '%s\n' '02ec53d1cc7dbb9cc6355393c61b9ab43d1244751a124f10248a4802830788cd  engine.zip' '1998af37f1387684e2c211cdb483daf492fc64dc6b12096bddcdca25b6910c86  templates.tpz' | sha256sum -c -
+            base=https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable
+            curl --fail --location --silent --show-error --retry 2 --max-time 240 "$base/Godot_v4.7.2-stable_linux.x86_64.zip" -o engine.zip
+            curl --fail --location --silent --show-error --retry 2 --max-time 360 "$base/Godot_v4.7.2-stable_export_templates.tpz" -o templates.tpz
+            printf '%s\n' 'cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  engine.zip' 'f298490b8d44d934be425a5a65a51bf15f422428b229a06a6e11d9ffea248011  templates.tpz' | sha256sum -c -
             mkdir -p "$HOME/.local/bin" "$templates"
-            unzip -p engine.zip Godot_v4.5.1-stable_linux.x86_64 > "$engine"
+            unzip -p engine.zip Godot_v4.7.2-stable_linux.x86_64 > "$engine"
             chmod 755 "$engine"
             unzip -joq templates.tpz 'templates/web_nothreads_*.zip' 'templates/version.txt' -d "$templates"
           fi
