@@ -90,3 +90,5 @@ jobs:
 
 # Recheck final rankings and claimable prize after poem deadline 2026-11-15 UTC.
 # Owner-authorized 2026-11-18 check for presently claimable historical contest prize; no wallet spend.
+
+# 25 Nov 2026: reconcile all account prizes and original entries, read-only; no transfer or claim.
