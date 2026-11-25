@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M09",
+  "next_module": "S104",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -8494,6 +8494,75 @@
           "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
         ]
       },
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45711866698",
+      "at": "2026-11-25T22:17:02.514524+00:00",
+      "module": "M09",
+      "title": "Kaedah induktif dan inferens",
+      "round": 3,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 1,
+      "mastery_verified": false,
+      "literature": {
+        "query": "induction Islamic philosophy istiqra",
+        "source": "https://api.crossref.org/works?query.bibliographic=induction+Islamic+philosophy+istiqra&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.24239/istq.v4i1.182.1-21",
+            "title": "Pola Pendidikan Karakter Berbasis Agama di SMK Islamic Center Palu Kelurahan Petobo Kecamatan Palu Selatan",
+            "year": 2016,
+            "url": "https://doi.org/10.24239/istq.v4i1.182.1-21",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.5840/islamicphil2005114",
+            "title": "Primer on Islam and the Problem of Causation, Induction, and Skepticism",
+            "year": 2005,
+            "url": "https://doi.org/10.5840/islamicphil2005114",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.24239/istq.v4i2.207.221-238",
+            "title": "LINGKUNGAN PENDIDIKAN DALAM ALQUR’AN (Pengaruhnya dalam Proses Pendidikan)",
+            "year": 2016,
+            "url": "https://doi.org/10.24239/istq.v4i2.207.221-238",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.21111/tsaqafah.v20i1.9330",
+            "title": "Istiqra Al Ma'nawiy's Reasoning:  As a Model of Indigenzation and Contextualization  of Islamic Law  (Hazairin and Hasbi Ash Shiddiqiy's Thought)",
+            "year": 2024,
+            "url": "https://doi.org/10.21111/tsaqafah.v20i1.9330",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.24239/istq.v4i1.185.81-110",
+            "title": "Implementasi Psikoterapi Penanggulangan Stress dan Depresi pada Pasien di Rumah Sakit Jiwa Madani Palu",
+            "year": 2016,
+            "url": "https://doi.org/10.24239/istq.v4i1.185.81-110",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.24239/istq.v4i1.182.1-21",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.5840/islamicphil2005114",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
       "publication_anchor": null
     }
   ]
