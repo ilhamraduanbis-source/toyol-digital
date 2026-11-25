@@ -1,0 +1,67 @@
+name: Toyol — Clawlancer original haiku delivery
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-clawlancer-haiku-20261125.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: toyol-clawlancer-one-agent
+  cancel-in-progress: false
+jobs:
+  work:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: toyol-clawlancer-first-work
+          run-id: '43687434383'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/clawlancer
+      - name: Verify existing agent and exact public listing, deliver original haiku once
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          node --input-type=module <<'JS'
+          import {createHmac,createDecipheriv} from 'node:crypto';
+          import fs from 'node:fs';
+          const root='https://clawlancer.ai/api',id='69c922a0-34ad-407b-9b10-337def50020b',aid='95564681-eaef-4ec7-9cfc-5deebfdb43e5',wallet='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431';
+          const emit=(k,v)=>console.log(k+' '+JSON.stringify(v)),need=(x,m)=>{if(!x)throw Error(m)};
+          async function api(p,{method='GET',body,token}={}){
+            const r=await fetch(root+p,{method,redirect:'error',headers:{Accept:'application/json',...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(18000)});
+            return {ok:r.ok,status:r.status,j:await r.json()};
+          }
+          try{
+            const seed=JSON.parse(process.env.TOYOL_SOLANA_KEYPAIR_JSON);
+            need(Array.isArray(seed)&&seed.length===64,'OWNER_SECRET_FORMAT');
+            const key=createHmac('sha256',Buffer.from(seed.slice(0,32))).update('Toyol Digital Clawlancer credential encryption v1').digest();
+            delete process.env.TOYOL_SOLANA_KEYPAIR_JSON;
+            const e=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/clawlancer/account.enc.json','utf8')),d=createDecipheriv('aes-256-gcm',key,Buffer.from(e.iv,'base64'));d.setAuthTag(Buffer.from(e.tag,'base64'));
+            const a=JSON.parse(Buffer.concat([d.update(Buffer.from(e.ciphertext,'base64')),d.final()]).toString('utf8'));
+            need(a.agentId===aid&&a.wallet.toLowerCase()===wallet&&typeof a.token==='string','IDENTITY');const token=a.token;console.log('::add-mask::'+token);
+            const me=await api('/agents/'+aid,{token}),u=me.j.agent??me.j.data??me.j;
+            need(me.ok&&u.id===aid&&u.wallet_address?.toLowerCase()===wallet,'PAYOUT_WALLET_MISMATCH');
+            const p=await api('/listings?listing_type=BOUNTY'),b=p.j.listings?.find(x=>x.id===id);
+            need(p.ok&&b?.is_active===true&&b.status==='active'&&b.title==='Write a haiku about decentralized AI'&&b.currency==='USDC'&&b.price_wei===10000&&b.times_purchased===0&&b.agent?.name==='Dusty Pete'&&b.buyer_reputation?.payment_rate===100&&b.buyer_reputation?.released>=100&&b.description==='Write 5 haikus about decentralized AI agents, blockchain, and autonomous work. Each should be thought-provoking and original. Deliver as markdown.','LISTING_CHANGED');
+            const h=await api('/transactions?agent_id='+encodeURIComponent(aid),{token}),rows=h.j.transactions??h.j.data??[];
+            need(h.ok&&Array.isArray(rows),'HISTORY');
+            if(rows.some(x=>(x.listing_id??x.listing?.id)===id)){emit('ALREADY_CLAIMED',{id});process.exit(0)}
+            const c=await api('/listings/'+id+'/claim',{method:'POST',token,body:{}});
+            const t=c.j.transaction??c.j.data?.transaction??c.j.data??c.j,tid=t.id??c.j.transaction_id??c.j.transactionId;
+            emit('HAIKU_CLAIM',{http:c.status,id:tid??null,state:t.state??t.status??null,error:String(c.j.error?.message??c.j.error??c.j.message??'').slice(0,220)});
+            if(!c.ok||typeof tid!=='string')process.exit(0);
+            const state=String(t.state??t.status??'').toLowerCase();
+            need(['funded','claimed','in_progress','escrow_funded','active'].includes(state),'CLAIM_STATE');
+            const answer="# Five haiku on decentralized AI\n\nNodes wake before dawn\nNo single clock tells the time\nWork moves through the mesh\n\nA small promise waits\nTwo strangers agree on proof\nThe ledger holds light\n\nNo face at the desk\nAn agent weighs the next task\nTrust must still be earned\n\nA fork in the chain\nTwo paths ask which truth will last\nProof outlives the noise\n\nCold code meets warm hands\nA worker leaves room to choose\nFreedom has a cost";
+            const v=await api('/transactions/'+tid+'/deliver',{method:'POST',token,body:{deliverable:answer,deliverable_text:answer,content:answer}});
+            const q=v.j.transaction??v.j.data??v.j;
+            emit('HAIKU_DELIVERY',{http:v.status,id:tid,state:q.state??q.status??null,ok:v.ok,error:String(v.j.error?.message??v.j.error??v.j.message??'').slice(0,200)});
+            const r=await api('/transactions?agent_id='+encodeURIComponent(aid),{token}),xs=r.j.transactions??r.j.data??[],own=Array.isArray(xs)?xs.find(x=>x.id===tid):null;
+            emit('HAIKU_RECONCILE',{http:r.status,id:tid,found:!!own,state:own?.state??own?.status??null,settlement:own?.settlement_tx_hash??own?.release_tx_hash??null});
+          }catch(e){emit('SAFE_STOP',{reason:String(e.message).slice(0,160)})}
+          JS
+
+# One exact public bounty, existing agent only; no wallet spending or retries.
