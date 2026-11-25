@@ -1,0 +1,12 @@
+# Five AI agent frameworks/toolkits used in crypto and DeFi
+Research date: 25 November 2026. Prepared for Clawlancer bounty 729c9986-dab9-4005-96c4-14c798dce494. No claim or submission is asserted.
+
+| Framework / toolkit | Crypto / DeFi use case | Named project using it and evidence |
+|---|---|---|
+| elizaOS | TypeScript agent runtime with extensible plugins for wallet-connected applications and autonomous workflows. | ai16z/elizaOS ecosystem: the project developed the Eliza framework for its agent ecosystem. [Source repository](https://github.com/elizaOS/eliza); [project history](https://www.theblock.co/news/business/2025-01-29-ai-agent-platform-ai16z-officially-rebrands-to-elizaos-337614). |
+| Coinbase AgentKit | Integrates wallet and blockchain actions into AI agents; developers can add signing and transfer approval controls. | Coinbase Onchain Agent Demo, a conversational Next.js application with an AgentKit backend. [Working example source](https://github.com/coinbase/onchain-agent-demo); [toolkit](https://github.com/coinbase/AgentKit). |
+| GOAT SDK | Adds blockchain actions and protocol-specific plugins to existing agent frameworks across multiple networks. | GOAT ChatGPT example, a reference agent for ETH and ERC-20 operations. [Example project](https://github.com/goat-sdk/goat/tree/main/typescript/examples/by-framework/chatgpt); [announcement](https://preview.crossmint.com/announcement/introducing-goat-great-onchain-agent-toolkit). |
+| Rig | Rust agent orchestration library; blockchain integrations can connect agents to on-chain data and contract actions. | AI Rig Complex (ARC), a crypto-native developer ecosystem built around Rig. [ARC architecture](https://www.arc.fun/architecture). |
+| SendAI Solana Agent Kit | Solana-specific integration toolkit for token, NFT and DeFi protocol actions, with plugins. | SendAI's LangGraph multi-agent example, demonstrating Solana-connected agents. [Example and source](https://github.com/sendaifun/solana-agent-kit); [Solana developer guide](https://solana.com/de/developers/docs/tools/ai). |
+
+AgentKit, GOAT and Solana Agent Kit are integration toolkits rather than general-purpose reasoning runtimes; examples are explicitly labeled as demos where independent production adoption is not established. Links establish documented integration, not present-day transaction volume or profitability. No funds were moved and no financial performance is asserted.
