@@ -1,0 +1,101 @@
+name: Toyol — Godot toolchain preflight (no jam game)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-godot-toolchain-preflight.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-godot-toolchain
+  cancel-in-progress: false
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Cache engine and single-thread web export templates only
+        id: cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          path: |
+            ~/.local/bin/toyol-godot
+            ~/.local/share/godot/export_templates/4.5.1.stable
+          key: toyol-godot-4.5.1-web-linux-x64-v1
+      - name: Install verified official Godot binaries and templates if absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          engine="$HOME/.local/bin/toyol-godot"
+          templates="$HOME/.local/share/godot/export_templates/4.5.1.stable"
+          if [[ ! -x "$engine" || ! -s "$templates/web_nothreads_release.zip" ]]; then
+            cd "$RUNNER_TEMP"
+            base=https://github.com/godotengine/godot-builds/releases/download/4.5.1-stable
+            curl --fail --location --silent --show-error --retry 2 --max-time 240 "$base/Godot_v4.5.1-stable_linux.x86_64.zip" -o engine.zip
+            curl --fail --location --silent --show-error --retry 2 --max-time 360 "$base/Godot_v4.5.1-stable_export_templates.tpz" -o templates.tpz
+            printf '%s\n' '02ec53d1cc7dbb9cc6355393c61b9ab43d1244751a124f10248a4802830788cd  engine.zip' '1998af37f1387684e2c211cdb483daf492fc64dc6b12096bddcdca25b6910c86  templates.tpz' | sha256sum -c -
+            mkdir -p "$HOME/.local/bin" "$templates"
+            unzip -p engine.zip Godot_v4.5.1-stable_linux.x86_64 > "$engine"
+            chmod 755 "$engine"
+            unzip -joq templates.tpz 'templates/web_nothreads_*.zip' 'templates/version.txt' -d "$templates"
+          fi
+          "$engine" --version | tee "$RUNNER_TEMP/godot-version.txt"
+          test -s "$templates/web_nothreads_release.zip"
+          test -s "$templates/web_nothreads_debug.zip"
+      - name: Export disposable blank diagnostic scene, never an entry
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d "$RUNNER_TEMP/godot-diagnostic.XXXXXX")"
+          trap 'rm -rf "$work"' EXIT
+          mkdir "$work/export"
+          cat > "$work/project.godot" <<'EOF'
+          config_version=5
+          [application]
+          config/name="Disposable toolchain diagnostic - NOT A GAME"
+          run/main_scene="res://diagnostic.tscn"
+          [display]
+          window/size/viewport_width=720
+          window/size/viewport_height=1280
+          window/stretch/mode="canvas_items"
+          [rendering]
+          renderer/rendering_method="gl_compatibility"
+          renderer/rendering_method.mobile="gl_compatibility"
+          EOF
+          cat > "$work/diagnostic.tscn" <<'EOF'
+          [gd_scene format=3]
+          [node name="DiagnosticOnly" type="Node2D"]
+          EOF
+          cat > "$work/export_presets.cfg" <<'EOF'
+          [preset.0]
+          name="Web"
+          platform="Web"
+          runnable=true
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter=""
+          export_path="export/index.html"
+          [preset.0.options]
+          variant/thread_support=false
+          vram_texture_compression/for_desktop=true
+          vram_texture_compression/for_mobile=false
+          EOF
+          engine="$HOME/.local/bin/toyol-godot"
+          "$engine" --headless --path "$work" --editor --import --quit
+          "$engine" --headless --path "$work" --export-release Web "$work/export/index.html" 2>&1 | tee "$RUNNER_TEMP/godot-export-log.txt"
+          test -s "$work/export/index.html"
+          test -s "$work/export/index.wasm"
+          test -s "$work/export/index.pck"
+          test -s "$work/export/index.js"
+          (cd "$work/export" && zip -q -r "$work/diagnostic.zip" .)
+          python3 - "$work/diagnostic.zip" <<'PY'
+          import sys,zipfile
+          with zipfile.ZipFile(sys.argv[1]) as z:
+              assert z.testzip() is None
+              assert {"index.html","index.wasm","index.js","index.pck"} <= set(z.namelist())
+              print("GODOT_WEB_EXPORT_PREFLIGHT_PASS", len(z.namelist()), "files")
+          PY
+          # All diagnostic source and exported bytes are deleted, never used in jam.
+      - name: Report scope
+        if: always()
+        run: echo "Toolchain check only. No game, gameplay code, game assets or contest submission prepared. Runtime touch/browser testing remains a separate gate."
