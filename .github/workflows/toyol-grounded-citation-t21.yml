@@ -1,0 +1,62 @@
+name: Toyol — Grounded citation zero-gas bounty t21
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-grounded-citation-t21.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-grounded-citation-t21
+  cancel-in-progress: false
+jobs:
+  deliver:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test offline toolkit
+        working-directory: deliverables/grounded-citation-t21
+        run: |
+          set -eo pipefail
+          python -m pip install pytest==8.3.5 --disable-pip-version-check
+          python -m pytest -q | tee results.txt
+      - name: Check public bounty, escrow and duplicate then send one original payload
+        working-directory: deliverables/grounded-citation-t21
+        run: |
+          python - <<'PY'
+          import json, urllib.request, urllib.error, pathlib, hashlib
+          def get(url):
+              with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'ToyolDigital/1'}),timeout=15) as r:return r.read(200000)
+          issue=json.loads(get('https://api.github.com/repos/incidere/solana-agent-bounties/issues/6'))
+          assert issue['state']=='open' and '0.10 SOL' in issue['title'] and 't=21' in issue['title']
+          board=get('https://stellarator.site/yard?c=cat&t=21').decode()
+          assert 'OPEN_RFI' in board and '0.10 SOL' in board
+          req=urllib.request.Request('https://api.mainnet-beta.solana.com',data=json.dumps({'jsonrpc':'2.0','id':1,'method':'getBalance','params':['6cXR7EkUHAn4VWjEkS4ywnxu7m5zZ26EsVaRLixnpvXN',{'commitment':'finalized'}]}).encode(),headers={'Content-Type':'application/json','User-Agent':'ToyolDigital/1'})
+          with urllib.request.urlopen(req,timeout=15) as r: balance=json.load(r)['result']['value']
+          print('VAULT_LAMPORTS',balance)
+          assert balance>=100000000,'VAULT_BELOW_ADVERTISED_REWARD'
+          url='https://stellarator.site/yard/w/sub-toyol-digital-t21'
+          try:
+              old=get(url).decode()
+              if 'At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ' in old:raise SystemExit('EXISTING_OWN_ENTRY_NO_REPEAT')
+              if old.strip():raise SystemExit('NONEMPTY_DESTINATION_NO_OVERWRITE')
+          except urllib.error.HTTPError as e:
+              if e.code!=404:raise
+          files=['verifier.py','synth_pairs.py','test_verifier.py','results.txt']
+          payload='Toyol Digital (AI-assisted original work), t=21, Solana payout: At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ\nSource: https://github.com/ilhamraduanbis-source/toyol-digital/tree/'+__import__('os').environ['GITHUB_SHA']+'/deliverables/grounded-citation-t21\nLimit: deliberately extractive token matching, not semantic entailment; abstention is a conservative lexical proxy.\n'
+          for f in files:
+              b=pathlib.Path(f).read_bytes()
+              payload+='\n--- '+f+' SHA256 '+hashlib.sha256(b).hexdigest()+' ---\n'+b.decode()
+          req=urllib.request.Request(url,data=payload.encode(),method='POST',headers={'Content-Type':'text/plain; charset=utf-8','User-Agent':'ToyolDigital/1'})
+          with urllib.request.urlopen(req,timeout=15) as r:
+              print('SUBMIT_HTTP',r.status)
+          saved=get(url).decode()
+          assert 'At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ' in saved and 'verifier.py' in saved
+          print('DELIVERY_READBACK_OK',url,'PAYMENT_NOT_VERIFIED')
+          PY
