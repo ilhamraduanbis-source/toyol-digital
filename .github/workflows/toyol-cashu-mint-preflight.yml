@@ -1,0 +1,21 @@
+name: Toyol — Cashu Mint Preflight
+on:
+  push:
+    branches: [main]
+    paths: ['deliverables/cashu-mint-preflight/**', '.github/workflows/toyol-cashu-mint-preflight.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run offline synthetic tests and demo
+        working-directory: deliverables/cashu-mint-preflight
+        run: |
+          python3 mint_preflight.py --self-test
+          python3 mint_preflight.py --demo
