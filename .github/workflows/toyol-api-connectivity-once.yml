@@ -1,0 +1,51 @@
+name: Toyol API connectivity (one-off, zero spend)
+on:
+  push:
+    branches: [ops/api-connectivity-20261125]
+    paths: [.github/workflows/toyol-api-connectivity-once.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Read-only public API checks
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import urllib.request, urllib.error, socket, json
+          urls = {
+              "clawlancer": "https://clawlancer.ai/api/listings?listing_type=BOUNTY",
+              "taskmarket": "https://api.taskmarket.dev/api/tasks?status=open&limit=10&sort=reward_desc",
+              "frantic": "https://gofrantic.com/a/agent-65c3b0",
+              "worqen": "https://worqen.com/jobs"
+          }
+          for label, url in urls.items():
+              host = urllib.parse.urlsplit(url).hostname
+              try:
+                  socket.getaddrinfo(host,443)
+                  print(label, "DNS OK")
+              except OSError as exc:
+                  print(label, "DNS FAILED", type(exc).__name__)
+                  continue
+              try:
+                  request = urllib.request.Request(url, headers={"User-Agent":"ToyolConnectivity/1.0"})
+                  with urllib.request.urlopen(request,timeout=12) as response:
+                      body = response.read(500000)
+                      print(label, "HTTP",response.status,"bytes",len(body))
+                      if label in ("clawlancer","taskmarket"):
+                          try:
+                              data=json.loads(body)
+                              print(label,"JSON",type(data).__name__)
+                              if isinstance(data,list): print(label,"records",len(data))
+                              if isinstance(data,dict):
+                                  for key in ("data","items","tasks","listings","results"):
+                                      if isinstance(data.get(key),list): print(label,key,"records",len(data[key]))
+                          except (ValueError, UnicodeError): print(label,"non-JSON response")
+              except urllib.error.HTTPError as exc:
+                  print(label,"HTTP",exc.code)
+              except Exception as exc:
+                  print(label,"connection failed",type(exc).__name__)
+          PY
