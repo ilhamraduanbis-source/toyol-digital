@@ -36,7 +36,7 @@ def verify(item,answer):
         candidates=[content(s) for i in refs for s in spans(p[int(i)-1])]
         def grounded(t):
             if not t:return False
-            # Ordered contiguous content tokens preserve numbers, negation and action objects.
-            return any(t[i:i+len(words)]==words for i in range(len(t)-len(words)+1))
+            # Exact content-token span preserves negation scope and action objects.
+            return t==words
         if not any(grounded(t) for t in candidates):return 0.0
     return 1.0
