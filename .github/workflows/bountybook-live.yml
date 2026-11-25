@@ -19,14 +19,23 @@ jobs:
               req=urllib.request.Request(url,headers={'User-Agent':'Toyol-BountyBook/1.0','Accept':'application/json'})
               with urllib.request.urlopen(req,timeout=20) as r:
                   return json.loads(r.read(4000000))
+          available=0
           for category in ('code','data','transform','research'):
               try:
                   obj=get('https://api.bountybook.ai/jobs?status=open&category='+category+'&limit=50')
                   rows=obj if isinstance(obj,list) else obj.get('jobs',obj.get('data',[]))
                   if isinstance(rows,dict): rows=rows.get('jobs',[])
+                  if not isinstance(rows,list): raise ValueError('Unexpected API schema')
+                  available+=1
                   print(json.dumps({'category':category,'count':len(rows),'jobs':[{k:x.get(k) for k in ('id','title','description','budget_usdc','status','spec','expires_at','payout_status','escrow_status')} for x in rows[:12]]},ensure_ascii=False)[:24000])
               except Exception as e:
                   print(json.dumps({'category':category,'blocked':str(e)[:250]}))
+          if available==0:
+              print('::warning::BOUNTYBOOK_PROVIDER_UNAVAILABLE: no categories verified; no claims made; do not use cached listings as funded work')
+              with open(__import__('os').environ['GITHUB_STEP_SUMMARY'],'a') as f:
+                  f.write('Provider unavailable. 0 live jobs verified; 0 claimed; 0 submitted; 0 USDC received.\n')
+          else:
+              print('BOUNTYBOOK_API_READ_OK',available)
           PY
 
 # 25 Nov: recheck direct market from runner after external HTTP 502; no claim or spending.
