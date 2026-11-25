@@ -1,0 +1,22 @@
+name: Toyol — Hybrid 4488 independent oracle V3
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['deliverables/go-hybrid-4488/**','.github/workflows/toyol-hybrid-oracle-v3.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Test standalone model against independent reference
+        working-directory: deliverables/go-hybrid-4488
+        run: |
+          go version
+          GO111MODULE=off go test -race -count=1 -v
+          GO111MODULE=off go test -run '^$' -bench 'BenchmarkV3' -benchtime=200ms -count=3
