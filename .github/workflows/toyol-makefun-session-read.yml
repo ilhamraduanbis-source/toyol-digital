@@ -1,0 +1,64 @@
+name: Toyol — Makefun read-only wallet session recovery
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-makefun-session-read.yml']
+permissions:
+  contents: read
+concurrency:
+  group: toyol-makefun-read-only-session
+  cancel-in-progress: false
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Existing wallet login, read only, no key creation or payments
+        env:
+          TOYOL_SOLANA_KEYPAIR_JSON: ${{ secrets.TOYOL_SOLANA_KEYPAIR_JSON }}
+        run: |
+          node --input-type=module <<'JS'
+          import {createPrivateKey,createPublicKey,sign,verify} from 'node:crypto';
+          const origin='https://make.fun', expected='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ', chain='solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp', statement='Sign in to make.fun. No transaction, no fee.';
+          const abc='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+          function b58(b){let n=0n;for(const x of b)n=n*256n+BigInt(x);let s='';while(n){s=abc[Number(n%58n)]+s;n/=58n;}for(const x of b){if(x)break;s='1'+s;}return s;}
+          const a=JSON.parse(process.env.TOYOL_SOLANA_KEYPAIR_JSON??'null');
+          delete process.env.TOYOL_SOLANA_KEYPAIR_JSON;
+          if(!Array.isArray(a)||a.length!==64||!a.every(v=>Number.isInteger(v)&&v>=0&&v<256))throw Error('KEY_FORMAT');
+          const k=createPrivateKey({key:Buffer.concat([Buffer.from('302e020100300506032b657004220420','hex'),Buffer.from(a.slice(0,32))]),format:'der',type:'pkcs8'}), p=createPublicKey(k), pub=Buffer.from(p.export({format:'jwk'}).x,'base64url'), wallet=b58(pub);
+          if(wallet!==expected||!pub.equals(Buffer.from(a.slice(32))))throw Error('IDENTITY_MISMATCH');
+          a.fill(0);
+          async function request(path,body,token){
+            const r=await fetch(origin+path,{method:body===undefined?'GET':'POST',redirect:'error',signal:AbortSignal.timeout(20000),headers:{Accept:'application/json',Origin:origin,...(body===undefined?{}:{'Content-Type':'application/json'}),...(token?{Authorization:'Bearer '+token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
+            let j;try{j=await r.json()}catch{j={};}
+            return {r,j};
+          }
+          const m=await request('/api/auth/methods');
+          if(!m.r.ok||m.j.solana?.domain!=='make.fun'||m.j.solana?.uri!==origin||m.j.solana?.chain_id!==chain||m.j.solana?.sign_in_statement!==statement)throw Error('AUTH_METHOD_MISMATCH');
+          const {r,j:c}=await request('/api/auth/siws/nonce',{walletAddress:wallet});
+          const t=Date.now(),i=Date.parse(c.issuedAt),e=Date.parse(c.expirationTime);
+          if(!r.ok||c.domain!=='make.fun'||c.uri!==origin||! /^[A-Za-z0-9_-]{8,128}$/.test(c.nonce??'')||!Number.isFinite(i)||!Number.isFinite(e)||i>t+10000||i<t-600000||e<=t||e-i>600000)throw Error('CHALLENGE_MISMATCH');
+          const message=[c.domain+' wants you to sign in with your Solana account:',wallet,'',statement,'','URI: '+c.uri,'Version: 1','Chain ID: '+chain,'Nonce: '+c.nonce,'Issued At: '+c.issuedAt,'Expiration Time: '+c.expirationTime].join('\n');
+          const sig=sign(null,Buffer.from(message),k);if(!verify(null,Buffer.from(message),p,sig))throw Error('SIGNATURE');
+          const auth=await request('/api/auth/siws/verify',{walletAddress:wallet,message,signature:b58(sig)});
+          console.log('SESSION_HTTP',auth.r.status);
+          if(!auth.r.ok){console.log('SESSION_REFUSED',String(auth.j.data?.code??auth.j.code??'UNKNOWN').replace(/[^A-Za-z0-9_]/g,'').slice(0,80));process.exit(1);}
+          const token=auth.j.token??auth.j.data?.token??auth.j.session?.token??auth.j.access_token;
+          if(typeof token!=='string'||token.length<20||/[\r\n]/.test(token))throw Error('SESSION_TOKEN_MISSING');
+          console.log('::add-mask::'+token);
+          const me=await request('/api/agents/me',undefined,token);
+          console.log('AGENT_ME_HTTP',me.r.status);
+          const q=await request('/api/me/participation-rewards',undefined,token);
+          console.log('REWARDS_HTTP',q.r.status);
+          if(q.r.ok){
+            const b=q.j.balance??q.j.data?.balance??{};
+            const result={};
+            for(const n of ['claimable_usd','participation_usd','minimum_usd','ready','earned_usd','progress_percent'])if(['string','number','boolean'].includes(typeof b[n]))result[n]=b[n];
+            console.log('PARTICIPATION_BALANCE',JSON.stringify(result));
+          }
+          const keys=await request('/api/auth/api-key/list',undefined,token);
+          const rows=keys.j.keys??keys.j.data?.keys??keys.j;
+          console.log('KEY_LIST_HTTP',keys.r.status,'KEY_COUNT',Array.isArray(rows)?rows.length:'unknown');
+          if(!me.r.ok&&!q.r.ok)console.log('SESSION_NOT_AUTHORIZED_FOR_AGENT_BALANCE_NO_KEY_DELETED');
+          JS
