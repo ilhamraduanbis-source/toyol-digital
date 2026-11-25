@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M04",
+  "next_module": "S106B",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -7716,6 +7716,83 @@
           "note": "The guide describes grammatical roles and case inflection; compare subjects/objects, genitive after prepositions, and kana constructions. No independent mastery inferred."
         }
       },
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45524796175",
+      "at": "2026-11-25T01:18:54.793908+00:00",
+      "module": "M04",
+      "title": "Penyelidikan Islam dan bacaan turath",
+      "round": 3,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 1,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Islamic studies textual methodology",
+        "source": "https://api.crossref.org/works?query.bibliographic=Islamic+studies+textual+methodology&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.58578/ajisd.v3i3.5586",
+            "title": "Authenticating Hadith Manuscripts and the Methodology of Textual Accuracy",
+            "year": 2025,
+            "url": "https://doi.org/10.58578/ajisd.v3i3.5586",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.52541/isiri.v45i2.4631",
+            "title": "Textual Analysis in Islamic Studies",
+            "year": 2006,
+            "url": "https://doi.org/10.52541/isiri.v45i2.4631",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/0950236x.2016.1153349",
+            "title": "Falsifying Beckett: Essays on Archives, Philosophy and Methodology in Beckett Studies",
+            "year": 2016,
+            "url": "https://doi.org/10.1080/0950236x.2016.1153349",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.15640/jisc.v3n2a15",
+            "title": "Introduction to Research Methodology in Islamic Studies",
+            "year": 2015,
+            "url": "https://doi.org/10.15640/jisc.v3n2a15",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1558/cis.22599",
+            "title": "Editorial",
+            "year": 2026,
+            "url": "https://doi.org/10.1558/cis.22599",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.58578/ajisd.v3i3.5586",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 257,
+            "signals": [
+              "results_signalled"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.52541/isiri.v45i2.4631",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 1,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
       "publication_anchor": null
     }
   ]
