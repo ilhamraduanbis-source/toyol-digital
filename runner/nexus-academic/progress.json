@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "S102",
+  "next_module": "M09",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -8412,6 +8412,88 @@
       },
       "transfer_test_pass": true,
       "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45693162652",
+      "at": "2026-11-25T20:16:08.378136+00:00",
+      "module": "S102",
+      "title": "Fiqh dan Faraid (S102)",
+      "round": 3,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 5,
+      "sources_total": 5,
+      "mastery_verified": false,
+      "literature": {
+        "query": "الفقه الشافعي العبادات المعاملات الفرائض الميراث",
+        "source": "https://api.crossref.org/works?query.bibliographic=%D8%A7%D9%84%D9%81%D9%82%D9%87+%D8%A7%D9%84%D8%B4%D8%A7%D9%81%D8%B9%D9%8A+%D8%A7%D9%84%D8%B9%D8%A8%D8%A7%D8%AF%D8%A7%D8%AA+%D8%A7%D9%84%D9%85%D8%B9%D8%A7%D9%85%D9%84%D8%A7%D8%AA+%D8%A7%D9%84%D9%81%D8%B1%D8%A7%D8%A6%D8%B6+%D8%A7%D9%84%D9%85%D9%8A%D8%B1%D8%A7%D8%AB&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.12816/0047112",
+            "title": "الميراث في ظل تنازع القوانين",
+            "year": 2017,
+            "url": "https://doi.org/10.12816/0047112",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.12816/0017590",
+            "title": "المحرر في الفقه الشافعي لعبد الكريم الرافعي ( ت 623 هـ ) : كتاب الحيض و الاستحاضة و النفاس في قسم العبادات : تحقيق و دراسة",
+            "year": 2014,
+            "url": "https://doi.org/10.12816/0017590",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.63226/majmaa.v0i30.2388",
+            "title": "أهمية تأقيت المعاملات الزمني في الفقه الإسلامي",
+            "year": 2019,
+            "url": "https://doi.org/10.63226/majmaa.v0i30.2388",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.12816/0000957",
+            "title": "حكم الإلزام بالوعد في المعاملات المالية في الفقه الإسلامي",
+            "year": 2013,
+            "url": "https://doi.org/10.12816/0000957",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.12816/0047028",
+            "title": "شروط استحقاق الميراث ما بين التشريع والقضاء : دراسة مقارنة",
+            "year": 2017,
+            "url": "https://doi.org/10.12816/0047028",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.12816/0047112",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.12816/0017590",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": {
+        "focus": "Munakahat",
+        "reading_targets": [
+          "Fath al-Qarib — Ibn Qasim al-Ghazzi",
+          "al-Majmuʿ Sharh al-Muhadhdhab — al-Nawawi"
+        ],
+        "edition_status": "UNVERIFIED_STAM_2008",
+        "full_text_reviewed": false,
+        "source_questions": [
+          "Apakah istilah Arab dan definisi asal?",
+          "Siapakah pengarang, apakah edisi dan lokasi teks?",
+          "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
+        ]
+      },
       "publication_anchor": null
     }
   ]
