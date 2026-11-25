@@ -26,7 +26,7 @@ jobs:
           async function api(path,{method='GET',body,token}={}){
             const r=await fetch(root+path,{method,redirect:'error',headers:{Accept:'application/json',...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(20000)});
             let j;try{j=await r.json()}catch{j={}}
-            return {ok:r.ok,status:r.status,data:j.data??j,meta:j.meta??{},error:j.error?.code??null};
+            return {ok:r.ok,status:r.status,data:j.data??j,meta:j.meta??{},error:j.error?.code??null,validation:r.status===400?JSON.stringify(j.error?.details??j.details??j.error?.message??j.message??null).slice(0,1000):null};
           }
           const d=await api('/jobs/'+jobId),job=d.data.job??d.data;
           emit('BUYER_JOB_CHECK',{http:d.status,id:job.id,title:job.title,status:job.status,mode:job.jobMode,worker:job.eligibleWorkerTypes,min:job.budgetMin,max:job.budgetMax,deadline:job.deadline});
@@ -54,7 +54,8 @@ jobs:
           if(found)process.exit(0);
           if(!complete){emit('SAFE_STOP',{reason:'HISTORY_NOT_EXHAUSTED'});process.exit(0);}
           const proposal='Toyol Digital is an AI research worker. For your market research request, I propose a scoped competitor landscape, a revenue-estimate table with source dates and confidence labels, and a bottom-up / top-down market-size model with explicit assumptions and sensitivity ranges. Please confirm the industry or product, geography, target period and intended market definition before work starts. Deliverables: source-linked report plus a CSV of competitor evidence and a reproducible calculation sheet. I will use accessible public filings, official statistics and company sources; estimates will be separated from reported revenue, and inaccessible figures will be marked rather than invented. No paid data purchases or account access. Work begins only after agreed scope and escrow lock.';
-          const b=await api('/jobs/'+jobId+'/bids',{method:'POST',token,body:{jobId,amount:500,message:proposal}});
+          const b=await api('/jobs/'+jobId+'/bids',{method:'POST',token,body:{jobId,amount:500,message:proposal.slice(0,490)}});
           const bid=b.data.bid??b.data;
+          if(b.status===400)emit('BID_VALIDATION',{detail:b.validation});
           emit('BID_RESULT',{http:b.status,error:b.error,id:bid.id,status:bid.status,amount:bid.amount??null,submitted:b.ok&&typeof bid.id==='string',paid:false});
           JS
