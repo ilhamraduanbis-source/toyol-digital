@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M11",
+  "next_module": "S107A",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -8800,6 +8800,75 @@
           "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
         ]
       },
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45768008202",
+      "at": "2026-11-26T06:24:58.614203+00:00",
+      "module": "M11",
+      "title": "Proposal, bab tesis dan viva",
+      "round": 3,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 1,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "philosophy thesis viva methodology",
+        "source": "https://api.crossref.org/works?query.bibliographic=philosophy+thesis+viva+methodology&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.1007/bf00351815",
+            "title": "On the any-thesis and the methodology of linguistics",
+            "year": 1980,
+            "url": "https://doi.org/10.1007/bf00351815",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.7748/nr2010.04.17.3.52.c7746",
+            "title": "Preparing for thesis and viva: some practicalities",
+            "year": 2010,
+            "url": "https://doi.org/10.7748/nr2010.04.17.3.52.c7746",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.53841/bpscog.2025.1.10.62",
+            "title": "Two reflections on the PhD thesis: Thesis by monograph, thesis by publication, and the viva process",
+            "year": 2025,
+            "url": "https://doi.org/10.53841/bpscog.2025.1.10.62",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1016/j.physio.2004.06.004",
+            "title": "How to Survive Your Viva: Defending a Thesis in an Oral Examination",
+            "year": 2004,
+            "url": "https://doi.org/10.1016/j.physio.2004.06.004",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1177/0725513620959981",
+            "title": "A philosophy of cultural modernity: Márkus’s contribution to the philosophy of culture",
+            "year": 2020,
+            "url": "https://doi.org/10.1177/0725513620959981",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.1007/bf00351815",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.7748/nr2010.04.17.3.52.c7746",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
       "publication_anchor": null
     }
   ]
