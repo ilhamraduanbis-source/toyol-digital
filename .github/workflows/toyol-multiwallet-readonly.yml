@@ -1,0 +1,25 @@
+name: Toyol — Multiwallet read-only snapshot
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-multiwallet-readonly.yml']
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Public finalized balances only
+        run: |
+          node --input-type=module <<'JS'
+          const base='0xac57ad3c3f233e5865c3cd652f67ffc82a7af431',send='0x2f4f4b790f1d899d02e3ba238cabA8e104fb1142'.toLowerCase(),sol='At7TxA4e81Ai8X2TWZq944NSSbP1HaJB9iRug4vD1uQ';
+          async function rpc(urls,method,params){for(const url of urls){try{const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(9000),redirect:'error'});const j=await r.json();if(r.ok&&!j.error&&j.result!==undefined)return j.result}catch{}}throw Error('RPC_UNAVAILABLE_'+method)}
+          const B=['https://base-rpc.publicnode.com','https://mainnet.base.org'],T=['https://rpc.tempo.xyz'],S=['https://api.mainnet-beta.solana.com','https://solana-rpc.publicnode.com'];
+          const emit=(name,value)=>console.log('WALLET_READ '+JSON.stringify({name,...value}));
+          async function evm(name,urls,chain,addr,token){try{if(BigInt(await rpc(urls,'eth_chainId',[]))!==BigInt(chain))throw Error('CHAIN');const block=await rpc(urls,'eth_getBlockByNumber',['finalized',false]);const amount=await rpc(urls,'eth_call',[{to:token,data:'0x70a08231'+addr.slice(2).padStart(64,'0')},block.number]);const decimals=await rpc(urls,'eth_call',[{to:token,data:'0x313ce567'},block.number]);const result={raw:BigInt(amount).toString(),decimals:Number(BigInt(decimals)),block:BigInt(block.number).toString()};if(chain===8453)result.nativeWei=BigInt(await rpc(urls,'eth_getBalance',[addr,block.number])).toString();emit(name,result)}catch(e){emit(name,{error:e.message})}}
+          const USDC='0x833589fcd6edb6e08f4c7c32d4f71b54bda02913';
+          await Promise.all([evm('Base USDC',B,8453,base,USDC),evm('Sendstables Base USDC',B,8453,send,USDC),evm('Tempo OUSD',T,4217,base,'0x20c0000000000000000000006a37da5c996874be'),evm('Tempo PathUSD',T,4217,base,'0x20c0000000000000000000000000000000000000'),(async()=>{try{const a=await rpc(S,'getBalance',[sol,{commitment:'finalized'}]);emit('Solana SOL',{lamports:String(a.value),slot:a.context.slot});const b=await rpc(S,'getTokenAccountsByOwner',[sol,{mint:'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'},{encoding:'jsonParsed',commitment:'finalized'}]);let total=0n;for(const row of b.value){const i=row.account.data.parsed.info;if(i.owner!==sol||i.tokenAmount.decimals!==6||i.mint!=='EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v')throw Error('TOKEN_MISMATCH');total+=BigInt(i.tokenAmount.amount)}emit('Solana USDC',{raw:String(total),decimals:6,slot:b.context.slot})}catch(e){emit('Solana',{error:e.message})}})()]);
+          console.log('READ_ONLY_NO_SIGN_NO_TRANSFER');
+          JS
