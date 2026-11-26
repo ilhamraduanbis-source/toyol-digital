@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "S107B",
+  "next_module": "M13",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -9026,6 +9026,91 @@
       },
       "transfer_test_pass": true,
       "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45812770568",
+      "at": "2026-11-26T11:41:06.864359+00:00",
+      "module": "S107B",
+      "title": "Mutalaʿah (S107)",
+      "round": 3,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 3,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "المطالعة فهم المقروء النص العربي الفكرة الرئيسة المفردات",
+        "source": "https://api.crossref.org/works?query.bibliographic=%D8%A7%D9%84%D9%85%D8%B7%D8%A7%D9%84%D8%B9%D8%A9+%D9%81%D9%87%D9%85+%D8%A7%D9%84%D9%85%D9%82%D8%B1%D9%88%D8%A1+%D8%A7%D9%84%D9%86%D8%B5+%D8%A7%D9%84%D8%B9%D8%B1%D8%A8%D9%8A+%D8%A7%D9%84%D9%81%D9%83%D8%B1%D8%A9+%D8%A7%D9%84%D8%B1%D8%A6%D9%8A%D8%B3%D8%A9+%D8%A7%D9%84%D9%85%D9%81%D8%B1%D8%AF%D8%A7%D8%AA&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.36317/0826-010-034-002",
+            "title": "أثر انموذج بايبي في فهم المقروء لدى طلاب المرحلة الاعدادية في مادة المطالعة",
+            "year": 2017,
+            "url": "https://doi.org/10.36317/0826-010-034-002",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.61856/cfjasp84",
+            "title": "فاعلية الخطوات السبع PQ4R في فهم المقروء والتفكير الجانبي عند طالبات الصف الثاني المتوسط في مادة المطالعة",
+            "year": 2025,
+            "url": "https://doi.org/10.61856/cfjasp84",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.29343/1/0130-018-072-001",
+            "title": "القدرة المعجمية لدى تلاميذ السنة السادسة من التعليم الابتدائي وتأثيرها في فهم النص المقروء",
+            "year": 2017,
+            "url": "https://doi.org/10.29343/1/0130-018-072-001",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.38169/0661-011-011-004",
+            "title": "الدلالة بين ضرورة النص وإمكان التأويل:, مقاربة لسانية لآليات القراءة وثقافة المقروء في التراث العربي",
+            "year": 2006,
+            "url": "https://doi.org/10.38169/0661-011-011-004",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.21608/maed.2024.410734",
+            "title": "استخدام استراتيجية الكلمة الرئيسة في تحسين مهارات فهم المقروء لدى تلاميذ الصف الخامس الابتدائي بدولة الكويت…",
+            "year": 2024,
+            "url": "https://doi.org/10.21608/maed.2024.410734",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.36317/0826-010-034-002",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.61856/cfjasp84",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 221,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": {
+        "focus": "Inferens dan makna konteks",
+        "reading_targets": [
+          "Teks bacaan STAM yang sah — perlu diperoleh",
+          "Kitab al-Bukhalaʾ — al-Jahiz (bacaan lanjutan, bukan teks STAM disahkan)"
+        ],
+        "edition_status": "UNVERIFIED_STAM_2008",
+        "full_text_reviewed": false,
+        "source_questions": [
+          "Apakah istilah Arab dan definisi asal?",
+          "Siapakah pengarang, apakah edisi dan lokasi teks?",
+          "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
+        ]
+      },
       "publication_anchor": null
     }
   ]
