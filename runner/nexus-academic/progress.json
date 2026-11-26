@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M15",
+  "next_module": "S110",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -9431,6 +9431,86 @@
           "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
         ]
       },
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45900814343",
+      "at": "2026-11-26T21:50:21.979019+00:00",
+      "module": "M15",
+      "title": "Epistemologi Islam dan teori ilmu",
+      "round": 3,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 3,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Islamic epistemology knowledge certainty epistemologi Islam ilmu pengetahuan",
+        "source": "https://api.crossref.org/works?query.bibliographic=Islamic+epistemology+knowledge+certainty+epistemologi+Islam+ilmu+pengetahuan&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.33102/abqari.vol20no2.217",
+            "title": "Memahami Sains Islam Melalui Pembentukan Kerangka Ilmu dalam Epistemologi Islam",
+            "year": 2019,
+            "url": "https://doi.org/10.33102/abqari.vol20no2.217",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.56146/edusifa.v10i1.434",
+            "title": "EPISTEMOLOGI ISLAM DAN KONTRIBUSINYA TERHADAP ILMU HUMANIORA",
+            "year": 2026,
+            "url": "https://doi.org/10.56146/edusifa.v10i1.434",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.36835/alirfan.v5i2.5773",
+            "title": "EPISTEMOLOGI BAYANI, IRFANI DAN BURHANI SEBAGAI DASAR PENGEMBANGAN ILMU PENGETAHUAN DALAM ISLAM",
+            "year": 2022,
+            "url": "https://doi.org/10.36835/alirfan.v5i2.5773",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.62567/ijis.v2i1.1935",
+            "title": "EPISTEMOLOGI ISLAM (Akal, Indra, Hati Dalam Kesatuan Pengetahuan Dan Implementasi Dalam Pemahaman Dan Pengetahuan Ilmu Di Madrasah Ibtidaiyah)",
+            "year": 2026,
+            "url": "https://doi.org/10.62567/ijis.v2i1.1935",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.62446/averroes.010305",
+            "title": "Islamic Science Epistemology: A Study of Kauniyah Verses and Their Relevance to Modern Science in a Global Context",
+            "year": 2024,
+            "url": "https://doi.org/10.62446/averroes.010305",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.33102/abqari.vol20no2.217",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 289,
+            "signals": [
+              "results_signalled"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.56146/edusifa.v10i1.434",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 189,
+            "signals": [
+              "qualitative",
+              "document_analysis"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
       "publication_anchor": null
     }
   ]
