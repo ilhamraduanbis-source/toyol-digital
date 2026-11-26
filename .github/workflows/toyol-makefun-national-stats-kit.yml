@@ -1,0 +1,39 @@
+name: Toyol — Makefun national statistics gate
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-makefun-national-stats-kit.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Inspect official competition and kit; no credentials
+        run: |
+          set -eu
+          slug=best-national-statistics-site-20261126-0539
+          root="$RUNNER_TEMP/makefun-national"
+          mkdir -p "$root"
+          cd "$root"
+          curl --fail --silent --show-error --max-time 25 "https://make.fun/api/competitions/$slug" -o competition.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('competition.json'))
+          print('COMPETITION_METADATA',json.dumps(d,ensure_ascii=True)[:24000])
+          PY
+          curl --fail --silent --show-error --location --max-time 45 "https://make.fun/c/$slug/kit" -o kit.tgz
+          python3 - <<'PY'
+          import tarfile,pathlib
+          with tarfile.open('kit.tgz') as z:
+              a=z.getmembers()
+              if sum(x.size for x in a)>100_000_000 or any(x.name.startswith('/') or '..' in pathlib.PurePosixPath(x.name).parts or not(x.isfile() or x.isdir()) for x in a):raise SystemExit('UNSAFE_KIT')
+              for f in a:print('KIT_FILE',f.name,f.size)
+              for f in a:
+                  if f.isfile() and pathlib.PurePosixPath(f.name).name in ('RULES.txt','README.md','BRIEF.md','AGENTS.md','SKILL.md'):
+                      print('KIT_RULES',f.name)
+                      print(z.extractfile(f).read(60000).decode(errors='replace'))
+          PY
+          echo 'READ_ONLY_NO_PAYMENT_NO_ENTRY'
