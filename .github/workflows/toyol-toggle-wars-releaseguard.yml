@@ -1,0 +1,38 @@
+name: Toyol — Toggle Wars ReleaseGuard
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['deliverables/toggle-wars-releaseguard/**','.github/workflows/toyol-toggle-wars-releaseguard.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Unit tests
+        working-directory: deliverables/toggle-wars-releaseguard
+        run: python3 -m unittest -v
+      - name: Read-only official public demo API
+        working-directory: deliverables/toggle-wars-releaseguard
+        env:
+          FLAGSMITH_ENVIRONMENT: TijpMX6ajA7REC4bf5suYg
+        run: |
+          python3 releaseguard.py inspect > "$RUNNER_TEMP/flags.json"
+          python3 - <<'PY'
+          import json,os,pathlib
+          from releaseguard import plan,approve
+          d=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"flags.json").read_text())
+          assert d["source"]=="LIVE_FLAGSMITH_SDK_API" and d["flags"], "Empty live response"
+          name=sorted(d["flags"])[0]
+          key=os.environ["FLAGSMITH_ENVIRONMENT"]
+          p=plan(d["flags"],key,name,not d["flags"][name])
+          a=approve(p,p["approval_sha256"],d["flags"],key)
+          assert a["status"]=="HUMAN_EXECUTION_REQUIRED"
+          print("LIVE_FLAGSMITH_READ_OK",len(d["flags"]))
+          print("PLAN_GENERATION_OK; public demo was not modified; approval simulation only")
+          PY
