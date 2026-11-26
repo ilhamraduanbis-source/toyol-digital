@@ -19,7 +19,7 @@ jobs:
           const key=process.env.DELPHI_KEY;
           if(!key){console.log('DELPHI_SECRET_MISSING');process.exit(1)}
           console.log('DELPHI_SECRET_PRESENT');
-          const origin='https://delphi.fyi/v1';
+          const origin='https://app.delphi.fyi/v1';
           let ok=true;
           for(const p of ['terms','limits']){
             try{
