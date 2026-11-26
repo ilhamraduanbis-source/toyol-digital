@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M12",
+  "next_module": "S107B",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -8950,6 +8950,82 @@
           "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
         ]
       },
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45793937980",
+      "at": "2026-11-26T09:39:23.013797+00:00",
+      "module": "M12",
+      "title": "Audit menyeluruh dan penulisan semula",
+      "round": 3,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 4,
+      "sources_total": 5,
+      "mastery_verified": false,
+      "literature": {
+        "query": "academic writing argument evidence",
+        "source": "https://api.crossref.org/works?query.bibliographic=academic+writing+argument+evidence&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.38169/0661-030-001-003",
+            "title": "Writing Academic Argument Paragraph:, A Challenge For EFL Students",
+            "year": 2024,
+            "url": "https://doi.org/10.38169/0661-030-001-003",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.24176/pro.v9i2.17204",
+            "title": "Bridging the Gap Between Evidence and Argument: Exploring Undergraduate EFL Students’ Struggles with Logical Warrants in Academic Writing",
+            "year": 2026,
+            "url": "https://doi.org/10.24176/pro.v9i2.17204",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.19195/0301-7966.54.1",
+            "title": "The Conceptualisation of Argument in Writing for Academic Purposes",
+            "year": 2016,
+            "url": "https://doi.org/10.19195/0301-7966.54.1",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.18546/lre.15.1.06",
+            "title": "'Academic literacies' as moving beyond writing: Investigating multimodal approaches to academic argument",
+            "year": 2017,
+            "url": "https://doi.org/10.18546/lre.15.1.06",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1093/applin/23.2.215",
+            "title": "Directives: Argument and Engagement in Academic Writing",
+            "year": 2002,
+            "url": "https://doi.org/10.1093/applin/23.2.215",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.38169/0661-030-001-003",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.24176/pro.v9i2.17204",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 222,
+            "signals": [
+              "qualitative",
+              "interview",
+              "results_signalled"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
       "publication_anchor": null
     }
   ]
