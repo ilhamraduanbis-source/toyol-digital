@@ -1,0 +1,41 @@
+name: Toyol — Delphi evidence access preflight
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toyol-delphi-evidence-access.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Check evidence API terms and limits (GET only)
+        env:
+          DELPHI_KEY: ${{ secrets.TOYOL_DELPHI_API_KEY }}
+        run: |
+          node --input-type=module <<'JS'
+          const key=process.env.DELPHI_KEY;
+          if(!key){console.log('DELPHI_SECRET_MISSING');process.exit(1)}
+          console.log('DELPHI_SECRET_PRESENT');
+          const origin='https://delphi.fyi/v1';
+          let ok=true;
+          for(const p of ['terms','limits']){
+            try{
+              const r=await fetch(origin+'/'+p,{method:'GET',redirect:'error',signal:AbortSignal.timeout(15000),headers:{Authorization:'Bearer '+key,Accept:'application/json','X-Agent-Id':'Toyol Digital'}});
+              console.log('DELPHI_HTTP',p,r.status);
+              if(!r.ok){ok=false;continue}
+              const j=await r.json(),d=j.data??j;
+              if(p==='terms'){
+                let safeUrl=null;
+                try{const u=new URL(d.url);if(u.protocol==='https:'&&['delphi.fyi','www.delphi.fyi','gensyn.ai','www.gensyn.ai','docs.gensyn.ai'].includes(u.hostname))safeUrl=u.origin+u.pathname;}catch{}
+                console.log('DELPHI_TERMS',JSON.stringify({version:typeof d.version==='string'&&/^[a-zA-Z0-9._-]{1,40}$/.test(d.version)?d.version:null,url:safeUrl,accepted:typeof d.acceptedAt==='string'&&Number.isFinite(Date.parse(d.acceptedAt))}));
+              }else{
+                console.log('DELPHI_LIMITS',JSON.stringify({submitsLeftThisHour:typeof d.submitsLeftThisHour==='number'?d.submitsLeftThisHour:null,dailyCapLeft:typeof d.dailyCapLeft==='number'?d.dailyCapLeft:null}));
+              }
+            }catch{console.log('DELPHI_NETWORK_ERROR',p);ok=false;}
+          }
+          console.log('READ_ONLY_NO_TRADE_NO_TERMS_ACCEPTANCE_NO_SUBMISSION');
+          if(!ok)process.exit(1);
+          JS
