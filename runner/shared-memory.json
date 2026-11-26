@@ -2,18 +2,6 @@
   "version": 1,
   "observations": [
     {
-      "worker": "go-hybrid-4488",
-      "runId": 45571937199,
-      "attempt": 1,
-      "completedAt": "2026-11-25T07:55:50Z",
-      "sourceCommit": "0f113dd9496ddd743010cdcb4a01bcc834ad948f",
-      "conclusion": "success",
-      "failedSteps": [],
-      "skippedSteps": [],
-      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
-      "incomeInferred": false
-    },
-    {
       "worker": "orion-mega-contracts",
       "runId": 45572463132,
       "attempt": 1,
@@ -1442,6 +1430,20 @@
       "conclusion": "success",
       "failedSteps": [],
       "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-data",
+      "runId": 45760624688,
+      "attempt": 1,
+      "completedAt": "2026-11-26T05:17:42Z",
+      "sourceCommit": "a017e8054687952587e930ee3da00f3aabda9796",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [
+        "Prepare actual data and notary evidence on code change (no claim)"
+      ],
       "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
       "incomeInferred": false
     }
