@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "S107A",
+  "next_module": "M12",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -8869,6 +8869,87 @@
       },
       "transfer_test_pass": true,
       "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45783222435",
+      "at": "2026-11-26T08:27:00.483701+00:00",
+      "module": "S107A",
+      "title": "Insyaʾ (S107)",
+      "round": 3,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 3,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "الإنشاء العربي التعبير الكتابي المقالة الرسالة الكتابة الأكاديمية",
+        "source": "https://api.crossref.org/works?query.bibliographic=%D8%A7%D9%84%D8%A5%D9%86%D8%B4%D8%A7%D8%A1+%D8%A7%D9%84%D8%B9%D8%B1%D8%A8%D9%8A+%D8%A7%D9%84%D8%AA%D8%B9%D8%A8%D9%8A%D8%B1+%D8%A7%D9%84%D9%83%D8%AA%D8%A7%D8%A8%D9%8A+%D8%A7%D9%84%D9%85%D9%82%D8%A7%D9%84%D8%A9+%D8%A7%D9%84%D8%B1%D8%B3%D8%A7%D9%84%D8%A9+%D8%A7%D9%84%D9%83%D8%AA%D8%A7%D8%A8%D8%A9+%D8%A7%D9%84%D8%A3%D9%83%D8%A7%D8%AF%D9%8A%D9%85%D9%8A%D8%A9&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.37136/1969-014-001-049",
+            "title": "ضعف أداء التعبير الكتابي لدى طلبة الجامعة:, دراسة ميدانية بجامعة العربي بن مهيدي / أم البواقي",
+            "year": 2022,
+            "url": "https://doi.org/10.37136/1969-014-001-049",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.35270/0011-028-104-001",
+            "title": "أثر استخدام المراحل الخمس للكتابة في تنمية القدرة على التعبير الكتابي لدى تلاميذ الصف الثاني المتوسط",
+            "year": 2007,
+            "url": "https://doi.org/10.35270/0011-028-104-001",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.33948/1640-000-020-004",
+            "title": "تصورات الطالبات ذوات صعوبات التعلم حول التعبير الكتابي واستخدام استراتيجيات التنظيم الذاتي في الكتابة في المرحلة المتوسطة",
+            "year": 2022,
+            "url": "https://doi.org/10.33948/1640-000-020-004",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.54633/2333-023-052-012",
+            "title": "أثر استخدام استراتيجية قوائم الطعام Menus على أداء طلاب الجامعة العراقيين في اللغة الإنكليزية كلغة أجنبية في التعبير الكتابي",
+            "year": 2024,
+            "url": "https://doi.org/10.54633/2333-023-052-012",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.35270/0011-029-107-002",
+            "title": "استخدام أسلوب العصف الذهني في تنمية مهارات التفكير الإبداعي وأثره على التعبير الكتابي لدى طالبات الصف الثالث المتوسط",
+            "year": 2008,
+            "url": "https://doi.org/10.35270/0011-029-107-002",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.37136/1969-014-001-049",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.35270/0011-028-104-001",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": {
+        "focus": "Surat dan ucapan",
+        "reading_targets": [
+          "Bahan latihan insyaʾ STAM yang sah — perlu diperoleh dan disahkan"
+        ],
+        "edition_status": "UNVERIFIED_STAM_2008",
+        "full_text_reviewed": false,
+        "source_questions": [
+          "Apakah istilah Arab dan definisi asal?",
+          "Siapakah pengarang, apakah edisi dan lokasi teks?",
+          "Apakah contoh, batas dan kemungkinan perbezaan pendapat?"
+        ]
+      },
       "publication_anchor": null
     }
   ]
