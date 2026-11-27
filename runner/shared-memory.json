@@ -2,18 +2,6 @@
   "version": 1,
   "observations": [
     {
-      "worker": "orion-mega-contracts",
-      "runId": 45773367011,
-      "attempt": 1,
-      "completedAt": "2026-11-26T07:10:48Z",
-      "sourceCommit": "79978ff3df14507a558de360fa41d35b7f065db3",
-      "conclusion": "success",
-      "failedSteps": [],
-      "skippedSteps": [],
-      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
-      "incomeInferred": false
-    },
-    {
       "worker": "payment-reconciliation",
       "runId": 45774233418,
       "attempt": 1,
@@ -1440,6 +1428,20 @@
       "conclusion": "success",
       "failedSteps": [],
       "skippedSteps": [],
+      "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
+      "incomeInferred": false
+    },
+    {
+      "worker": "swarmmemo-data",
+      "runId": 45944530988,
+      "attempt": 1,
+      "completedAt": "2026-11-27T05:13:52Z",
+      "sourceCommit": "55dd5bf593bc3110e5a862b28782d20402619e2a",
+      "conclusion": "success",
+      "failedSteps": [],
+      "skippedSteps": [
+        "Prepare actual data and notary evidence on code change (no claim)"
+      ],
       "lesson": "Workflow completion alone does not establish delivery, acceptance, or payment.",
       "incomeInferred": false
     }
