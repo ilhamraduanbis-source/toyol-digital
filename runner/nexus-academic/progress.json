@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M20",
+  "next_module": "M21",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -9879,6 +9879,87 @@
             "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
             "word_count": 256,
             "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45976087006",
+      "at": "2026-11-27T09:43:42.665293+00:00",
+      "module": "M20",
+      "title": "Etika air, wuduk, israf dan kelestarian",
+      "round": 3,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 3,
+      "sources_total": 4,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Islamic ablution water consumption ethics wastage israf sustainability",
+        "source": "https://api.crossref.org/works?query.bibliographic=Islamic+ablution+water+consumption+ethics+wastage+israf+sustainability&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.37034/infeb.v8i2.1445",
+            "title": "Fast Fashion Consumption Behavior According to Islamic Consumption Ethics and Sustainability",
+            "year": 2026,
+            "url": "https://doi.org/10.37034/infeb.v8i2.1445",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.66052/f4s42b11",
+            "title": "&lt;b&gt;THRIFTING BETWEEN AVOIDING AND TRIGGERING ISRAF AND TABDZIR: A STUDY OF ISLAMIC CONSUMPTION ETHICS&lt;/b&gt;&lt;b&gt;&lt;/b&gt;",
+            "year": 2026,
+            "url": "https://doi.org/10.66052/f4s42b11",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.31330/repo.v4i2.117",
+            "title": "PARADOX OF CONSUMPTION IN ISLAMIC ECONOMICS: BETWEEN ANTI-ISRAF PRINCIPLE AND FINANCIAL POLICIES",
+            "year": 2025,
+            "url": "https://doi.org/10.31330/repo.v4i2.117",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.3390/su13147583",
+            "title": "Household Food Consumption and Wastage during the COVID-19 Pandemic Outbreak: A Comparison between Peru and Brazil",
+            "year": 2021,
+            "url": "https://doi.org/10.3390/su13147583",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.24191/bej.v22i2.1346",
+            "title": "Water Conservation in Ablution: An Evaluation of Mist Spray Devices and Their Financial Impact on Water Usage and Sustainability in Communal Facilities",
+            "year": 2025,
+            "url": "https://doi.org/10.24191/bej.v22i2.1346",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.37034/infeb.v8i2.1445",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 194,
+            "signals": [
+              "quantitative"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.66052/f4s42b11",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 246,
+            "signals": [
+              "qualitative",
+              "document_analysis",
+              "results_signalled"
+            ],
             "full_text_reviewed": false,
             "findings_verified": false
           }
