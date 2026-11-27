@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M22",
+  "next_module": "M23",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -10031,6 +10031,88 @@
             "doi": "10.31901/24566772.2012/06.03.10",
             "status": "ABSTRACT_UNAVAILABLE",
             "full_text_reviewed": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "46010024216",
+      "at": "2026-11-27T13:46:52.674751+00:00",
+      "module": "M22",
+      "title": "Sosiologi agama dan tingkah laku manusia",
+      "round": 3,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 0,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "religious practice Islamic higher education students Malaysia sociology religiosity behaviour",
+        "source": "https://api.crossref.org/works?query.bibliographic=religious+practice+Islamic+higher+education+students+Malaysia+sociology+religiosity+behaviour&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.53840/alirsyad.v4i2.57",
+            "title": "Pengamalan hidup beragama dalam kalangan mahasiswa Institut Pengajian Tinggi Islam di Malaysia",
+            "year": 2019,
+            "url": "https://doi.org/10.53840/alirsyad.v4i2.57",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.33423/jhetp.v22i2.5039",
+            "title": "Relationship Between Islamic Sufism Practices and Religious Personality  Among Muslim Students in Malaysia",
+            "year": 2022,
+            "url": "https://doi.org/10.33423/jhetp.v22i2.5039",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.52615/jie.v9i1.350",
+            "title": "Religiosity and Learning Satisfaction among Students in the Islamic Religious Education Program",
+            "year": 2024,
+            "url": "https://doi.org/10.52615/jie.v9i1.350",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.35723/jie.v9i1.350",
+            "title": "Religiosity and Learning Satisfaction among Students in the Islamic Religious Education Program",
+            "year": 2024,
+            "url": "https://doi.org/10.35723/jie.v9i1.350",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.24239/jsi.v10i1.20.97-125",
+            "title": "RELIGIOSITY LEARNING AND STUDENTS’ ASSESSMENT IN  ISLAMIC RELIGIOUS EDUCATION (IRE)",
+            "year": 2013,
+            "url": "https://doi.org/10.24239/jsi.v10i1.20.97-125",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.53840/alirsyad.v4i2.57",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 196,
+            "signals": [
+              "quantitative",
+              "survey",
+              "results_signalled"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.33423/jhetp.v22i2.5039",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 102,
+            "signals": [
+              "survey",
+              "results_signalled"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
           }
         ]
       },
