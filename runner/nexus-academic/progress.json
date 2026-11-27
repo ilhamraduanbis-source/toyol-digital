@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M19",
+  "next_module": "M20",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -9806,6 +9806,78 @@
             "doi": "10.31436/id.v34i1.2512",
             "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
             "word_count": 191,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "45962299621",
+      "at": "2026-11-27T08:00:01.198147+00:00",
+      "module": "M19",
+      "title": "Akhlak, etika normatif dan etika gunaan",
+      "round": 3,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 2,
+      "sources_total": 2,
+      "mastery_verified": false,
+      "literature": {
+        "query": "Islamic virtue ethics akhlaq applied ethics moral philosophy",
+        "source": "https://api.crossref.org/works?query.bibliographic=Islamic+virtue+ethics+akhlaq+applied+ethics+moral+philosophy&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.1111/1540-6253.12044",
+            "title": "Virtue Ethics and Moral Responsibility: Confucian Conceptions of Moral Praise and Blame",
+            "year": 2013,
+            "url": "https://doi.org/10.1111/1540-6253.12044",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1163/24685542-20240002",
+            "title": "Virtue Ethics as Animal Ethics in Philosophy of the Islamic World",
+            "year": 2024,
+            "url": "https://doi.org/10.1163/24685542-20240002",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1017/s0031819107000058",
+            "title": "Moral Status in Virtue Ethics",
+            "year": 2007,
+            "url": "https://doi.org/10.1017/s0031819107000058",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.5840/10.2307/3857434",
+            "title": "Virtue Ethics, the Firm, and Moral Psychology",
+            "year": 1998,
+            "url": "https://doi.org/10.5840/10.2307/3857434",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.1080/17511321.2025.2545244",
+            "title": "The Peripatetic athlete in Islamic philosophy: an interpretation of Avicenna’s moral philosophy",
+            "year": 2025,
+            "url": "https://doi.org/10.1080/17511321.2025.2545244",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.1111/1540-6253.12044",
+            "status": "ABSTRACT_UNAVAILABLE",
+            "full_text_reviewed": false
+          },
+          {
+            "doi": "10.1163/24685542-20240002",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 256,
             "signals": [],
             "full_text_reviewed": false,
             "findings_verified": false
