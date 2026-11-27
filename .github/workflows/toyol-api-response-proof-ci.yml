@@ -1,0 +1,22 @@
+name: Toyol API Response Proof CI
+on:
+  push:
+    branches: [toyol-api-response-proof-v1]
+    paths:
+      - 'skills/api-response-proof/**'
+      - '.github/workflows/toyol-api-response-proof-ci.yml'
+permissions:
+  contents: read
+concurrency:
+  group: toyol-api-response-proof-ci
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run isolated Node tests
+        run: node --test skills/api-response-proof/audit.test.mjs skills/api-response-proof/delivery.test.mjs
