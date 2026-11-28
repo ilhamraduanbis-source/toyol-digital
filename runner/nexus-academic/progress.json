@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "next_module": "M28",
+  "next_module": "M29",
   "sessions": [
     {
       "run_id": "43806074283",
@@ -10486,6 +10486,84 @@
               "qualitative",
               "document_analysis",
               "interview",
+              "results_signalled"
+            ],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          }
+        ]
+      },
+      "transfer_test_pass": true,
+      "stam": null,
+      "publication_anchor": null
+    },
+    {
+      "run_id": "46095656764",
+      "at": "2026-11-28T01:57:42.333440+00:00",
+      "module": "M28",
+      "title": "Pengajian Islam dan isu kontemporari Muslim",
+      "round": 3,
+      "status": "REFERENCE_PRACTICE_COMPLETED",
+      "fixture_pass": true,
+      "sources_reachable": 2,
+      "sources_total": 3,
+      "mastery_verified": false,
+      "literature": {
+        "query": "contemporary Muslim issues Malaysia Islamic thought ethics society",
+        "source": "https://api.crossref.org/works?query.bibliographic=contemporary+Muslim+issues+Malaysia+Islamic+thought+ethics+society&rows=5&filter=type%3Ajournal-article&select=DOI%2Ctitle%2Cauthor%2Cpublished%2CURL%2Ctype",
+        "status": "METADATA_RETRIEVED",
+        "records": [
+          {
+            "doi": "10.56389/tafhim.vol1no4.4",
+            "title": "THE IMPACT OF GLOBALIZATION ON MUSLIM THOUGHT, CULTURE AND SOCIETY: CHALLENGES AND OPPORTUNITIES TO THE MUSLIM UNITY IN 21ST CENTURY",
+            "year": 2015,
+            "url": "https://doi.org/10.56389/tafhim.vol1no4.4",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.24191/jcis.v10i3.16",
+            "title": "Inheritance Issues Among Muslim Converts in Malaysia",
+            "year": 2024,
+            "url": "https://doi.org/10.24191/jcis.v10i3.16",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.53840/alirsyad.v10i1.532",
+            "title": "Voices of Muslim scholars: Navigating contemporary challenges in Islamic thought",
+            "year": 2025,
+            "url": "https://doi.org/10.53840/alirsyad.v10i1.532",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.56389/tafhim.vol1no4.5",
+            "title": "A BRIEF STUDY OF SOCIO-POLITICAL THOUGHT OF SAYYID QUTB ON THE REFORMATION OF MUSLIM SOCIETY",
+            "year": 2015,
+            "url": "https://doi.org/10.56389/tafhim.vol1no4.5",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          },
+          {
+            "doi": "10.22515/islimus.v10i1.12570",
+            "title": "From Theocentric to Anthropocentric: Reconfiguring Tawḥīd in Contemporary Islamic Thought",
+            "year": 2025,
+            "url": "https://doi.org/10.22515/islimus.v10i1.12570",
+            "status": "METADATA_CANDIDATE_RELEVANCE_AND_TEXT_UNVERIFIED"
+          }
+        ],
+        "abstract_checks": [
+          {
+            "doi": "10.56389/tafhim.vol1no4.4",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 139,
+            "signals": [],
+            "full_text_reviewed": false,
+            "findings_verified": false
+          },
+          {
+            "doi": "10.24191/jcis.v10i3.16",
+            "status": "ABSTRACT_SCANNED_METHOD_SIGNALS_ONLY",
+            "word_count": 157,
+            "signals": [
+              "qualitative",
               "results_signalled"
             ],
             "full_text_reviewed": false,
