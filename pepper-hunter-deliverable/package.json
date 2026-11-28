@@ -1,0 +1,16 @@
+{
+  "name": "toyol-paid-tasks",
+  "version": "1.0.0",
+  "description": "Radar for open paid AI agent tasks and bounties",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "verify": "node -e 'console.log(\"Toyol tasks system operational.\")'"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
